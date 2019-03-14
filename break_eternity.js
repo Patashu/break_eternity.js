@@ -53,7 +53,7 @@
 
   var NUMBER_EXP_MIN = -324;
   
-  var MAX_ES_IN_A_ROW = 5;
+  var MAX_ES_IN_A_ROW = 6;
 
   var powerOf10 = function () {
     // We need this lookup table because Math.pow(10, exponent)
