@@ -45,7 +45,7 @@
 
   var MAX_SIGNIFICANT_DIGITS = 17; // Highest value you can safely put here is Number.MAX_SAFE_INTEGER-MAX_SIGNIFICANT_DIGITS
 
-  var EXP_LIMIT = 9e15; // The largest exponent that can appear in a Number, though not all mantissas are valid here.
+  var EXP_LIMIT = 9e15; // If we're ABOVE this value, increase a layer. (9e15 is close to the largest integer that can fit in a Number.)
   
   var LAYER_DOWN = Math.log10(9e15); //If we're BELOW this value, drop down a layer. About 15.954.
 
@@ -425,11 +425,11 @@
     };
 
     Decimal.pow10 = function (value) {
-      throw Error("Unimplemented");
+      return D(value).powbase10();
     };
 
     Decimal.pow = function (value, other) {
-      throw Error("Unimplemented");
+      return D(value).pow(other);
     };
 
     Decimal.exp = function (value) {
@@ -529,6 +529,7 @@
     Decimal.prototype.fromNumber = function (value) {
       this.mag = Math.abs(value);
       this.sign = Math.sign(value);
+      this.layer = 0;
       this.normalize();
       return this;
     };
@@ -824,17 +825,17 @@
       //Special case: If one of the numbers is layer 2 or higher, just take the bigger number.
       if ((a.layer >= 2 || b.layer >= 2)) { return a; }
       
-      if (a.layer == 0 && b.layer == 0) { return new D(a.sign*a.mag + b.sign*b.mag); }
+      if (a.layer == 0 && b.layer == 0) { return D(a.sign*a.mag + b.sign*b.mag); }
       
       if (a.layer == 1 && b.layer == 0)
       {
-        var magdiff = Math.pow(10, a.mag-Math.log10(b.mag));
-        if (!isFinite(magdiff) || magdiff > 1e17)
+        if (a.mag-Math.log10(b.mag) > MAX_SIGNIFICANT_DIGITS)
         {
           return a;
         }
         else
         {
+          var magdiff = Math.pow(10, a.mag-Math.log10(b.mag));
           var mantissa = (b.sign*1)+(a.sign*magdiff);
           return FC(Math.sign(mantissa), 1, Math.log10(b.mag)+Math.log10(Math.abs(mantissa)));
         }
@@ -842,13 +843,13 @@
       
       if (a.layer == 1 && b.layer == 1)
       {
-        var magdiff = Math.pow(10, a.mag-b.mag);
-        if (!isFinite(magdiff) || magdiff > 1e17)
+        if (a.mag-b.mag > MAX_SIGNIFICANT_DIGITS)
         {
           return a;
         }
         else
         {
+          var magdiff = Math.pow(10, a.mag-b.mag);
           var mantissa = (b.sign*1)+(a.sign*magdiff);
           return FC(Math.sign(mantissa), 1, b.mag+Math.log10(Math.abs(mantissa)));
         }
@@ -896,7 +897,7 @@
       //Special case: If one of the numbers is layer 3 or higher or one of the numbers is 2+ layers bigger than the other, just take the bigger number.
       if ((a.layer >= 3 || b.layer >= 3) || (a.layer - b.layer >= 2)) { return FC(a.sign*b.sign, a.layer, a.mag); }
       
-      if (a.layer == 0 && b.layer == 0) { return new D(a.sign*b.sign*a.mag*b.mag); }
+      if (a.layer == 0 && b.layer == 0) { return D(a.sign*b.sign*a.mag*b.mag); }
       
       if (a.layer == 1 && b.layer == 0)
       { 
@@ -977,7 +978,7 @@
       //Special case - if either number is layer 3 or higher, whichever number is larger wins.
       if (a.layer >= 3 || b.layer >= 3) { return a.cmpabs(b) > 0 ? FC(a.sign*b.sign, a.layer, a.mag) : FC_NN(0, 0, 0); }
       
-      if (a.layer == 0 && b.layer == 0) { return new D(a.sign*b.sign*a.mag/b.mag); }
+      if (a.layer == 0 && b.layer == 0) { return D(a.sign*b.sign*a.mag/b.mag); }
       
       if (a.layer == 1 && b.layer == 0) { return FC(a.sign*b.sign, 1, a.mag-Math.log10(b.mag)); }
       
@@ -1252,6 +1253,10 @@
       
       //TODO: Going to worry about negative numbers later and assume stuff is positive for now.
       
+      //special case: if a is 0, then return 0
+      if (a.sign === 0) { return FC_NN(0, 0, 0); }
+      //special case: if a is 1, then return 1
+      if (a.sign === 1 && a.layer === 0 && a.mag === 1) { return a; }
       //special case: if b is 0, then return 1
       if (b.sign === 0) { return FC_NN(0, 0, 0); }
       //special case: if b is 1, then return a
@@ -1263,17 +1268,17 @@
       {
         var newmag = Math.pow(a.sign*a.mag, b.sign*b.mag);
         if (isFinite(newmag)) { return FC(1, 0, newmag); }
-        return FC(1, 1, Math.log10(a.mag)*b.mag);
+        return FC(1, 0, Math.log10(a.mag)*b.mag);
       }
       
       if (a.layer === 0 && b.layer === 1)
       {
-        throw Error("Unimplemented");
+        return FC(1, 2, Math.log10(Math.log10(a.mag))+b.mag);
       }
       
       if (a.layer === 1 && b.layer === 0)
       {
-        throw Error("Unimplemented");
+        return FC(1, 2, Math.log10(a.mag)+Math.log10(b.mag));
       }
       
       if (a.layer === 1 && b.layer === 1)
