@@ -1202,7 +1202,7 @@
     Decimal.prototype.abslog10 = function () {
        if (this.layer > 0)
       {
-        return D_FCNN(this.sign, this.layer-1, this.mag);
+        return FC_NN(this.sign, this.layer-1, this.mag);
       }
       else if (this.sign === 0)
       {
@@ -1210,14 +1210,14 @@
       }
       else
       {
-        return D_FCNN(this.sign, 0, Math.log10(Math.abs(this.mag)));
+        return FC_NN(this.sign, 0, Math.log10(Math.abs(this.mag)));
       }
     };
 
     Decimal.prototype.log10 = function () {
       if (this.layer > 0)
       {
-        return D_FCNN(this.sign, this.layer-1, this.mag);
+        return FC_NN(this.sign, this.layer-1, this.mag);
       }
       else if (this.sign < -1)
       {
@@ -1225,7 +1225,7 @@
       }
       else
       {
-        return D_FCNN(this.sign, 0, Math.log10(this.mag));
+        return FC_NN(this.sign, 0, Math.log10(this.mag));
       }
     };
 
@@ -1246,30 +1246,90 @@
     };
 
     Decimal.prototype.pow = function (value) {
+      var decimal = D(value);
+      var a = this;
+      var b = decimal;
+      
+      //TODO: Going to worry about negative numbers later and assume stuff is positive for now.
+      
+      //special case: if b is 0, then return 1
+      if (b.sign === 0) { return FC_NN(0, 0, 0); }
+      //special case: if b is 1, then return a
+      if (b.sign === 1 && b.layer === 0 && b.mag === 1) { return a; }
+      //special case: if a is 10, then call powbase10
+      if (a.sign === 1 && a.layer === 0 && a.mag === 10) { return b.powbase10(); }
+      
+      if (a.layer === 0 && b.layer === 0)
+      {
+        var newmag = Math.pow(a.sign*a.mag, b.sign*b.mag);
+        if (isFinite(newmag)) { return FC(1, 0, newmag); }
+        return FC(1, 1, Math.log10(a.mag)*b.mag);
+      }
+      
+      if (a.layer === 0 && b.layer === 1)
+      {
+        throw Error("Unimplemented");
+      }
+      
+      if (a.layer === 1 && b.layer === 0)
+      {
+        throw Error("Unimplemented");
+      }
+      
+      if (a.layer === 1 && b.layer === 1)
+      {
+        return FC(1, 2, Math.log10(a.mag)+b.mag);
+      }
+      
+      if (a.layer === 0 && b.layer === 2)
+      {
+        throw Error("Unimplemented");
+      }
+      
+      if (a.layer === 1 && b.layer === 2)
+      {
+        throw Error("Unimplemented");
+      }
+      
+      if (a.layer === 2 && b.layer === 0)
+      {
+        throw Error("Unimplemented");
+      }
+      
+      if (a.layer === 2 && b.layer === 1)
+      {
+        throw Error("Unimplemented");
+      }
+      
+      if (a.layer === 2 && b.layer === 2)
+      {
+        throw Error("Unimplemented");
+      }
+      
       throw Error("Unimplemented");
     };
     
-    Decimal.prototype.powbase10 = function (value) {
+    Decimal.prototype.powbase10 = function () {
       if (this.sign === 0)
       {
-        return D_FCNN(1, 0, 1);
+        return FC_NN(1, 0, 1);
       }
       else if (this.sign === 1)
       {
         //mag might be too low and it might immediately be bumped down
-        return D_FC(1, this.layer+1, this.mag);
+        return FC(1, this.layer+1, this.mag);
       }
       else if (this.layer === 0)
       {
         //negative layer 0 number - will end up in range (0, 1) though rounding can make it exactly 0 or 1
         var new_mag = Math.pow(10, -this.mag);
-        if (new_mag === 0) { return D_FC(0, 0, 0); }
-        return D_FCNN(1, 0, new_mag);
+        if (new_mag === 0) { return FC_NN(0, 0, 0); }
+        return FC_NN(1, 0, new_mag);
       }
       else
       {
         //negative higher layer number - will always be 0
-        return D_FCNN(0, 0, 0);
+        return FC_NN(0, 0, 0);
       }
     }
 
