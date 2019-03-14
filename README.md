@@ -16,4 +16,4 @@ Special thanks:
 * nathanisbored, for coming up with a short and sweet formula for 10^a + 10^b == 10^c which has been used in add and mul.
 * Razenpok, slabdrill and Hevipelle/Antimatter Dimensions, for inspiration, assistance and testing with the original break_infinity.js and its C# port.
 
-obligatory SEO: number library, big number, big num, bignumber, bignum, big integer, biginteger, bigint
+obligatory SEO: number library, big number, big num, bignumber, bignum, big integer, biginteger, bigint, incremental games, idle games, large numbers, huge numbers
