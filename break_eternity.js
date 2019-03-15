@@ -468,6 +468,10 @@
       return D(value).tetrate(height, payload);
     }
     
+    Decimal.pentate = function (value, height = 2, payload = FC_NN(1, 0, 1)) {
+      return D(value).pentate(height, payload);
+    }
+    
     /**
      * If you're willing to spend 'resourcesAvailable' and want to buy something
      * with exponentially increasing cost each purchase (start at priceStart,
@@ -658,15 +662,44 @@
     };
 
     Decimal.prototype.fromString = function (value) {
-      //Handle x^^y format. (Has to come before parseFloat.)
+      //Handle x^^^y format.
+      var pentationparts = value.split("^^^");
+      if (pentationparts.length === 2)
+      {
+        var base = parseFloat(pentationparts[0]);
+        var height = parseFloat(pentationparts[1]);
+        var payload = 1;
+        var heightparts = pentationparts[1].split(";");
+        if (heightparts.length === 2)
+        {
+          var payload = parseFloat(heightparts[1]);
+          if (!isFinite(payload)) { payload = 1; }
+        }
+        if (isFinite(base) && isFinite(height))
+        {
+          var result = Decimal.pentate(base, height, payload);
+          this.sign = result.sign;
+          this.layer = result.layer;
+          this.mag = result.mag;
+          return this;
+        }
+      }
+    
+      //Handle x^^y format.
       var tetrationparts = value.split("^^");
       if (tetrationparts.length === 2)
       {
         var base = parseFloat(tetrationparts[0]);
         var height = parseFloat(tetrationparts[1]);
+        var heightparts = tetrationparts[1].split(";");
+        if (heightparts.length === 2)
+        {
+          var payload = parseFloat(heightparts[1]);
+          if (!isFinite(payload)) { payload = 1; }
+        }
         if (isFinite(base) && isFinite(height))
         {
-          var result = Decimal.tetrate(base, height);
+          var result = Decimal.tetrate(base, height, payload);
           this.sign = result.sign;
           this.layer = result.layer;
           this.mag = result.mag;
@@ -1530,6 +1563,7 @@
     
     Decimal.prototype.tetrate = function(height = 2, payload = FC_NN(1, 0, 1)) {
       payload = D(payload);
+      height = Math.trunc(height);
       
       //special case: if height is 0, return 1
       if (height == 0) { return FC_NN(1, 0, 1); }
@@ -1545,6 +1579,24 @@
         if (payload.layer - this.layer > 3) { return FC_NN(payload.sign, payload.layer + (height - i - 1), payload.mag); }
         //give up after 100 iterations if nothing is happening
         if (i > 100) { return payload; }
+      }
+      return payload;
+    }
+    
+    Decimal.prototype.pentate = function(height = 2, payload = FC_NN(1, 0, 1)) {
+      payload = D(payload);
+      height = Math.trunc(height);
+      
+      //special case: if height is 0, return 1
+      if (height == 0) { return FC_NN(1, 0, 1); }
+      
+      for (var i = 0; i < height; ++i)
+      {
+        payload = this.tetrate(payload);
+        //bail if we're NaN
+        if (!isFinite(payload.layer) || !isFinite(payload.mag)) { return payload; }
+        //give up after 10 iterations if nothing is happening
+        if (i > 10) { return payload; }
       }
       return payload;
     }
