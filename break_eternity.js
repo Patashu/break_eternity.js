@@ -1301,19 +1301,9 @@
         return FC(1, b.layer+1, b.mag);
       }
       
-      if (a.layer === 2 && b.layer === 0)
+      if (a.layer === 2 && b.layer <= 2)
       {
-        throw Error("Unimplemented");
-      }
-      
-      if (a.layer === 2 && b.layer === 1)
-      {
-        throw Error("Unimplemented");
-      }
-      
-      if (a.layer === 2 && b.layer === 2)
-      {
-        var result = Decimal.mul(FC_NN(a.sign, 1, a.mag), FC_NN(b.sign, 2, b.mag));
+        var result = Decimal.mul(FC_NN(a.sign, 1, a.mag), FC_NN(b.sign, b.layer, b.mag));
         result.layer += 1;
         return result;
       }
