@@ -754,6 +754,22 @@
         }
       }
       
+      //Handle x^y format.
+      var powparts = value.split("^");
+      if (powparts.length === 2)
+      {
+        var base = parseFloat(powparts[0]);
+        var exponent = parseFloat(powparts[1]);
+        if (isFinite(base) && isFinite(exponent))
+        {
+          var result = Decimal.pow(base, exponent);
+          this.sign = result.sign;
+          this.layer = result.layer;
+          this.mag = result.mag;
+          return this;
+        }
+      }
+      
       //Handle various cases involving it being a Big Number.
       value = value.trim().toLowerCase();
       
