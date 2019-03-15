@@ -548,7 +548,7 @@
 
     Decimal.affordGeometricSeries_core = function (resourcesAvailable, priceStart, priceRatio, currentOwned) {
       var actualStart = priceStart.mul(priceRatio.pow(currentOwned));
-      return Decimal.floor(resourcesAvailable.div(actualStart).mul(priceRatio.sub(1)).add(1).log10() / priceRatio.log10());
+      return Decimal.floor(resourcesAvailable.div(actualStart).mul(priceRatio.sub(1)).add(1).log10().div(priceRatio.log10()));
     };
 
     Decimal.sumGeometricSeries_core = function (numItems, priceStart, priceRatio, currentOwned) {
@@ -926,7 +926,7 @@
     Decimal.prototype.round = function () {
       if (this.layer === 0)
       {
-        return FC(0, 0, Math.round(this.sign*this.mag));
+        return FC(this.sign, 0, Math.round(this.sign*this.mag));
       }
       return this;
     };
@@ -934,7 +934,7 @@
     Decimal.prototype.floor = function () {
       if (this.layer === 0)
       {
-        return FC(0, 0, Math.floor(this.sign*this.mag));
+        return FC(this.sign, 0, Math.floor(this.sign*this.mag));
       }
       return this;
     };
@@ -942,7 +942,7 @@
     Decimal.prototype.ceil = function () {
       if (this.layer === 0)
       {
-        return FC(0, 0, this.Math.ceil(this.sign*this.mag));
+        return FC(this.sign, 0, this.Math.ceil(this.sign*this.mag));
       }
       return this;
     };
@@ -950,7 +950,7 @@
     Decimal.prototype.trunc = function () {
       if (this.layer === 0)
       {
-        return FC(0, 0, Math.trunc(this.sign*this.mag));
+        return FC(this.sign, 0, Math.trunc(this.sign*this.mag));
       }
       return this;
     };
@@ -1121,11 +1121,11 @@
       
       //Special case - if the second number is hugely larger than the first number, return 0.
       
-      if (b.layer - a.layer > 2) { return FC_NN(0, 0, 0); }
+      if (b.layer - a.layer >= 2) { return FC_NN(0, 0, 0); }
       
       //Special case - if the first number is hugely larger than the second number, return it.
       
-      if (a.layer - b.layer > 2) { return FC(a.sign*b.sign, a.layer, a.mag); }
+      if (a.layer - b.layer >= 2) { return FC(a.sign*b.sign, a.layer, a.mag); }
       
       //Special case - if either number is layer 3 or higher, whichever number is larger wins.
       if (a.layer >= 3 || b.layer >= 3) { return a.cmpabs(b) > 0 ? FC(a.sign*b.sign, a.layer, a.mag) : FC_NN(0, 0, 0); }
@@ -1513,19 +1513,19 @@
     };
 
     Decimal.prototype.sqr = function () {
-      return Decimal.pow(2);
+      return this.pow(2);
     };
 
     Decimal.prototype.sqrt = function () {
-      return Decimal.pow(0.5);
+      return this.pow(0.5);
     };
 
     Decimal.prototype.cube = function () {
-      return Decimal.pow(3);
+      return this.pow(3);
     };
 
     Decimal.prototype.cbrt = function () {
-      return Decimal.pow(1/3);
+      return this.pow(1/3);
     };
     
     Decimal.prototype.tetrate = function(height = 2, payload = FC_NN(1, 0, 1)) {
