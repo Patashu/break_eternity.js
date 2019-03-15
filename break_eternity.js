@@ -452,6 +452,10 @@
       return D(value).cbrt();
     };
     
+    Decimal.tetrate = function (value, height = 2, payload = FC_NN(1, 0, 1)) {
+      return D(value).tetrate(height, payload);
+    }
+    
     Decimal.prototype.normalize = function () {
       /*
       PSEUDOCODE:
@@ -911,13 +915,13 @@
       
       if (a.layer == 2 && b.layer == 1)
       {
-        var magdiff = Math.pow(10, a.mag-Math.log10(b.mag));
-        if (!isFinite(magdiff) || magdiff > 1e17)
+        if (a.mag-Math.log10(b.mag) > MAX_SIGNIFICANT_DIGITS)
         {
-          return a;
+          return FC(a.sign*b.sign, a.layer, a.mag);
         }
         else
         {
+          var magdiff = Math.pow(10, a.mag-Math.log10(b.mag));
           var mantissa = 1+magdiff;
           return FC(a.sign*b.sign, 2, Math.log10(b.mag)+Math.log10(Math.abs(mantissa)));
         }
@@ -925,13 +929,13 @@
       
       if (a.layer == 2 && b.layer == 2)
       {
-        var magdiff = Math.pow(10, a.mag-b.mag);
-        if (!isFinite(magdiff) || magdiff > 1e17)
+        if (a.mag-b.mag > MAX_SIGNIFICANT_DIGITS)
         {
-          return a;
+          return FC(a.sign*b.sign, a.layer, a.mag);
         }
         else
         {
+          var magdiff = Math.pow(10, a.mag-b.mag);
           var mantissa = 1+magdiff;
           return FC(a.sign*b.sign, 2, b.mag+Math.log10(Math.abs(mantissa)));
         }
@@ -989,13 +993,14 @@
       if (a.layer == 2 && b.layer == 1)
       {
         if (a.mag < Math.log10(b.mag)) { return FC_NN(0, 0, 0); }
-        var magdiff = Math.pow(10, a.mag-Math.log10(b.mag));
-        if (!isFinite(magdiff) || magdiff > 1e17)
+        
+        if (a.mag-Math.log10(b.mag) > MAX_SIGNIFICANT_DIGITS)
         {
           return FC(a.sign*b.sign, a.layer, a.mag);
         }
         else
         {
+          var magdiff = Math.pow(10, a.mag-Math.log10(b.mag));
           var mantissa = -1+magdiff;
           return FC(a.sign*b.sign, 2, Math.log10(b.mag)+Math.log10(Math.abs(mantissa)));
         }
@@ -1009,13 +1014,14 @@
       if (a.layer == 2 && b.layer == 2)
       {
         if (a.mag < b.mag) { return FC_NN(0, 0, 0); }
-        var magdiff = Math.pow(10, a.mag-b.mag);
-        if (!isFinite(magdiff) || magdiff > 1e17)
+        
+        if (a.mag-b.mag > MAX_SIGNIFICANT_DIGITS)
         {
           return FC(a.sign*b.sign, a.layer, a.mag);
         }
         else
         {
+          var magdiff = Math.pow(10, a.mag-b.mag);
           var mantissa = -1+magdiff;
           return FC(a.sign*b.sign, 2, b.mag+Math.log10(Math.abs(mantissa)));
         }
@@ -1271,6 +1277,9 @@
         return FC(1, 0, Math.log10(a.mag)*b.mag);
       }
       
+      //Special case: if a is < 1, then return 0
+      if (a.layer === 0 && a.mag < 1) { return FC_NN(0, 0, 0); }
+      
       if (a.layer === 0 && b.layer === 1)
       {
         return FC(1, 2, Math.log10(Math.log10(a.mag))+b.mag);
@@ -1286,14 +1295,10 @@
         return FC(1, 2, Math.log10(a.mag)+b.mag);
       }
       
-      if (a.layer === 0 && b.layer === 2)
+      if (a.layer <= 1 && b.layer >= 2)
       {
-        throw Error("Unimplemented");
-      }
-      
-      if (a.layer === 1 && b.layer === 2)
-      {
-        throw Error("Unimplemented");
+        //As far as I can tell, if a > 1 but is layer 0-1, then you just add 1 to b's layer because all precision vanishes.
+        return FC(1, b.layer+1, b.mag);
       }
       
       if (a.layer === 2 && b.layer === 0)
@@ -1308,7 +1313,9 @@
       
       if (a.layer === 2 && b.layer === 2)
       {
-        throw Error("Unimplemented");
+        var result = Decimal.mul(FC_NN(a.sign, 1, a.mag), FC_NN(b.sign, 2, b.mag));
+        result.layer += 1;
+        return result;
       }
       
       throw Error("Unimplemented");
@@ -1347,24 +1354,39 @@
     };
 
     Decimal.prototype.exp = function () {
-      return Error("Unimplemented");
+      return Decimal.fromNumber(Math.E).pow(this);
     };
 
     Decimal.prototype.sqr = function () {
-      throw Error("Unimplemented");
+      return Decimal.pow(2);
     };
 
     Decimal.prototype.sqrt = function () {
-      throw Error("Unimplemented");
+      return Decimal.pow(0.5);
     };
 
     Decimal.prototype.cube = function () {
-      throw Error("Unimplemented");
+      return Decimal.pow(3);
     };
 
     Decimal.prototype.cbrt = function () {
-      throw Error("Unimplemented");
+      return Decimal.pow(1/3);
     };
+    
+    Decimal.prototype.tetrate = function(height = 2, payload = FC_NN(1, 0, 1)) {
+      payload = D(payload);
+      
+      //special case: if height is 0, return 1
+      if (height == 0) { return FC_NN(1, 0, 1); }
+      //special case: if this is 10, return payload with layer increases by height
+      if (this.sign == 1 && this.layer == 0 && this.mag == 10) { return FC(payload.sign, payload.layer + height, payload.mag); }
+      
+      for (var i = 0; i < height; ++i)
+      {
+        payload = this.pow(payload);
+      }
+      return payload;
+    }
     
     Decimal.prototype.lessThanOrEqualTo = function (other) {
       return this.cmp(other) < 1;
