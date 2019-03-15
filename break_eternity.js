@@ -91,9 +91,50 @@
     return parseFloat(rounded.toFixed(Math.max(len - numDigits, 0)));
   };
   
+  var f_gamma = function(n) {
+    if (!isFinite(n)) { return n; }
+    if (n < -50)
+    {
+      if (n == Math.trunc(n)) { return Number.NEGATIVE_INFINITY; }
+      return 0;
+    }
+    
+    var scal1 = 1;
+    while (n < 10)
+    {
+      scal1 = scal1*n;
+      ++n;
+    }
+    
+    n -= 1;
+    var l = 0.9189385332046727; //0.5*Math.log(2*Math.PI)
+    l = l + (n+0.5)*Math.log(n);
+    l = l - n;
+    var n2 = n*n;
+    var np = n;
+    l = l+1/(12*np);
+    np = np*n2;
+    l = l+1/(360*np);
+    np = np*n2;
+    l = l+1/(1260*np);
+    np = np*n2;
+    l = l+1/(1680*np);
+    np = np*n2;
+    l = l+1/(1188*np);
+    np = np*n2;
+    l = l+691/(360360*np);
+    np = np*n2;
+    l = l+7/(1092*np);
+    np = np*n2;
+    l = l+3617/(122400*np);
+
+    return Math.exp(l)/scal1;
+  };
+  
   var Decimal =
   /** @class */
   function () {
+  
     function Decimal(value) {
       
       this.sign = Number.NaN;
@@ -1650,11 +1691,71 @@
     }
 
     Decimal.prototype.factorial = function () {
-      throw Error("Unimplemented");
+      if (this.layer === 0)
+      {
+        return this.add(1).gamma();
+      }
+      else if (this.layer === 1)
+      {
+        return Decimal.exp(Decimal.mul(this, Decimal.ln(this).sub(1)));
+      }
+      else
+      {
+        return Decimal.exp(this);
+      }
     };
     
     Decimal.prototype.gamma = function () {
-      throw Error("Unimplemented");
+      if (this.layer === 0)
+      {
+        if (this.lt(FC_NN(1, 0, 24)))
+        {
+          return D(f_gamma(this.sign*this.mag));
+        }
+        
+        var t = this.mag - 1;
+        var l = 0.9189385332046727; //0.5*Math.log(2*Math.PI)
+        l = (l+((t+0.5)*Math.log(t)));
+        l = l-t;
+        var n2 = t*t;
+        var np = t;
+        var lm = 12*np;
+        var adj = 1/lm;
+        var l2 = l+adj;
+        if (l2 === l)
+        {
+          return Decimal.exp(l);
+        }
+        
+        l = l2;
+        np = np*n2;
+        lm = 360*np;
+        adj = 1/lm;
+        l2 = l-adj;
+        if (l2 === l)
+        {
+          return Decimal.exp(l);
+        }
+        
+        l = l2;
+        np = np*n2;
+        lm = 1260*np;
+        var lt = 1/lm;
+        l = l+lt;
+        np = np*n2;
+        lm = 1680*np;
+        lt = 1/lm;
+        l = l-lt;
+        return Decimal.exp(l);
+      }
+      else if (this.layer === 1)
+      {
+        return Decimal.exp(Decimal.mul(this, Decimal.ln(this).sub(1)));
+      }
+      else
+      {
+        return Decimal.exp(this);
+      }
     };
 
     Decimal.prototype.exp = function () {
