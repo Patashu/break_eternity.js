@@ -392,17 +392,17 @@
     Decimal.max = function (value, other) {
       return D(value).max(other);
     };
+    
+    Decimal.min = function (value, other) {
+      return D(value).min(other);
+    };
 
     Decimal.minabs = function (value, other) {
       return D(value).minabs(other);
     };
 	
-	Decimal.maxabs = function (value, other) {
+    Decimal.maxabs = function (value, other) {
       return D(value).maxabs(other);
-    };
-
-    Decimal.min = function (value, other) {
-      return D(value).min(other);
     };
 
     Decimal.cmp_tolerance = function (value, other, tolerance) {
