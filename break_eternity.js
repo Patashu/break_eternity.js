@@ -431,6 +431,18 @@
     Decimal.pow = function (value, other) {
       return D(value).pow(other);
     };
+    
+    Decimal.root = function (value, other) {
+      return D(value).pow(other);
+    };
+    
+    Decimal.factorial = function (value, other) {
+      return D(value).factorial();
+    };
+    
+    Decimal.gamma = function (value, other) {
+      return D(value).gamma();
+    };
 
     Decimal.exp = function (value) {
       return D(value).exp();
@@ -455,6 +467,92 @@
     Decimal.tetrate = function (value, height = 2, payload = FC_NN(1, 0, 1)) {
       return D(value).tetrate(height, payload);
     }
+    
+    /**
+     * If you're willing to spend 'resourcesAvailable' and want to buy something
+     * with exponentially increasing cost each purchase (start at priceStart,
+     * multiply by priceRatio, already own currentOwned), how much of it can you buy?
+     * Adapted from Trimps source code.
+     */
+
+
+    Decimal.affordGeometricSeries = function (resourcesAvailable, priceStart, priceRatio, currentOwned) {
+      return this.affordGeometricSeries_core(D(resourcesAvailable), D(priceStart), D(priceRatio), currentOwned);
+    };
+    /**
+     * How much resource would it cost to buy (numItems) items if you already have currentOwned,
+     * the initial price is priceStart and it multiplies by priceRatio each purchase?
+     */
+
+
+    Decimal.sumGeometricSeries = function (numItems, priceStart, priceRatio, currentOwned) {
+      return this.sumGeometricSeries_core(numItems, D(priceStart), D(priceRatio), currentOwned);
+    };
+    /**
+     * If you're willing to spend 'resourcesAvailable' and want to buy something with additively
+     * increasing cost each purchase (start at priceStart, add by priceAdd, already own currentOwned),
+     * how much of it can you buy?
+     */
+
+
+    Decimal.affordArithmeticSeries = function (resourcesAvailable, priceStart, priceAdd, currentOwned) {
+      return this.affordArithmeticSeries_core(D(resourcesAvailable), D(priceStart), D(priceAdd), D(currentOwned));
+    };
+    /**
+     * How much resource would it cost to buy (numItems) items if you already have currentOwned,
+     * the initial price is priceStart and it adds priceAdd each purchase?
+     * Adapted from http://www.mathwords.com/a/arithmetic_series.htm
+     */
+
+
+    Decimal.sumArithmeticSeries = function (numItems, priceStart, priceAdd, currentOwned) {
+      return this.sumArithmeticSeries_core(D(numItems), D(priceStart), D(priceAdd), D(currentOwned));
+    };
+    /**
+     * When comparing two purchases that cost (resource) and increase your resource/sec by (deltaRpS),
+     * the lowest efficiency score is the better one to purchase.
+     * From Frozen Cookies:
+     * http://cookieclicker.wikia.com/wiki/Frozen_Cookies_(JavaScript_Add-on)#Efficiency.3F_What.27s_that.3F
+     */
+
+
+    Decimal.efficiencyOfPurchase = function (cost, currentRpS, deltaRpS) {
+      return this.efficiencyOfPurchase_core(D(cost), D(currentRpS), D(deltaRpS));
+    };
+
+    Decimal.randomDecimalForTesting = function (maxLayers) {
+      // NOTE: This doesn't follow any kind of sane random distribution, so use this for testing purposes only.
+      throw new Error("Unimplemented");
+    };
+
+    Decimal.affordGeometricSeries_core = function (resourcesAvailable, priceStart, priceRatio, currentOwned) {
+      var actualStart = priceStart.mul(priceRatio.pow(currentOwned));
+      return Decimal.floor(resourcesAvailable.div(actualStart).mul(priceRatio.sub(1)).add(1).log10() / priceRatio.log10());
+    };
+
+    Decimal.sumGeometricSeries_core = function (numItems, priceStart, priceRatio, currentOwned) {
+      return priceStart.mul(priceRatio.pow(currentOwned)).mul(Decimal.sub(1, priceRatio.pow(numItems))).div(Decimal.sub(1, priceRatio));
+    };
+
+    Decimal.affordArithmeticSeries_core = function (resourcesAvailable, priceStart, priceAdd, currentOwned) {
+      // n = (-(a-d/2) + sqrt((a-d/2)^2+2dS))/d
+      // where a is actualStart, d is priceAdd and S is resourcesAvailable
+      // then floor it and you're done!
+      var actualStart = priceStart.add(currentOwned.mul(priceAdd));
+      var b = actualStart.sub(priceAdd.div(2));
+      var b2 = b.pow(2);
+      return b.neg().add(b2.add(priceAdd.mul(resourcesAvailable).mul(2)).sqrt()).div(priceAdd).floor();
+    };
+
+    Decimal.sumArithmeticSeries_core = function (numItems, priceStart, priceAdd, currentOwned) {
+      var actualStart = priceStart.add(currentOwned.mul(priceAdd)); // (n/2)*(2*a+(n-1)*d)
+
+      return numItems.div(2).mul(actualStart.mul(2).plus(numItems.sub(1).mul(priceAdd)));
+    };
+
+    Decimal.efficiencyOfPurchase_core = function (cost, currentRpS, deltaRpS) {
+      return cost.div(currentRpS).add(cost.div(deltaRpS));
+    };
     
     Decimal.prototype.normalize = function () {
       /*
@@ -714,6 +812,18 @@
         return (this.sign*this.mag).toFixed(places);
       }
       return this.toStringWithDecimalPlaces(places);
+    };
+    
+    Decimal.prototype.toPrecision = function (places) {
+      if (this.e <= -7) {
+        return this.toExponential(places - 1);
+      }
+
+      if (places > this.e) {
+        return this.toFixed(places - this.exponent - 1);
+      }
+
+      return this.toExponential(places - 1);
     };
     
     Decimal.prototype.valueOf = function () {
@@ -1259,12 +1369,14 @@
       
       //TODO: Going to worry about negative numbers later and assume stuff is positive for now.
       
-      //special case: if a is 0, then return 0
-      if (a.sign === 0) { return FC_NN(0, 0, 0); }
+      //TODO: Can probably be made slightly less redundant.
+      
+      //special case: if a is 0, then return 0 (redundant: handled by a special case below)
+      //if (a.sign === 0) { return FC_NN(0, 0, 0); }
       //special case: if a is 1, then return 1
       if (a.sign === 1 && a.layer === 0 && a.mag === 1) { return a; }
       //special case: if b is 0, then return 1
-      if (b.sign === 0) { return FC_NN(0, 0, 0); }
+      if (b.sign === 0) { return FC_NN(1, 0, 1); }
       //special case: if b is 1, then return a
       if (b.sign === 1 && b.layer === 0 && b.mag === 1) { return a; }
       //special case: if a is 10, then call powbase10
@@ -1277,7 +1389,7 @@
         return FC(1, 0, Math.log10(a.mag)*b.mag);
       }
       
-      //Special case: if a is < 1, then return 0
+      //Special case: if a is < 1 and b.layer > 0 then return 0
       if (a.layer === 0 && a.mag < 1) { return FC_NN(0, 0, 0); }
       
       if (a.layer === 1 && b.layer === 0)
@@ -1345,8 +1457,16 @@
     Decimal.prototype.pow_base = function (value) {
       return D(value).pow(this);
     };
+    
+    decimal.prototype.root = function (value) {
+      throw Error("Unimplemented");
+    }
 
     Decimal.prototype.factorial = function () {
+      throw Error("Unimplemented");
+    };
+    
+    Decimal.prototype.gamma = function () {
       throw Error("Unimplemented");
     };
 
@@ -1378,12 +1498,86 @@
       //special case: if this is 10, return payload with layer increases by height
       if (this.sign == 1 && this.layer == 0 && this.mag == 10) { return FC(payload.sign, payload.layer + height, payload.mag); }
       
+      //TODO: There are probably tricks to compute large heights more directly. Check what HyperCalc does.
+      
       for (var i = 0; i < height; ++i)
       {
         payload = this.pow(payload);
       }
       return payload;
     }
+	
+	// trig functions!
+    Decimal.prototype.sin = function () {
+      throw Error("Unimplemented");
+    };
+
+    Decimal.prototype.cos = function () {
+      throw Error("Unimplemented");
+    };
+
+    Decimal.prototype.tan = function () {
+      throw Error("Unimplemented");
+    };
+
+    Decimal.prototype.asin = function () {
+      throw Error("Unimplemented");
+    };
+
+    Decimal.prototype.acos = function () {
+      throw Error("Unimplemented");
+    };
+
+    Decimal.prototype.atan = function () {
+      throw Error("Unimplemented");
+    };
+    
+    // Some hyperbolic trig functions that happen to be easy
+    Decimal.prototype.sinh = function () {
+      return this.exp().sub(this.negate().exp()).div(2);
+    };
+
+    Decimal.prototype.cosh = function () {
+      return this.exp().add(this.negate().exp()).div(2);
+    };
+
+    Decimal.prototype.tanh = function () {
+      return this.sinh().div(this.cosh());
+    };
+
+    Decimal.prototype.asinh = function () {
+      return Decimal.ln(this.add(this.sqr().add(1).sqrt()));
+    };
+
+    Decimal.prototype.acosh = function () {
+      return Decimal.ln(this.add(this.sqr().sub(1).sqrt()));
+    };
+
+    Decimal.prototype.atanh = function () {
+      if (this.abs().gte(1)) {
+        return Number.NaN;
+      }
+
+      return Decimal.ln(this.add(1).div(D(1).sub(this))).div(2);
+    };
+    
+    /**
+     * Joke function from Realm Grinder
+     */
+    Decimal.prototype.ascensionPenalty = function (ascensions) {
+      if (ascensions === 0) {
+        return this;
+      }
+
+      return this.pow(Math.pow(10, -ascensions));
+    };
+    
+    /**
+     * Joke function from Cookie Clicker. It's 'egg'
+     */
+    Decimal.prototype.egg = function () {
+      return this.add(9);
+    };
     
     Decimal.prototype.lessThanOrEqualTo = function (other) {
       return this.cmp(other) < 1;
