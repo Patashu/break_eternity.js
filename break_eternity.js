@@ -754,8 +754,11 @@
         }
       }
       
+      //Handle various cases involving it being a Big Number.
+      value = value.trim().toLowerCase();
+      
       //handle X PT Y format.
-      var ptparts = value.split("PT");
+      var ptparts = value.split("pt");
       if (ptparts.length === 2)
       {
         base = 10;
@@ -774,8 +777,26 @@
         }
       }
       
-      //Handle various cases involving it being a Big Number.
-      value = value.trim().toLowerCase();
+      //handle XpY format (it's the same thing just with p).
+      var ptparts = value.split("p");
+      if (ptparts.length === 2)
+      {
+        base = 10;
+        height = parseFloat(ptparts[0]);
+        ptparts[1] = ptparts[1].replace("(", "");
+        ptparts[1] = ptparts[1].replace(")", "");
+        var payload = parseFloat(ptparts[1]);
+        if (!isFinite(payload)) { payload = 1; }
+        if (isFinite(base) && isFinite(height))
+        {
+          var result = Decimal.tetrate(base, height, payload);
+          this.sign = result.sign;
+          this.layer = result.layer;
+          this.mag = result.mag;
+          return this;
+        }
+      }
+
       var parts = value.split("e");
       var ecount = parts.length-1;
     
@@ -796,10 +817,10 @@
         var layerstring = "";
         for (var i = 0; i < newparts[1].length; ++i)
         {
-          var chrcode = newparts[1].charCodeAt(0);
-          if (chrcode >= 48 && chrcode <= 57) //is "0" to "9"
+          var chrcode = newparts[1].charCodeAt(i);
+          if ((chrcode >= 43 && chrcode <= 57) || chrcode == 101) //is "0" to "9" or "+" or "-" or "." or "e" (or "," or "/")
           {
-            layerstring += newparts[1].charAt(0);
+            layerstring += newparts[1].charAt(i);
           }
           else //we found the end of the layer count
           {
