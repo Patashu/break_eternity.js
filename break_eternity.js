@@ -1302,41 +1302,20 @@
         return result;
       }
       
-      if (b.layer >= 2 && (b.layer - a.layer) >= 1)
+      if (b.layer >= 2 && (b.layer - a.layer) >= 0)
       {
         //As far as I can tell, if b.layer >= 2 and a is a layer or more behind, then you just add 1 to b's layer because all precision vanishes.
         return FC(1, b.layer+1, b.mag);
       }
-      
-      if (b.layer >= 3 && (b.layer - a.layer) >= 0)
+      else
       {
-        //Same kind of case, just that layer 2, 2 case cared about a.mag but N, N where N >= 3 doesn't.
-        return FC(1, b.layer+1, b.mag);
-      }
-      
-      if ((a.layer - b.layer) > 2)
-      {
-        return a;
-      }
-      
-      if (a.layer === 3)
-      {
-        var result = Decimal.mul(FC_NN(a.sign, 2, a.mag), FC_NN(b.sign, b.layer, b.mag));
+        //mul of increasingly higher layer (eventually turns into max).
+        var result = Decimal.mul(FC_NN(a.sign, a.layer-1, a.mag), FC_NN(b.sign, b.layer, b.mag));
         result.layer += 1;
         return result;
       }
       
-      if ((a.layer - b.layer) > 2)
-      {
-        return a;
-      }
-      
-      if (a.layer === 4)
-      {
-        throw Error("Unimplemented");
-      }
-      
-      throw Error("Unimplemented");
+      throw Error("Bad arguments to pow: " + this + ", " + value);
     };
     
     Decimal.prototype.powbase10 = function () {
