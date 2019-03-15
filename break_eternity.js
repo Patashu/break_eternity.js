@@ -433,7 +433,7 @@
     };
     
     Decimal.root = function (value, other) {
-      return D(value).pow(other);
+      return D(value).root(other);
     };
     
     Decimal.factorial = function (value, other) {
@@ -1442,8 +1442,6 @@
       
       //TODO: Can probably be made slightly less redundant.
       
-      //special case: if a is 0, then return 0 (redundant: handled by a special case below)
-      //if (a.sign === 0) { return FC_NN(0, 0, 0); }
       //special case: if a is 1, then return 1
       if (a.sign === 1 && a.layer === 0 && a.mag === 1) { return a; }
       //special case: if b is 0, then return 1
@@ -1530,7 +1528,68 @@
     };
     
     Decimal.prototype.root = function (value) {
-      throw Error("Unimplemented");
+      var decimal = D(value);
+      var a = this;
+      var b = decimal;
+      
+      //TODO: Going to worry about negative numbers later and assume stuff is positive for now.
+      
+      //TODO: Can probably be made slightly less redundant.
+      
+      //special case: if a is 0, return 0
+      if (a.sign === 0) { return a; }
+      //special case: if b is 0, return NaN
+      if (b.sign === 0) { return FC_NN(Number.NaN, Number.NaN, Number.NaN); }
+      //special case: if a is 1, return a
+      if (a.sign === 1 && a.layer === 0 && a.mag === 1) { return a; }
+      //special case: if b is 1, return a
+      if (b.sign === 1 && b.layer === 0 && b.mag === 1) { return a; }
+      
+      if (a.layer === 0 && b.layer === 0)
+      {
+        var newmag = Math.pow(a.sign*a.mag, b.sign*(1/b.mag));
+        if (isFinite(newmag)) { return FC(1, 0, newmag); }
+        return FC(1, 1, Math.log10(a.mag)/b.mag);
+      }
+      
+      if (a.layer === 1 && b.layer === 0)
+      {
+        return FC(1, 2, Math.log10(a.mag)-Math.log10(b.mag));
+      }
+      
+      if (a.layer === 0 && b.layer === 1)
+      {
+        return FC(1, 2, Math.log10(Math.log10(a.mag))-b.mag);
+      }
+      
+      if (a.layer === 1 && b.layer === 1)
+      {
+        return FC(1, 2, Math.log10(a.mag)-b.mag);
+      }
+
+      if (a.layer === 2 && b.layer <= 2)
+      {
+        var result = Decimal.div(FC_NN(a.sign, 1, a.mag), FC_NN(b.sign, b.layer, b.mag));
+        result.layer += 1;
+        result.normalize();
+        return result;
+      }
+      
+      if (b.layer >= 2 && (b.layer - a.layer) >= 0)
+      {
+        //As far as I can tell, if b.layer >= 2 and a is a layer or more behind, then you just return 0 because all precision vanishes.
+        return FC_NN(0, 0, 0);
+      }
+      else
+      {
+        //div of increasingly higher layer.
+        var result = Decimal.div(FC_NN(a.sign, a.layer-1, a.mag), FC_NN(b.sign, b.layer, b.mag));
+        result.layer += 1;
+        result.normalize();
+        return result;
+      }
+      
+      throw Error("Bad arguments to root: " + this + ", " + value);
     }
 
     Decimal.prototype.factorial = function () {
@@ -1542,7 +1601,10 @@
     };
 
     Decimal.prototype.exp = function () {
-      return Decimal.fromNumber(Math.E).pow(this);
+      if (this.layer === 0 && this.mag <= 709.7) { return FC(1, 0, Math.exp(this.mag)); }
+      else if (this.layer === 0) { return FC(1, 1, Math.log10(Math.E)*this.mag); }
+      else if (this.layer === 1) { return FC(1, 2, Math.log10(0.4342944819032518)+this.mag); }
+      else { return FC(this.sign, this.layer+1, this.mag); }
     };
 
     Decimal.prototype.sqr = function () {
@@ -1550,7 +1612,15 @@
     };
 
     Decimal.prototype.sqrt = function () {
-      return this.pow(0.5);
+      if (this.layer == 0) { return D(Math.sqrt(this.sign*this.mag)); }
+      else if (this.layer == 1) { return FC(1, 2, Math.log10(this.mag)-0.3010299956639812); }
+      else
+      {
+        var result = Decimal.div(FC_NN(this.sign, this.layer-1, this.mag), FC_NN(1, 0, 2));
+        result.layer += 1;
+        result.normalize();
+        return result;
+      }
     };
 
     Decimal.prototype.cube = function () {
