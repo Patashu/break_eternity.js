@@ -522,7 +522,28 @@
 
     Decimal.randomDecimalForTesting = function (maxLayers) {
       // NOTE: This doesn't follow any kind of sane random distribution, so use this for testing purposes only.
-      throw new Error("Unimplemented");
+      //5% of the time, return 0
+      if (Math.random() * 20 < 1) {
+        return FC_NN(0, 0, 0);
+      }
+      
+      var randomsign = Math.random() > 0.5 ? 1 : -1;
+      
+      //5% of the time, return 1 or -1
+      if (Math.random() * 20 < 1) {
+        return FC_NN(randomsign, 0, 1);
+      }
+      
+      //pick a random layer
+      var layer = Math.floor(Math.random()*(maxLayers+1));
+
+      var randomexp = layer === 0 ? Math.random()*616-308 : Math.random()*16;
+      //10% of the time, make it a simple power of 10
+      if (Math.random() > 0.9) { randomexp = Math.trunc(randomexp); }
+      var randommag = Math.pow(10, randomexp);
+      //10% of the time, trunc mag
+      if (Math.random() > 0.9) { randommag = Math.trunc(randommag); }
+      return FC(randomsign, layer, randommag);
     };
 
     Decimal.affordGeometricSeries_core = function (resourcesAvailable, priceStart, priceRatio, currentOwned) {
@@ -1458,7 +1479,7 @@
       return D(value).pow(this);
     };
     
-    decimal.prototype.root = function (value) {
+    Decimal.prototype.root = function (value) {
       throw Error("Unimplemented");
     }
 
