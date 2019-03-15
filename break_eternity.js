@@ -1388,13 +1388,13 @@
     };
 
     Decimal.prototype.abslog10 = function () {
-       if (this.layer > 0)
-      {
-        return FC_NN(this.sign, this.layer-1, this.mag);
-      }
-      else if (this.sign === 0)
+      if (this.sign === 0)
       {
         throw Error("abslog10(0) is undefined");
+      }
+      else if (this.layer > 0)
+      {
+        return FC_NN(this.sign, this.layer-1, this.mag);
       }
       else
       {
@@ -1403,13 +1403,13 @@
     };
 
     Decimal.prototype.log10 = function () {
-      if (this.layer > 0)
-      {
-        return FC_NN(this.sign, this.layer-1, this.mag);
-      }
-      else if (this.sign < -1)
+      if (this.sign <= 0)
       {
         throw Error("log10 is undefined for numbers <= 0");
+      }
+      else if (this.layer > 0)
+      {
+        return FC_NN(this.sign, this.layer-1, this.mag);
       }
       else
       {
@@ -1418,15 +1418,71 @@
     };
 
     Decimal.prototype.log = function (base) {
-      throw Error("Unimplemented");
+      base = D(base);
+      if (this.sign <= 0)
+      {
+        throw Error("log is undefined for numbers <= 0");
+      }
+      if (base.sign <= 0)
+      {
+        throw Error("log is undefined for bases <= 0");
+      }
+      if (base.sign === 1 && base.layer === 0 && base.mag === 1)
+      {
+        throw Error("log is undefined for base === 1");
+      }
+      else if (this.layer === 0 && base.layer === 0)
+      {
+        return FC_NN(this.sign, 0, Math.log(this.mag)/Math.log(base.mag));
+      }
+      
+      return Decimal.div(this.log10(), base.log10());
     };
 
     Decimal.prototype.log2 = function () {
-      throw Error("Unimplemented");
+      if (this.sign <= 0)
+      {
+        throw Error("ln is undefined for numbers <= 0");
+      }
+      else if (this.layer === 0)
+      {
+        return FC_NN(this.sign, 0, Math.log2(this.mag));
+      }
+      else if (this.layer === 1)
+      {
+        return FC(1, 0, this.mag*3.321928094887362); //log2(10)
+      }
+      else if (this.layer === 2)
+      {
+        return FC(1, 1, this.mag+0.5213902276543247); //-log10(log10(2))
+      }
+      else
+      {
+        return FC_NN(1, this.layer-1, this.mag);
+      }
     };
 
     Decimal.prototype.ln = function () {
-      throw Error("Unimplemented");
+      if (this.sign <= 0)
+      {
+        throw Error("ln is undefined for numbers <= 0");
+      }
+      else if (this.layer === 0)
+      {
+        return FC_NN(this.sign, 0, Math.log(this.mag));
+      }
+      else if (this.layer === 1)
+      {
+        return FC(1, 0, this.mag*2.302585092994046); //ln(10)
+      }
+      else if (this.layer === 2)
+      {
+        return FC(1, 1, this.mag+0.36221568869946325); //log10(log10(e))
+      }
+      else
+      {
+        return FC_NN(1, this.layer-1, this.mag);
+      }
     };
 
     Decimal.prototype.logarithm = function (base) {
@@ -1458,6 +1514,7 @@
         return FC(1, 1, Math.log10(a.mag)*b.mag);
       }
       
+      //TODO: This might not be needed?
       //Special case: if a is < 1 and b.layer > 0 then return 0
       if (a.layer === 0 && a.mag < 1) { return FC_NN(0, 0, 0); }
       
