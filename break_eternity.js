@@ -702,7 +702,13 @@
       return this;
     };
 
+    var IGNORE_COMMAS = true;
+    var COMMAS_ARE_DECIMAL_POINTS = false;
+    
     Decimal.prototype.fromString = function (value) {
+      if (IGNORE_COMMAS) { value = value.replace(",", ""); }
+      else if (COMMAS_ARE_DECIMAL_POINTS) { value = value.replace(",", "."); }
+    
       //Handle x^^^y format.
       var pentationparts = value.split("^^^");
       if (pentationparts.length === 2)
@@ -747,16 +753,41 @@
           return this;
         }
       }
-    
-      //Handle numbers that are already floats.
-      var numberAttempt = parseFloat(value);
-      if (isFinite(numberAttempt))
+      
+      //handle X PT Y format.
+      var ptparts = value.split("PT");
+      if (ptparts.length === 2)
       {
-        return this.fromNumber(numberAttempt);
+        base = 10;
+        height = parseFloat(ptparts[0]);
+        ptparts[1] = ptparts[1].replace("(", "");
+        ptparts[1] = ptparts[1].replace(")", "");
+        var payload = parseFloat(ptparts[1]);
+        if (!isFinite(payload)) { payload = 1; }
+        if (isFinite(base) && isFinite(height))
+        {
+          var result = Decimal.tetrate(base, height, payload);
+          this.sign = result.sign;
+          this.layer = result.layer;
+          this.mag = result.mag;
+          return this;
+        }
       }
       
       //Handle various cases involving it being a Big Number.
       value = value.trim().toLowerCase();
+      var parts = value.split("e");
+      var ecount = parts.length-1;
+    
+      //Handle numbers that are exactly floats (0 or 1 es).
+      if (ecount < 2)
+      {
+        var numberAttempt = parseFloat(value);
+        if (isFinite(numberAttempt))
+        {
+          return this.fromNumber(numberAttempt);
+        }
+      }
       
       //Handle new (e^N)X format.
       var newparts = value.split("e^");
@@ -780,12 +811,12 @@
         }
       }
       
-      var parts = value.split("e");
-      var ecount = parts.length-1;
       if (ecount < 1) { this.sign = 0; this.layer = 0; this.mag = 0; return this; }
       var mantissa = parseFloat(parts[0]);
       if (mantissa === 0) { this.sign = 0; this.layer = 0; this.mag = 0; return this; }
       var exponent = parseFloat(parts[parts.length-1]);
+      //handle numbers like AeBeC and AeeeeBeC
+      if (ecount >= 2) { var me = parseFloat(parts[parts.length-2]); if (isFinite(me)) { exponent += Math.log10(me); } }
       
       //Handle numbers written like eee... (N es) X
       if (!isFinite(mantissa))
@@ -807,10 +838,13 @@
       {
         this.sign = Math.sign(mantissa);
         this.layer = ecount;
-        //Example: 2ee10 is equal to 10^(10^10+log10(2)) is equal to 10^10^(10+(1+log10(2))/1e11)
         if (ecount === 2)
         {
-          this.mag = exponent + (1+Math.log10(Math.abs(mantissa)))/1e11;
+          var result = Decimal.mul(FC(1, 2, exponent), D(mantissa));
+          this.sign = result.sign;
+          this.layer = result.layer;
+          this.mag = result.mag;
+          return this;
         }
         else
         {
