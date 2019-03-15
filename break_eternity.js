@@ -1825,7 +1825,14 @@
     
     Decimal.prototype.tetrate = function(height = 2, payload = FC_NN(1, 0, 1)) {
       payload = D(payload);
+      var oldheight = height;
       height = Math.trunc(height);
+      var fracheight = oldheight-height;
+      if (fracheight != 0)
+      {
+        ++height;
+        payload = Decimal.pow(fracheight, payload);
+      }
       
       //special case: if height is 0, return 1
       if (height == 0) { return FC_NN(1, 0, 1); }
