@@ -7,7 +7,29 @@ The internal representation is as follows: Decimal.fromComponents(sign, layer, m
 * layer is a non-negative integer. (Sorry, no negative layers!) (For now...?)
 * mag is normalized as follows: if it is above 9e15, log10(mag) it and increment layer. If it is below log10(9e15) (about 15.954) and layer > 0, Math.pow(10, mag) it and decrement layer. At layer 0, sign is extracted from negative mags. Zeroes (this.sign === 0 || (this.mag === 0 && this.layer === 0)) become 0, 0, 0 in all fields.
 
-So far all the operators except pow and its variants (log, root, etc) are implemented, and much manual and automatic testing lies in the future. Stretch goals are factorial/gamma/lngamma/invgamma/lambertw/tetrate/superroot/superlog in order of difficulty.
+Create a Decimal with `new Decimal(string, Number or Decimal)` or with `Decimal.fromComponents(sign, layer, mag)`.
+
+Functions you can call include `abs, neg, round, floor, ceil, trunc, add, sub, mul, div, recip, cmp, cmpabs, max, min, maxabs, minabs, log, log10, ln, pow, root, factorial, gamma, exp, sqrt, tetrate, pentate` and more!
+
+Accepted input formats to new Decimal or Decimal.fromString:
+
+```
+M === M
+eX === 10^X
+MeX === M*10^X
+eXeY === 10^(XeY)
+MeXeY === M*10^(XeY)
+eeX === 10^10^X
+eeXeY === 10^10^(XeY)
+eeeX === 10^10^10^X
+eeeXeY === 10^10^10^(XeY)
+eeee... (N es) X === 10^10^10^ ... (N 10^s) X
+(e^N)X === 10^10^10^ ... (N 10^s) X
+X^^N === X^X^X^ ... (N X^s) 1
+X^^N;Y === X^X^X^ ... (N X^s) Y
+X^^^N === X^^X^^X^^ ... (N X^^s) 1
+X^^^N;Y === X^^X^^X^^ ... (N X^^s) Y
+```
 
 Special thanks:
 
