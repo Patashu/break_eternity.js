@@ -1506,33 +1506,38 @@
       }
       return payload;
     }
-	
-	// trig functions!
+    
+    // trig functions!
     Decimal.prototype.sin = function () {
-      throw Error("Unimplemented");
+      if (this.layer === 0) { return D(Math.sin(this.sign*this.mag)); }
+      return FC_NN(0, 0, 0);
     };
 
     Decimal.prototype.cos = function () {
-      throw Error("Unimplemented");
+      if (this.layer === 0) { return D(Math.cos(this.sign*this.mag)); }
+      return FC_NN(0, 0, 0);
     };
 
     Decimal.prototype.tan = function () {
-      throw Error("Unimplemented");
+      if (this.layer === 0) { return D(Math.tan(this.sign*this.mag)); }
+      return FC_NN(0, 0, 0);
     };
 
     Decimal.prototype.asin = function () {
-      throw Error("Unimplemented");
+      if (this.layer === 0) { return D(Math.asin(this.sign*this.mag)); }
+      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
     };
 
     Decimal.prototype.acos = function () {
-      throw Error("Unimplemented");
+      if (this.layer === 0) { return D(Math.acos(this.sign*this.mag)); }
+      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
     };
 
     Decimal.prototype.atan = function () {
-      throw Error("Unimplemented");
+      if (this.layer === 0) { return D(Math.atan(this.sign*this.mag)); }
+      return D(Math.atan(this.sign*1.8e308));
     };
-    
-    // Some hyperbolic trig functions that happen to be easy
+
     Decimal.prototype.sinh = function () {
       return this.exp().sub(this.negate().exp()).div(2);
     };
@@ -1555,7 +1560,7 @@
 
     Decimal.prototype.atanh = function () {
       if (this.abs().gte(1)) {
-        return Number.NaN;
+        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
       }
 
       return Decimal.ln(this.add(1).div(D(1).sub(this))).div(2);
