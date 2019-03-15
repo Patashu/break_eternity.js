@@ -658,12 +658,29 @@
     };
 
     Decimal.prototype.fromString = function (value) {
+      //Handle x^^y format. (Has to come before parseFloat.)
+      var tetrationparts = value.split("^^");
+      if (tetrationparts.length === 2)
+      {
+        var base = parseFloat(tetrationparts[0]);
+        var height = parseFloat(tetrationparts[1]);
+        if (isFinite(base) && isFinite(height))
+        {
+          var result = Decimal.tetrate(base, height);
+          this.sign = result.sign;
+          this.layer = result.layer;
+          this.mag = result.mag;
+          return this;
+        }
+      }
+    
       //Handle numbers that are already floats.
       var numberAttempt = parseFloat(value);
       if (isFinite(numberAttempt))
       {
         return this.fromNumber(numberAttempt);
       }
+      
       //Handle various cases involving it being a Big Number.
       value = value.trim().toLowerCase();
       
@@ -1407,7 +1424,7 @@
       {
         var newmag = Math.pow(a.sign*a.mag, b.sign*b.mag);
         if (isFinite(newmag)) { return FC(1, 0, newmag); }
-        return FC(1, 0, Math.log10(a.mag)*b.mag);
+        return FC(1, 1, Math.log10(a.mag)*b.mag);
       }
       
       //Special case: if a is < 1 and b.layer > 0 then return 0
@@ -1519,11 +1536,15 @@
       //special case: if this is 10, return payload with layer increases by height
       if (this.sign == 1 && this.layer == 0 && this.mag == 10) { return FC(payload.sign, payload.layer + height, payload.mag); }
       
-      //TODO: There are probably tricks to compute large heights more directly. Check what HyperCalc does.
-      
       for (var i = 0; i < height; ++i)
       {
         payload = this.pow(payload);
+        //bail if we're NaN
+        if (!isFinite(payload.layer) || !isFinite(payload.mag)) { return payload; }
+        //shortcut 
+        if (payload.layer - this.layer > 3) { return FC_NN(payload.sign, payload.layer + (height - i - 1), payload.mag); }
+        //give up after 100 iterations if nothing is happening
+        if (i > 100) { return payload; }
       }
       return payload;
     }
