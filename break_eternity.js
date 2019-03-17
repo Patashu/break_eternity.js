@@ -1365,11 +1365,7 @@
       var decimal = D(value);
       if (this.sign > decimal.sign) { return 1; }
       if (this.sign < decimal.sign) { return -1; }
-      if (this.layer > decimal.layer) { return 1; }
-      if (this.layer < decimal.layer) { return -1; }
-      if (this.mag > decimal.mag) { return 1; }
-      if (this.mag < decimal.mag) { return -1; }
-      return 0;
+      return this.sign*this.cmpabs(value);
     };
 	
 	Decimal.prototype.cmpabs = function (value) {
