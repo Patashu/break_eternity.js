@@ -84,6 +84,14 @@
     return Decimal.fromComponents_noNormalize(sign, layer, mag);
   };
   
+  var ME = function ME(mantissa, exponent) {
+    return Decimal.fromMantissaExponent(mantissa, exponent);
+  };
+
+  var ME_NN = function ME_NN(mantissa, exponent) {
+    return Decimal.fromMantissaExponent_noNormalize(mantissa, exponent);
+  };
+  
   var decimalPlaces = function decimalPlaces(value, places) {
     var len = places + 1;
     var numDigits = Math.ceil(Math.log10(Math.abs(value)));
@@ -163,7 +171,16 @@
         else if (this.layer === 0)
         {
           var exp = Math.floor(Math.log10(this.mag));
-          var man = this.mag / powerOf10(exp);
+          //handle special case 5e-324
+          var man;
+          if (this.mag === 5e-324)
+          {
+            man = 5;
+          }
+          else
+          {
+            man = this.mag / powerOf10(exp);
+          }
           return this.sign*man;
         }
         else if (this.layer === 1)
@@ -175,6 +192,18 @@
         {
           //mantissa stops being relevant past 1e9e15 / ee15.954
           return this.sign;
+        }
+      },
+      set: function set(value) {
+        if (this.layer <= 2)
+        {
+          this.fromMantissaExponent(value, this.e);
+        }
+        else
+        {
+          //don't even pretend mantissa is meaningful
+          this.sign = Math.sign(value);
+          if (this.sign === 0) { this.layer === 0; this.exponent === 0; }
         }
       },
       enumerable: true,
@@ -202,6 +231,9 @@
         {
           return Number.POSITIVE_INFINITY;
         }
+      },
+      set: function set(value) {
+        this.fromMantissaExponent(this.m, value);
       },
       enumerable: true,
       configurable: true
@@ -231,6 +263,14 @@
 
     Decimal.fromComponents_noNormalize = function (sign, layer, mag) {
       return new Decimal().fromComponents_noNormalize(sign, layer, mag);
+    };
+    
+    Decimal.fromMantissaExponent = function (mantissa, exponent) {
+      return new Decimal().fromMantissaExponent(mantissa, exponent);
+    };
+
+    Decimal.fromMantissaExponent_noNormalize = function (mantissa, exponent) {
+      return new Decimal().fromMantissaExponent_noNormalize(mantissa, exponent);
     };
     
     Decimal.fromDecimal = function (value) {
@@ -666,6 +706,11 @@
           this.mag = -this.mag;
           this.sign = -this.sign;
         }
+        else if (this.mag === 0 && this.layer === 0)
+        {
+          //excessive rounding can give us all zeroes
+          this.sign = 0;
+        }
       }
 
       return this;
@@ -684,6 +729,23 @@
       this.sign = sign;
       this.layer = layer;
       this.mag = mag;
+      return this;
+    };
+    
+    Decimal.prototype.fromMantissaExponent = function (mantissa, exponent) {
+      this.layer = 1;
+      this.sign = Math.sign(mantissa);
+      mantissa = Math.abs(mantissa);
+      this.mag = exponent + Math.log10(mantissa);
+
+      this.normalize();
+      return this;
+    };
+
+
+    Decimal.prototype.fromMantissaExponent_noNormalize = function (mantissa, exponent) {
+      //The idea of 'normalizing' a break_infinity.js style Decimal doesn't really apply. So just do the same thing.
+      this.fromMantissaExponent(mantissa, exponent);
       return this;
     };
 
@@ -957,7 +1019,7 @@
     Decimal.prototype.toString = function () {
       if (this.layer === 0)
       {
-        if (this.mag < 1e21 && this.mag > 1e-7)
+        if ((this.mag < 1e21 && this.mag > 1e-7) || this.mag == 0)
         {
           return (this.sign*this.mag).toString();
         }
@@ -972,11 +1034,11 @@
         //layer 2+
         if (this.layer <= MAX_ES_IN_A_ROW)
         {
-          return "e".repeat(this.layer) + this.mag;
+          return (this.sign == -1 ? "-" : "") + "e".repeat(this.layer) + this.mag;
         }
         else
         {
-          return "(e^" + this.layer + ")" + this.mag;
+          return (this.sign == -1 ? "-" : "") + "(e^" + this.layer + ")" + this.mag;
         }
       }
     };
@@ -1020,7 +1082,7 @@
     Decimal.prototype.toStringWithDecimalPlaces = function (places) {
       if (this.layer === 0)
       {
-        if (this.mag < 1e21 & this.mag > 1e-7)
+        if ((this.mag < 1e21 && this.mag > 1e-7) || this.mag == 0)
         {
           return (this.sign*this.mag).toFixed(places);
         }
@@ -1035,11 +1097,11 @@
         //layer 2+
         if (this.layer <= MAX_ES_IN_A_ROW)
         {
-          return "e".repeat(this.layer, places) + decimalPlaces(this.mag, places);
+          return (this.sign == -1 ? "-" : "") + "e".repeat(this.layer, places) + decimalPlaces(this.mag, places);
         }
         else
         {
-          return "(e^" + this.layer + ")" + decimalPlaces(this.mag, places);
+          return (this.sign == -1 ? "-" : "") + "(e^" + this.layer + ")" + decimalPlaces(this.mag, places);
         }
       }
     };
