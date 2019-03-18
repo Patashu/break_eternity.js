@@ -9,6 +9,8 @@ The internal representation is as follows: Decimal.fromComponents(sign, layer, m
 
 Create a Decimal with `new Decimal(string, Number or Decimal)` or with `Decimal.fromComponents(sign, layer, mag)`.
 
+IMPORTANT NOTE TO PEOPLE CONVERTING FROM break_infinity.js: log/log2/log10/ln now return Decimal not Number!
+
 Functions you can call include `abs, neg, round, floor, ceil, trunc, add, sub, mul, div, recip, cmp, cmpabs, max, min, maxabs, minabs, log, log10, ln, pow, root, factorial, gamma, exp, sqrt, tetrate, pentate` and more!
 
 Accepted input formats to new Decimal or Decimal.fromString:
