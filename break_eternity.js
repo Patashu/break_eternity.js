@@ -256,6 +256,28 @@
       enumerable: true,
       configurable: true
     });
+    
+    Object.defineProperty(Decimal.prototype, "mantissa", {
+      get: function get() {
+        return this.m;
+      },
+      set: function set(value) {
+        this.m = value;
+      },
+      enumerable: true,
+      configurable: true
+    });
+
+    Object.defineProperty(Decimal.prototype, "exponent", {
+      get: function get() {
+        return this.e;
+      },
+      set: function set(value) {
+        this.e = value;
+      },
+      enumerable: true,
+      configurable: true
+    });
 
     Decimal.fromComponents = function (sign, layer, mag) {
       return new Decimal().fromComponents(sign, layer, mag);
