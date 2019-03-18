@@ -553,6 +553,10 @@
       return D(value).pentate(height, payload);
     }
     
+    Decimal.iteratedlog = function (value, base = 10, times = 1) {
+      return D(value).iteratedlog(base, height);
+    }
+    
     /**
      * If you're willing to spend 'resourcesAvailable' and want to buy something
      * with exponentially increasing cost each purchase (start at priceStart,
@@ -1963,6 +1967,31 @@
         if (i > 10) { return payload; }
       }
       return payload;
+    }
+    
+    Decimal.prototype.iteratedlog = function(base = 10, times = 1) {
+      //There isn't, as far as I know, a good operator to represent doing 'half' of a log,
+      //so no fractional or negative heights for now!
+      base = D(base);
+      var result = this;
+      if (result.layer - base.layer > 3)
+      {
+        var layerloss = Math.min(times, (result.layer - base.layer - 3));
+        times -= layerloss;
+        result.layer -= layerloss;
+      }
+      
+      if (times < 1) { return result; }
+      
+      for (var i = 0; i < times; ++i)
+      {
+        result = result.log(base);
+        //bail if we're NaN
+        if (!isFinite(result.layer) || !isFinite(result.mag)) { return result; }
+        //give up after 100 iterations if nothing is happening
+        if (i > 100) { return result; }
+      }
+      return result;
     }
     
     // trig functions!
