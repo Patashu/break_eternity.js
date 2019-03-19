@@ -1638,7 +1638,7 @@
     Decimal.prototype.log2 = function () {
       if (this.sign <= 0)
       {
-        throw Error("ln is undefined for numbers <= 0");
+        throw Error("log2 is undefined for numbers <= 0");
       }
       else if (this.layer === 0)
       {
