@@ -11,7 +11,7 @@ Create a Decimal with `new Decimal(string, Number or Decimal)` or with `Decimal.
 
 IMPORTANT NOTE TO PEOPLE CONVERTING FROM break_infinity.js: log/log2/log10/ln now return Decimal not Number! You'll also need to reconsider your string parsing/displaying functions and consider moving e/exponent calls to log10.
 
-Functions you can call include `abs, neg, round, floor, ceil, trunc, add, sub, mul, div, recip, cmp, cmpabs, max, min, maxabs, minabs, log, log10, ln, pow, root, factorial, gamma, exp, sqrt, tetrate, pentate` and more!
+Functions you can call include `abs, neg, round, floor, ceil, trunc, add, sub, mul, div, recip, cmp, cmpabs, max, min, maxabs, minabs, log, log10, ln, pow, root, factorial, gamma, exp, sqrt, iteratedlog, tetrate, sroot, pentate` and more!
 
 Accepted input formats to new Decimal or Decimal.fromString:
 
