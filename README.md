@@ -4,7 +4,7 @@ A Javascript numerical library to represent numbers as large as 10^^1e308. If th
 The internal representation is as follows: Decimal.fromComponents(sign, layer, mag) == sign*10^10^10^ ... (layer times) mag.
 
 * sign is -1, 0 or 1.
-* layer is a non-negative integer. (Sorry, no negative layers (except maybe in a fork).)
+* layer is a non-negative integer. (Sorry, no negative layers. https://github.com/Patashu/break_eternity.js/issues/20 is about implementing very small numbers, if you're curious!)
 * mag is normalized as follows: if it is above 9e15, log10(mag) it and increment layer. If it is below log10(9e15) (about 15.954) and layer > 0, Math.pow(10, mag) it and decrement layer. At layer 0, sign is extracted from negative mags. Zeroes (this.sign === 0 || (this.mag === 0 && this.layer === 0)) become 0, 0, 0 in all fields.
 
 Create a Decimal with `new Decimal(string, Number or Decimal)` or with `Decimal.fromComponents(sign, layer, mag)`.
