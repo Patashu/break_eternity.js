@@ -579,6 +579,10 @@
       return D(value).iteratedlog(base, times);
     }
     
+    Decimal.slog = function (value, base = 10) {
+      return D(value).slog(base);
+    }
+    
     /**
      * If you're willing to spend 'resourcesAvailable' and want to buy something
      * with exponentially increasing cost each purchase (start at priceStart,
@@ -2014,6 +2018,37 @@
         if (i > 100) { return result; }
       }
       return result;
+    }
+    
+    Decimal.prototype.slog = function(base = 10) {
+      base = D(base);
+      var result = 0;
+      var copy = D(this);
+      if (copy.layer - base.layer > 3)
+      {
+        var layerloss = (copy.layer - base.layer - 3);
+        result += layerloss;
+        copy.layer -= layerloss;
+      }
+      
+      for (var i = 0; i < 100; ++i)
+      {
+        if (copy.lt(Decimal.dZero))
+        {
+          copy = Decimal.pow(base, copy);
+          result -= 1;
+        }
+        else if (copy.lte(Decimal.dOne))
+        {
+          return D(result - 1 + copy.toNumber());
+        }
+        else
+        {
+          result += 1;
+          copy = Decimal.log(copy, base);
+        }
+      }
+      return D(result);
     }
     
     // trig functions!
