@@ -576,7 +576,7 @@
     }
     
     Decimal.iteratedlog = function (value, base = 10, times = 1) {
-      return D(value).iteratedlog(base, height);
+      return D(value).iteratedlog(base, times);
     }
     
     /**
@@ -2112,6 +2112,15 @@
     return Decimal;
   }();
 
+	Decimal.dZero = FC_NN(0, 0, 0);
+	Decimal.dOne = FC_NN(1, 0, 1);
+	Decimal.dNegOne = FC_NN(-1, 0, 1);
+	Decimal.dTwo = FC_NN(1, 0, 2);
+	Decimal.dTen = FC_NN(1, 0, 10);
+	Decimal.dNaN = FC_NN(Number.NaN, Number.NaN, Number.NaN);
+	Decimal.dInf = FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+	Decimal.dNegInf = FC_NN(-1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+  
   return Decimal;
 
 }));
