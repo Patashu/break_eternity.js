@@ -1737,7 +1737,7 @@
       {
         var result = Decimal.mul(FC_NN(a.sign, 1, a.mag), FC_NN(b.sign, b.layer, b.mag));
         result.layer += 1;
-        return result;
+        return result.normalize();
       }
       
       if (b.layer >= 2 && (b.layer - a.layer) >= 0)
@@ -2118,7 +2118,7 @@
         return this;
       }
 
-      return this.pow(Math.pow(10, -ascensions));
+      return this.root(Decimal.pow(10, ascensions));
     };
     
     /**
