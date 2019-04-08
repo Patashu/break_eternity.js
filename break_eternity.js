@@ -1996,18 +1996,18 @@
     }
     
     Decimal.prototype.iteratedlog = function(base = 10, times = 1) {
-      //There isn't, as far as I know, a good operator to represent doing 'half' of a log,
-      //so no fractional or negative heights for now!
+      //Fractional heights now supported! Test by doing Decimal.tetrate(X, Y).iteratedlog(X, Y) where Y is fractional.
       base = D(base);
       var result = this;
+      var fulltimes = times;
+      times = Math.trunc(times);
+      var fraction = fulltimes - times;
       if (result.layer - base.layer > 3)
       {
         var layerloss = Math.min(times, (result.layer - base.layer - 3));
         times -= layerloss;
         result.layer -= layerloss;
       }
-      
-      if (times < 1) { return result; }
       
       for (var i = 0; i < times; ++i)
       {
@@ -2017,6 +2017,14 @@
         //give up after 100 iterations if nothing is happening
         if (i > 100) { return result; }
       }
+      
+      //handle fractional part
+      if (fraction > 0 && fraction < 1)
+      {
+        result = result.mul(Decimal.pow(base, 1-fraction));
+        return result.log(base);
+      }
+      
       return result;
     }
     
