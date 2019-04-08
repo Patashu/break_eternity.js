@@ -466,6 +466,18 @@
     Decimal.maxabs = function (value, other) {
       return D(value).maxabs(other);
     };
+    
+    Decimal.clamp = function(value, min, max) {
+      return D(value).clamp(min, max);
+    }
+    
+    Decimal.clampMin = function(value, min) {
+      return D(value).clampMin(min);
+    }
+    
+    Decimal.clampMax = function(value, max) {
+      return D(value).clampMax(max);
+    }
 
     Decimal.cmp_tolerance = function (value, other, tolerance) {
       return D(value).cmp_tolerance(other, tolerance);
@@ -507,6 +519,14 @@
       return D(value).gte_tolerance(other, tolerance);
     };
 
+    Decimal.absLog10 = function (value) {
+      return D(value).absLog10();
+    };
+    
+    Decimal.pLog10 = function (value) {
+      return D(value).pLog10();
+    };
+    
     Decimal.log10 = function (value) {
       return D(value).log10();
     };
@@ -1527,6 +1547,18 @@
       var decimal = D(value);
       return this.cmpabs(decimal) > 0 ? decimal : this;
     };
+    
+    Decimal.prototype.clamp = function(min, max) {
+      return this.max(min).min(max);
+    }
+    
+    Decimal.prototype.clampMin = function(min) {
+      return this.max(min);
+    }
+    
+    Decimal.prototype.clampMax = function(max) {
+      return this.min(max);
+    }
 
     Decimal.prototype.cmp_tolerance = function (value, tolerance) {
       var decimal = D(value);
@@ -1545,7 +1577,7 @@
     Decimal.prototype.eq_tolerance = function (value, tolerance) {
       var decimal = D(value); // https://stackoverflow.com/a/33024979
       //Numbers that are too far away are never close.
-      if (this.sign != decimal.sign) { return false; }
+      if (this.sign !== decimal.sign) { return false; }
       if (Math.abs(this.layer - decimal.layer) > 1) { return false; }
       // return abs(a-b) <= tolerance * max(abs(a), abs(b))
       var magA = this.mag;
@@ -1587,10 +1619,10 @@
       return this.eq_tolerance(decimal, tolerance) || this.gt(decimal);
     };
 
-    Decimal.prototype.abslog10 = function () {
+    Decimal.prototype.absLog10 = function () {
       if (this.sign === 0)
       {
-        throw Error("abslog10(0) is undefined");
+        throw Error("absLog10(0) is undefined");
       }
       else if (this.layer > 0)
       {
@@ -1601,6 +1633,11 @@
         return FC_NN(this.sign, 0, Math.log10(Math.abs(this.mag)));
       }
     };
+    
+    Decimal.prototype.pLog10 = function() {
+      if (this.lt(Decimal.dZero)) { return Decimal.dZero; }
+      return this.log10();
+    }
 
     Decimal.prototype.log10 = function () {
       if (this.sign <= 0)
@@ -1953,7 +1990,7 @@
       var oldheight = height;
       height = Math.trunc(height);
       var fracheight = oldheight-height;
-      if (fracheight != 0)
+      if (fracheight !== 0)
       {
         ++height;
         payload = Decimal.pow(fracheight, payload);
