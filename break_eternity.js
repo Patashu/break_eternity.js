@@ -566,6 +566,10 @@
     Decimal.gamma = function (value, other) {
       return D(value).gamma();
     };
+    
+    Decimal.lngamma = function (value, other) {
+      return D(value).lngamma();
+    };
 
     Decimal.exp = function (value) {
       return D(value).exp();
@@ -1953,6 +1957,10 @@
         return Decimal.exp(this);
       }
     };
+    
+    Decimal.prototype.lngamma = function () {
+      return this.gamma().ln();
+    }
 
     Decimal.prototype.exp = function () {
       if (this.layer === 0 && this.mag <= 709.7) { return FC(1, 0, Math.exp(this.mag)); }
