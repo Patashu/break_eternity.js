@@ -1,17 +1,17 @@
 # break_eternity.js
-A Javascript numerical library to represent numbers as large as 10^^1e308. If this is too ridiculous for your needs, check out break_infinity.js, my other library which maxes out at 1e1e308 ( https://github.com/Patashu/break_infinity.js ) and its C# port ( https://github.com/Razenpok/BreakInfinity.cs ).
+A Javascript numerical library to represent numbers as large as 10^^1e308. This is a sequel to break_infinity.js, my other library which maxes out at 1e1e308 ( https://github.com/Patashu/break_infinity.js ) and its C# port ( https://github.com/Razenpok/BreakInfinity.cs ). Despite handling a wider range of numbers, execution time is comparable (within 2x/0.5x as fast as break_infinity.js in testing) and it has the same interface, so it can be used as a drop-in replacement for break_infinity.js and decimal.js.
 
-The internal representation is as follows: Decimal.fromComponents(sign, layer, mag) == sign*10^10^10^ ... (layer times) mag.
+The internal representation is as follows: Decimal.fromComponents(sign, layer, mag) == sign*10^10^10^ ... (layer times) mag. So a layer 0 number is just sign*mag, a layer 1 number is sign*10^mag, a layer 2 number is sign*10^10^mag, and so on.
 
 * sign is -1, 0 or 1.
-* layer is a non-negative integer. (Sorry, no negative layers. https://github.com/Patashu/break_eternity.js/issues/20 is about implementing very small numbers, if you're curious!)
-* mag is normalized as follows: if it is above 9e15, log10(mag) it and increment layer. If it is below log10(9e15) (about 15.954) and layer > 0, Math.pow(10, mag) it and decrement layer. At layer 0, sign is extracted from negative mags. Zeroes (this.sign === 0 || (this.mag === 0 && this.layer === 0)) become 0, 0, 0 in all fields.
+* layer is a non-negative integer.
+* mag is a Number, normalized as follows: if it is above 9e15, log10(mag) it and increment layer. If it is below log10(9e15) (about 15.954) and layer > 0, Math.pow(10, mag) it and decrement layer. At layer 0, sign is extracted from negative mags. Zeroes (this.sign === 0 || (this.mag === 0 && this.layer === 0)) become 0, 0, 0 in all fields.
 
-Create a Decimal with `new Decimal(string, Number or Decimal)` or with `Decimal.fromComponents(sign, layer, mag)`.
+Create a Decimal with `new Decimal(string, Number or Decimal)` or with `Decimal.fromComponents(sign, layer, mag)`. Use operations 
 
-IMPORTANT NOTE TO PEOPLE CONVERTING FROM break_infinity.js: log/log2/log10/ln now return Decimal not Number! You'll also need to reconsider your string parsing/displaying functions and consider moving e/exponent calls to log10.
+IMPORTANT NOTE TO PEOPLE CONVERTING FROM break_infinity.js: log/log2/log10/ln now return Decimal not Number! You'll also need to reconsider your string parsing/displaying functions and consider moving e/exponent calls to log10. Also, if you need to create very small numbers (like 1e-1000), break_eternity.js currently cannot do this - consider reciprocating them to equivalently large numbers, and swapping mul to div and pow to root. ( see https://github.com/Patashu/break_eternity.js/issues/20 for related discussion).
 
-Functions you can call include `abs, neg, round, floor, ceil, trunc, add, sub, mul, div, recip, cmp, cmpabs, max, min, maxabs, minabs, log, log10, ln, pow, root, factorial, gamma, exp, sqrt, iteratedlog, tetrate, sroot, pentate` and more!
+Functions you can call include `abs, neg, round, floor, ceil, trunc, add, sub, mul, div, recip, cmp, cmpabs, max, min, maxabs, minabs, log, log10, ln, pow, root, factorial, gamma, exp, sqrt, iteratedlog, tetrate, sroot, pentate` and more! Javascript operators like `+` and `*` do not work - you need to call the equivalent functions instead.
 
 Accepted input formats to new Decimal or Decimal.fromString:
 
