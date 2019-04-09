@@ -2002,15 +2002,8 @@
       var fracheight = oldheight-height;
       if (fracheight !== 0)
       {
-        if (payload.eq(Decimal.dOne))
-        {
-          ++height;
-          payload = new Decimal(fracheight);
-        }
-        else
-        {
-          payload = Decimal.pow(this, payload).div(Decimal.pow(this, 1-fracheight));
-        }
+        ++height;
+        payload = payload.sub(1).add(fracheight);
       }
       
       //special case: if height is 0, return 1
