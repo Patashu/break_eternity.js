@@ -1993,6 +1993,8 @@
       return this.pow(1/3);
     };
     
+    //Tetration/tetrate: The result of exponentiating 'height' times in a row. Payload is an optional value that can be powed to at the very end before continuing as normal. 
+    // https://en.wikipedia.org/wiki/Tetration
     Decimal.prototype.tetrate = function(height = 2, payload = FC_NN(1, 0, 1)) {
       payload = D(payload);
       var oldheight = height;
@@ -2022,6 +2024,8 @@
       return payload;
     }
     
+    //Pentation/pentate: The result of tetrating 'height' times in a row. An absurdly strong operator - probably too powerful for break_eternity.js unless it has a cool extension to real heights that can be implemented.
+    // https://en.wikipedia.org/wiki/Pentation
     Decimal.prototype.pentate = function(height = 2, payload = FC_NN(1, 0, 1)) {
       payload = D(payload);
       height = Math.trunc(height);
@@ -2040,6 +2044,7 @@
       return payload;
     }
     
+    //iterated log/repeated log: The result of applying log(base) 'times' times in a row. Doesn't correspond to any mathematically studied function I know of, but a convenient operator for 'shrinking' numbers that's weaker than slog but stronger than log.
     Decimal.prototype.iteratedlog = function(base = 10, times = 1) {
       //Fractional heights now supported! Test by doing Decimal.tetrate(X, Y).iteratedlog(X, Y) where Y is fractional.
       base = D(base);
@@ -2073,6 +2078,8 @@
       return result;
     }
     
+    //Super-logarithm, one of tetration's inverses, tells you what size power tower you'd have to tetrate base to to get number. By definition, will never be higher than 1.8e308 in break_eternity.js, since a power tower 1.8e308 numbers tall is the largest representable number.
+    // https://en.wikipedia.org/wiki/Super-logarithm
     Decimal.prototype.slog = function(base = 10) {
       base = D(base);
       var result = 0;
@@ -2093,7 +2100,7 @@
         }
         else if (copy.lte(Decimal.dOne))
         {
-          return D(result - 1 + copy.toNumber());
+          return D(result + slog_criticalfunction_1(base, copy));
         }
         else
         {
@@ -2102,6 +2109,59 @@
         }
       }
       return D(result);
+    }
+    
+    //Approximations taken from the excellent paper https://web.archive.org/web/20090201164836/http://tetration.itgo.com/paper.html !
+    var slog_criticalfunction_1 = function(x, z) {
+      z = z.toNumber();
+      return -1 + z;
+    }
+    
+    var slog_criticalfunction_2 = function(x, z) {
+      z = z.toNumber();
+      var lnx = x.ln();
+      if (lnx.layer === 0)
+      {
+        lnx = lnx.toNumber();
+        return -1 + z*2*lnx/(1+lnx) - z*z*(1-lnx)/(1+lnx);
+      }
+      else
+      {
+        var term1 = lnx.mul(z*2).div(lnx.add(1));
+        var term2 = Decimal.sub(1, lnx).mul(z*z).div(lnx.add(1));
+        Decimal.dNegOne.add(Decimal.sub(term1, term2));
+      }
+    }
+    
+    var slog_criticalfunction_3 = function(x, z) {
+      z = z.toNumber();
+      var lnx = x.ln();
+      var lnx2 = lnx.sqr();
+      var lnx3 = lnx.cube();
+      if (lnx.layer === 0 && lnx2.layer === 0 && lnx3.layer === 0)
+      {
+        lnx = lnx.toNumber();
+        lnx2 = lnx2.toNumber();
+        lnx3 = lnx3.toNumber();
+        
+        var term1 = 6*z*(lnx+lnx3);
+        var term2 = 3*z*z*(3*lnx2-2*lnx3);
+        var term3 = 2*z*z*z*(1-lnx-2*lnx2+lnx3);
+        var top = term1+term2+term3;
+        var bottom = 2+4*lnx+5*lnx2+2*lnx3;
+        
+        return -1 + top/bottom;
+      }
+      else
+      {
+        var term1 = (lnx.add(lnx3)).mul(6*z);
+        var term2 = (lnx2.mul(3).sub(lnx3.mul(2))).mul(3*z*z);
+        var term3 = (Decimal.dOne.sub(lnx).sub(lnx2.mul(2)).add(lnx3)).mul(2*z*z*z);
+        var top = term1.add(term2).add(term3);
+        var bottom = new Decimal(2).add(lnx.mul(4)).add(lnx2.mul(5)).add(lnx3.mul(2));
+        
+        return Decimal.dNegOne.add(top.div(bottom));
+      }
     }
     
     // trig functions!
