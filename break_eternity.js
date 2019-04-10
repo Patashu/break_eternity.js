@@ -741,7 +741,7 @@
         return this;
       }
       
-      if (this.mag >= EXP_LIMIT)
+      if (this.mag >= EXP_LIMIT || this.layer < 0)
       {
         if (this.layer === 0 && this.mag < 0)
         {
@@ -2076,8 +2076,16 @@
       //handle fractional part
       if (fraction > 0 && fraction < 1)
       {
+        if (base.eq(10))
+        {
+          result = result.layeradd(-fraction);
+        }
+        else
+        {
+          throw Error("Unimplemented");
+        }
         //We're basically simulating the operator 'add/remove a fraction of a layer' here.
-        if (result.lt(base))
+        /*if (result.lt(base))
         {
           result = result.mul(Decimal.pow(base, 1-fraction));
           return result.log(base);
@@ -2090,7 +2098,7 @@
           result.normalize();
           return result;
           //return result.log(base);
-        }
+        }*/
       }
       
       return result;
@@ -2251,10 +2259,18 @@
       }
       else if (diff < 0)
       {
+        var subtractlayerslater = 0;
+        
         while (Number.isFinite(result.mag) && result.mag < 10)
         {
           result.mag = Math.pow(10, result.mag);
           ++subtractlayerslater;
+        }
+        
+        if (result.mag > 1e10)
+        {
+          result.mag = Math.log10(result.mag);
+          result.layer++;
         }
         
         var diffToNextSlog = Math.log10(1/Math.log10(result.mag));
@@ -2267,12 +2283,12 @@
         
         result.mag = Math.pow(result.mag, Math.pow(10, diff));
         result.normalize();
-      }
-      
-      while (subtractlayerslater > 0)
-      {
-        result.mag = Math.log10(result.mag);
-        --subtractlayerslater;
+        
+        while (subtractlayerslater > 0)
+        {
+          result.mag = Math.log10(result.mag);
+          --subtractlayerslater;
+        }
       }
       
       return result;
