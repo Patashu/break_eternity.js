@@ -1380,7 +1380,7 @@
       
       //Special case - if the second number is 0, explode (Divide by 0).
       
-      if (b.sign === 0) { throw Error("Divide by 0"); }
+      if (b.sign === 0) { return Decimal.dNaN; }
       
       //NOTE: Unlike add/mul, second number can be bigger in magnitude than first number.
       
@@ -1631,7 +1631,7 @@
     Decimal.prototype.absLog10 = function () {
       if (this.sign === 0)
       {
-        throw Error("absLog10(0) is undefined");
+        return Decimal.dNaN;
       }
       else if (this.layer > 0)
       {
@@ -1651,7 +1651,7 @@
     Decimal.prototype.log10 = function () {
       if (this.sign <= 0)
       {
-        throw Error("log10 is undefined for numbers <= 0");
+        return Decimal.dNaN;
       }
       else if (this.layer > 0)
       {
@@ -1667,15 +1667,15 @@
       base = D(base);
       if (this.sign <= 0)
       {
-        throw Error("log is undefined for numbers <= 0");
+        return Decimal.dNaN;
       }
       if (base.sign <= 0)
       {
-        throw Error("log is undefined for bases <= 0");
+        return Decimal.dNaN;
       }
       if (base.sign === 1 && base.layer === 0 && base.mag === 1)
       {
-        throw Error("log is undefined for base === 1");
+        return Decimal.dNaN;
       }
       else if (this.layer === 0 && base.layer === 0)
       {
@@ -1688,7 +1688,7 @@
     Decimal.prototype.log2 = function () {
       if (this.sign <= 0)
       {
-        throw Error("log2 is undefined for numbers <= 0");
+        return Decimal.dNaN;
       }
       else if (this.layer === 0)
       {
@@ -1711,7 +1711,7 @@
     Decimal.prototype.ln = function () {
       if (this.sign <= 0)
       {
-        throw Error("ln is undefined for numbers <= 0");
+        return Decimal.dNaN;
       }
       else if (this.layer === 0)
       {
@@ -2000,21 +2000,39 @@
     
     //Tetration/tetrate: The result of exponentiating 'height' times in a row. Payload is an optional value that can be powed to at the very end before continuing as normal. 
     // https://en.wikipedia.org/wiki/Tetration
+    //Update: Apparently when 'payload' is != 1, this is called 'iterated exponentiation'. Who knew? https://andydude.github.io/tetration/archives/tetration2/ident.html
     Decimal.prototype.tetrate = function(height = 2, payload = FC_NN(1, 0, 1)) {
       payload = D(payload);
       var oldheight = height;
       height = Math.trunc(height);
       var fracheight = oldheight-height;
+     
       if (fracheight !== 0)
       {
-        ++height;
-        payload = payload.sub(1).add(fracheight);
+         if (payload.eq(Decimal.dOne))
+        {
+          ++height;
+          payload = new Decimal(fracheight);
+        }
+        else
+        {
+          if (this.eq(10))
+          {
+            payload = payload.layeradd(fracheight);
+          }
+          else
+          {
+            //really need layeradd for non base 10, I think.
+            throw Error("Unimplemented");
+          }
+        }
       }
       
-      //special case: if height is 0, return 1
-      if (height === 0) { return FC_NN(1, 0, 1); }
-      //special case: if this is 10, return payload with layer increases by height
-      if (this.sign === 1 && this.layer === 0 && this.mag === 10) { return FC(payload.sign, payload.layer + height, payload.mag); }
+      //log as many times as there are negative heights
+      for (var i = 0; i > height; --i)
+      {
+        
+      }
       
       for (var i = 0; i < height; ++i)
       {
@@ -2249,7 +2267,6 @@
         }
         
         result.mag = Math.pow(result.mag, Math.pow(10, diff));
-        result.normalize();
         
         while (subtractlayerslater > 0)
         {
@@ -2282,7 +2299,6 @@
         }
         
         result.mag = Math.pow(result.mag, Math.pow(10, diff));
-        result.normalize();
         
         while (subtractlayerslater > 0)
         {
@@ -2291,6 +2307,7 @@
         }
       }
       
+      result.normalize();
       return result;
     }
     
@@ -2397,7 +2414,7 @@
 	Decimal.dTen = FC_NN(1, 0, 10);
 	Decimal.dNaN = FC_NN(Number.NaN, Number.NaN, Number.NaN);
 	Decimal.dInf = FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
-	Decimal.dNegInf = FC_NN(-1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+	Decimal.dNegInf = FC_NN(-1, Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY);
   
   return Decimal;
 
