@@ -603,6 +603,10 @@
       return D(value).iteratedlog(base, times);
     }
     
+    Decimal.layeradd = function (value, other) {
+      return D(value).layeradd(other);
+    }
+    
     Decimal.slog = function (value, base = 10) {
       return D(value).slog(base);
     }
@@ -1580,6 +1584,7 @@
      */
     Decimal.prototype.eq_tolerance = function (value, tolerance) {
       var decimal = D(value); // https://stackoverflow.com/a/33024979
+      if (tolerance == null) { tolerance = 1e-7; }
       //Numbers that are too far away are never close.
       if (this.sign !== decimal.sign) { return false; }
       if (Math.abs(this.layer - decimal.layer) > 1) { return false; }
@@ -2044,11 +2049,11 @@
       return payload;
     }
     
-    //iterated log/repeated log: The result of applying log(base) 'times' times in a row. Doesn't correspond to any mathematically studied function I know of, but a convenient operator for 'shrinking' numbers that's weaker than slog but stronger than log.
+    //iterated log/repeated log: The result of applying log(base) 'times' times in a row. Approximately equal to subtracting (times) from the number's slog representation. Doesn't correspond to any mathematically studied function I know of, but has interesting properties related to being 'kind of' the inverse of tetrating to that height.
     Decimal.prototype.iteratedlog = function(base = 10, times = 1) {
       //Fractional heights now supported! Test by doing Decimal.tetrate(X, Y).iteratedlog(X, Y) where Y is fractional.
       base = D(base);
-      var result = this;
+      var result = D(this);
       var fulltimes = times;
       times = Math.trunc(times);
       var fraction = fulltimes - times;
@@ -2071,8 +2076,21 @@
       //handle fractional part
       if (fraction > 0 && fraction < 1)
       {
-        result = result.mul(Decimal.pow(base, 1-fraction));
-        return result.log(base);
+        //We're basically simulating the operator 'add/remove a fraction of a layer' here.
+        if (result.lt(base))
+        {
+          result = result.mul(Decimal.pow(base, 1-fraction));
+          return result.log(base);
+        }
+        else
+        {
+          result.mag = Decimal.pow(result.mag, Decimal.pow(base, -fraction)).toNumber();
+          //result.mag = Decimal.pow(base, Decimal.log(Decimal.pow(result.mag, Decimal.pow(base, 1-fraction)), base).div(base)).toNumber();
+          //result.mag = Decimal.pow(result.mag, Decimal.pow(base, 1-fraction)).toNumber();
+          result.normalize();
+          return result;
+          //return result.log(base);
+        }
       }
       
       return result;
@@ -2100,7 +2118,7 @@
         }
         else if (copy.lte(Decimal.dOne))
         {
-          return D(result + slog_criticalfunction_1(base, copy));
+          return D(result + copy.toNumber() - 1);
         }
         else
         {
@@ -2112,7 +2130,8 @@
     }
     
     //Approximations taken from the excellent paper https://web.archive.org/web/20090201164836/http://tetration.itgo.com/paper.html !
-    var slog_criticalfunction_1 = function(x, z) {
+    //Not using for now unless I can figure out how to use it in all the related functions.
+    /*var slog_criticalfunction_1 = function(x, z) {
       z = z.toNumber();
       return -1 + z;
     }
@@ -2162,6 +2181,101 @@
         
         return Decimal.dNegOne.add(top.div(bottom));
       }
+    }*/
+    
+    //Function for adding/removing layers from a Decimal, even fractional layers (e.g. its slog10 representation).
+    //Everything continues to use the linear approximation ATM.
+    Decimal.prototype.layeradd = function(diff) {
+      diff = Decimal.fromValue_noAlloc(diff).toNumber();
+      var result = D(this);
+      if (diff >= 1)
+      {
+        var layeradd = Math.trunc(diff);
+        diff -= layeradd;
+        result.layer += layeradd;
+      }
+      if (diff <= -1)
+      {
+        var layeradd = Math.trunc(diff);
+        diff -= layeradd;
+        result.layer += layeradd;
+        if (result.layer < 0)
+        {
+          for (var i = 0; i < 100; ++i)
+          {
+            result.layer++;
+            result.mag = Math.log10(result.mag);
+            if (!isFinite(result.mag)) { return result; }
+            if (result.layer >= 0) { break; }
+          }
+        }
+      }
+      
+      //handle fractional layers here.
+      //Note that every integer slog10 value, the formula changes, so if we're near such a number, we have to spend exactly enough layerdiff to hit it, and then use the new formula.
+      if (diff > 0)
+      {
+        var subtractlayerslater = 0;
+        //Ironically, this edge case would be unnecessary if we had 'negative layers'.
+        while (Number.isFinite(result.mag) && result.mag < 10)
+        {
+          result.mag = Math.pow(10, result.mag);
+          ++subtractlayerslater;
+        }
+        
+        //A^(10^B) === C, solve for B
+        //B === log10(logA(C))
+        
+        if (result.mag > 1e10)
+        {
+          result.mag = Math.log10(result.mag);
+          result.layer++;
+        }
+        
+        var diffToNextSlog = Math.log10(Math.log(1e10)/Math.log(result.mag), 10);
+        if (diffToNextSlog < diff)
+        {
+          result.mag = Math.log10(1e10);
+          result.layer++;
+          diff -= diffToNextSlog;
+        }
+        
+        result.mag = Math.pow(result.mag, Math.pow(10, diff));
+        result.normalize();
+        
+        while (subtractlayerslater > 0)
+        {
+          result.mag = Math.log10(result.mag);
+          --subtractlayerslater;
+        }
+      }
+      else if (diff < 0)
+      {
+        while (Number.isFinite(result.mag) && result.mag < 10)
+        {
+          result.mag = Math.pow(10, result.mag);
+          ++subtractlayerslater;
+        }
+        
+        var diffToNextSlog = Math.log10(1/Math.log10(result.mag));
+        if (diffToNextSlog > diff)
+        {
+          result.mag = 1e10;
+          result.layer--;
+          diff -= diffToNextSlog;
+        }
+        
+        result.mag = Math.pow(result.mag, Math.pow(10, diff));
+        result.normalize();
+      }
+      
+      while (subtractlayerslater > 0)
+      {
+        result.mag = Math.log10(result.mag);
+        --subtractlayerslater;
+      }
+      
+      return result;
     }
     
     // trig functions!
