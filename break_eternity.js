@@ -595,20 +595,28 @@
       return D(value).tetrate(height, payload);
     }
     
-    Decimal.pentate = function (value, height = 2, payload = FC_NN(1, 0, 1)) {
-      return D(value).pentate(height, payload);
+    Decimal.iteratedexp = function (value, height = 2, payload = FC_NN(1, 0, 1)) {
+      return D(value).iteratedexp(height, payload);
     }
     
     Decimal.iteratedlog = function (value, base = 10, times = 1) {
       return D(value).iteratedlog(base, times);
     }
     
-    Decimal.layeradd = function (value, other) {
-      return D(value).layeradd(other);
+    Decimal.layeradd10 = function (value, diff) {
+      return D(value).layeradd10(diff);
+    }
+    
+     Decimal.layeradd = function (value, diff, base = 10) {
+      return D(value).layeradd(diff, base);
     }
     
     Decimal.slog = function (value, base = 10) {
       return D(value).slog(base);
+    }
+    
+    Decimal.pentate = function (value, height = 2, payload = FC_NN(1, 0, 1)) {
+      return D(value).pentate(height, payload);
     }
     
     /**
@@ -1998,9 +2006,9 @@
       return this.pow(1/3);
     };
     
-    //Tetration/tetrate: The result of exponentiating 'height' times in a row. Payload is an optional value that can be powed to at the very end before continuing as normal. 
-    // https://en.wikipedia.org/wiki/Tetration
-    //Update: Apparently when 'payload' is != 1, this is called 'iterated exponentiation'. Who knew? https://andydude.github.io/tetration/archives/tetration2/ident.html
+    //Tetration/tetrate: The result of exponentiating 'this' to 'this' 'height' times in a row.  https://en.wikipedia.org/wiki/Tetration
+    //If payload != 1, then this is 'iterated exponentiation', the result of exping (payload) to base (this) (height) times. https://andydude.github.io/tetration/archives/tetration2/ident.html
+    //Works with negative and positive real heights.
     Decimal.prototype.tetrate = function(height = 2, payload = FC_NN(1, 0, 1)) {
       if (height < 0)
       {
@@ -2014,7 +2022,7 @@
      
       if (fracheight !== 0)
       {
-         if (payload.eq(Decimal.dOne))
+        if (payload.eq(Decimal.dOne))
         {
           ++height;
           payload = new Decimal(fracheight);
@@ -2023,12 +2031,11 @@
         {
           if (this.eq(10))
           {
-            payload = payload.layeradd(fracheight);
+            payload = payload.layeradd10(fracheight);
           }
           else
           {
-            //really need layeradd for non base 10, I think.
-            throw Error("Unimplemented");
+            payload = payload.layeradd(fracheight, this);
           }
         }
       }
@@ -2046,29 +2053,19 @@
       return payload;
     }
     
-    //Pentation/pentate: The result of tetrating 'height' times in a row. An absurdly strong operator - probably too powerful for break_eternity.js unless it has a cool extension to real heights that can be implemented.
-    // https://en.wikipedia.org/wiki/Pentation
-    Decimal.prototype.pentate = function(height = 2, payload = FC_NN(1, 0, 1)) {
-      payload = D(payload);
-      height = Math.trunc(height);
-      
-      //special case: if height is 0, return 1
-      if (height === 0) { return FC_NN(1, 0, 1); }
-      
-      for (var i = 0; i < height; ++i)
-      {
-        payload = this.tetrate(payload);
-        //bail if we're NaN
-        if (!isFinite(payload.layer) || !isFinite(payload.mag)) { return payload; }
-        //give up after 10 iterations if nothing is happening
-        if (i > 10) { return payload; }
-      }
-      return payload;
+    //iteratedexp/iterated exponentiation: - all cases handled in tetrate, so just call it
+    Decimal.prototype.iteratedexp = function(height = 2, payload = FC_NN(1, 0, 1)) {
+      return this.tetrate(height, payload);
     }
     
-    //iterated log/repeated log: The result of applying log(base) 'times' times in a row. Approximately equal to subtracting (times) from the number's slog representation. Doesn't correspond to any mathematically studied function I know of, but has interesting properties related to being 'kind of' the inverse of tetrating to that height.
+    //iterated log/repeated log: The result of applying log(base) 'times' times in a row. Approximately equal to subtracting (times) from the number's slog representation. Equivalent to tetrating to a negative height.
+    //Works with negative and positive real heights.
     Decimal.prototype.iteratedlog = function(base = 10, times = 1) {
-      //Fractional heights now supported! Test by doing Decimal.tetrate(X, Y).iteratedlog(X, Y) where Y is fractional.
+      if (times < 0)
+      {
+        return Decimal.tetrate(base, -times, this);
+      }
+      
       base = D(base);
       var result = D(this);
       var fulltimes = times;
@@ -2095,27 +2092,12 @@
       {
         if (base.eq(10))
         {
-          result = result.layeradd(-fraction);
+          result = result.layeradd10(-fraction);
         }
         else
         {
-          throw Error("Unimplemented");
+          result = result.layeradd(-fraction, base);
         }
-        //We're basically simulating the operator 'add/remove a fraction of a layer' here.
-        /*if (result.lt(base))
-        {
-          result = result.mul(Decimal.pow(base, 1-fraction));
-          return result.log(base);
-        }
-        else
-        {
-          result.mag = Decimal.pow(result.mag, Decimal.pow(base, -fraction)).toNumber();
-          //result.mag = Decimal.pow(base, Decimal.log(Decimal.pow(result.mag, Decimal.pow(base, 1-fraction)), base).div(base)).toNumber();
-          //result.mag = Decimal.pow(result.mag, Decimal.pow(base, 1-fraction)).toNumber();
-          result.normalize();
-          return result;
-          //return result.log(base);
-        }*/
       }
       
       return result;
@@ -2143,7 +2125,8 @@
         }
         else if (copy.lte(Decimal.dOne))
         {
-          return D(result + copy.toNumber() - 1);
+          return D(result + copy.toNumber() - 1); //<-- THIS IS THE CRITICAL FUNCTION
+          //^ Also have to change tetrate payload handling and layer10 if this is changed!
         }
         else
         {
@@ -2210,7 +2193,7 @@
     
     //Function for adding/removing layers from a Decimal, even fractional layers (e.g. its slog10 representation).
     //Everything continues to use the linear approximation ATM.
-    Decimal.prototype.layeradd = function(diff) {
+    Decimal.prototype.layeradd10 = function(diff) {
       diff = Decimal.fromValue_noAlloc(diff).toNumber();
       var result = D(this);
       if (diff >= 1)
@@ -2236,8 +2219,7 @@
         }
       }
       
-      //handle fractional layers here.
-      //Note that every integer slog10 value, the formula changes, so if we're near such a number, we have to spend exactly enough layerdiff to hit it, and then use the new formula.
+      //layeradd10: like adding 'diff' to the number's slog(base) representation. Very similar to tetrate base 10 and iterated log base 10. Also equivalent to adding a fractional amount to the number's layer in its break_eternity.js representation.
       if (diff > 0)
       {
         var subtractlayerslater = 0;
@@ -2257,6 +2239,7 @@
           result.layer++;
         }
         
+        //Note that every integer slog10 value, the formula changes, so if we're near such a number, we have to spend exactly enough layerdiff to hit it, and then use the new formula.
         var diffToNextSlog = Math.log10(Math.log(1e10)/Math.log(result.mag), 10);
         if (diffToNextSlog < diff)
         {
@@ -2313,6 +2296,165 @@
       }
       result.normalize();
       return result;
+    }
+    
+    //layeradd: like adding 'diff' to the number's slog(base) representation. Very similar to tetrate base 'base' and iterated log base 'base'.
+    Decimal.prototype.layeradd = function(diff, base) {
+      var slogthis = this.slog(base).toNumber();
+      var slogdest = slogthis+diff;
+      if (slogdest >= 0)
+      {
+        return Decimal.tetrate(base, slogdest);
+      }
+      else if (!Number.isFinite(slogdest))
+      {
+        return Decimal.dNaN;
+      }
+      else if (slogdest >= -1)
+      {
+        return Decimal.log(Decimal.tetrate(base, slogdest+1), base);
+      }
+      else
+      {
+        Decimal.log(Decimal.log(Decimal.tetrate(base, slogdest+2), base), base);
+      }
+    }
+    
+/*
+
+Unit tests for tetrate/iteratedexp/iteratedlog/layeradd10/layeradd/slog:
+
+for (var i = 0; i < 1000; ++i)
+{
+    var first = Math.random()*100;
+    var both = Math.random()*100;
+    var expected = first+both+1;
+    var result = new Decimal(10).layeradd10(first).layeradd10(both).slog();
+    if (Number.isFinite(result.mag) && !Decimal.eq_tolerance(expected, result))
+    {
+        console.log(first + ", " + both);
+    }
+}
+
+for (var i = 0; i < 1000; ++i)
+{
+    var first = Math.random()*100;
+    var both = Math.random()*100;
+    first += both;
+    var expected = first-both+1;
+    var result = new Decimal(10).layeradd10(first).layeradd10(-both).slog();
+    if (Number.isFinite(result.mag) && !Decimal.eq_tolerance(expected, result))
+    {
+        console.log(first + ", " + both);
+    }
+}
+
+for (var i = 0; i < 1000; ++i)
+{
+    var first = Math.random()*100;
+    var both = Math.random()*100;
+    var base = Math.random()*8+2;
+    var expected = first+both+1;
+    var result = new Decimal(base).layeradd(first, base).layeradd(both, base).slog(base);
+    if (Number.isFinite(result.mag) && !Decimal.eq_tolerance(expected, result))
+    {
+        console.log(first + ", " + both);
+    }
+}
+
+for (var i = 0; i < 1000; ++i)
+{
+    var first = Math.random()*100;
+    var both = Math.random()*100;
+    var base = Math.random()*8+2;
+    first += both;
+    var expected = first-both+1;
+    var result = new Decimal(base).layeradd(first, base).layeradd(-both, base).slog(base);
+    if (Number.isFinite(result.mag) && !Decimal.eq_tolerance(expected, result))
+    {
+        console.log(first + ", " + both);
+    }
+}
+
+for (var i = 0; i < 1000; ++i)
+{
+	var first = Math.round((Math.random()*30))/10;
+	var both = Math.round((Math.random()*30))/10;
+	var tetrateonly = Decimal.tetrate(10, first);
+	var tetrateandlog = Decimal.tetrate(10, first+both).iteratedlog(10, both);
+	if (!Decimal.eq_tolerance(tetrateonly, tetrateandlog))
+	{
+		console.log(first + ", " + both);
+	}
+}
+
+for (var i = 0; i < 1000; ++i)
+{
+	var first = Math.round((Math.random()*30))/10;
+	var both = Math.round((Math.random()*30))/10;
+  var base = Math.random()*8+2;
+	var tetrateonly = Decimal.tetrate(base, first);
+	var tetrateandlog = Decimal.tetrate(base, first+both).iteratedlog(base, both);
+	if (!Decimal.eq_tolerance(tetrateonly, tetrateandlog))
+	{
+		console.log(first + ", " + both);
+	}
+}
+
+for (var i = 0; i < 1000; ++i)
+{
+	var first = Math.round((Math.random()*30))/10;
+	var both = Math.round((Math.random()*30))/10;
+  var base = Math.random()*8+2;
+	var tetrateonly = Decimal.tetrate(base, first, base);
+	var tetrateandlog = Decimal.tetrate(base, first+both, base).iteratedlog(base, both);
+	if (!Decimal.eq_tolerance(tetrateonly, tetrateandlog))
+	{
+		console.log(first + ", " + both);
+	}
+}
+
+*/
+    
+    //Pentation/pentate: The result of tetrating 'height' times in a row. An absurdly strong operator - Decimal.pentate(2, 4.28) and Decimal.pentate(10, 2.37) are already too huge for break_eternity.js!
+    // https://en.wikipedia.org/wiki/Pentation
+    Decimal.prototype.pentate = function(height = 2, payload = FC_NN(1, 0, 1)) {
+      payload = D(payload);
+      var oldheight = height;
+      height = Math.trunc(height);
+      var fracheight = oldheight-height;
+      
+      //I have no idea if this is a meaningful approximation for pentation to continuous heights, but it is monotonic and continuous.
+      if (fracheight !== 0)
+      {
+        if (payload.eq(Decimal.dOne))
+        {
+          ++height;
+          payload = new Decimal(fracheight);
+        }
+        else
+        {
+          if (this.eq(10))
+          {
+            payload = payload.layeradd10(fracheight);
+          }
+          else
+          {
+            payload = payload.layeradd(fracheight, this);
+          }
+        }
+      }
+      
+      for (var i = 0; i < height; ++i)
+      {
+        payload = this.tetrate(payload);
+        //bail if we're NaN
+        if (!isFinite(payload.layer) || !isFinite(payload.mag)) { return payload; }
+        //give up after 10 iterations if nothing is happening
+        if (i > 10) { return payload; }
+      }
+      
+      return payload;
     }
     
     // trig functions!
