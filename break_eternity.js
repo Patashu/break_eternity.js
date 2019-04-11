@@ -741,7 +741,7 @@
         return this;
       }
       
-      if (this.mag >= EXP_LIMIT || this.layer < 0)
+      if (this.mag >= EXP_LIMIT)
       {
         if (this.layer === 0 && this.mag < 0)
         {
@@ -2002,6 +2002,11 @@
     // https://en.wikipedia.org/wiki/Tetration
     //Update: Apparently when 'payload' is != 1, this is called 'iterated exponentiation'. Who knew? https://andydude.github.io/tetration/archives/tetration2/ident.html
     Decimal.prototype.tetrate = function(height = 2, payload = FC_NN(1, 0, 1)) {
+      if (height < 0)
+      {
+        return Decimal.iteratedlog(payload, this, -height);
+      }
+      
       payload = D(payload);
       var oldheight = height;
       height = Math.trunc(height);
@@ -2026,12 +2031,6 @@
             throw Error("Unimplemented");
           }
         }
-      }
-      
-      //log as many times as there are negative heights
-      for (var i = 0; i > height; --i)
-      {
-        
       }
       
       for (var i = 0; i < height; ++i)
@@ -2307,6 +2306,11 @@
         }
       }
       
+      while (result.layer < 0)
+      {
+        result.layer++;
+        result.mag = Math.log10(result.mag);
+      }
       result.normalize();
       return result;
     }
