@@ -1,9 +1,9 @@
 # break_eternity.js
-A Javascript numerical library to represent numbers as large as 10^^1e308. This is a sequel to break_infinity.js, my other library which maxes out at 1e1e308 ( https://github.com/Patashu/break_infinity.js ) and its C# port ( https://github.com/Razenpok/BreakInfinity.cs ). Despite handling a wider range of numbers, execution time is comparable (within 2x/0.5x as fast as break_infinity.js in testing) and it has the same interface, so it can be used as a drop-in replacement for break_infinity.js and decimal.js.
+A Javascript numerical library to represent numbers as large as 10^^1e308 and as 'small' as 10^-(10^^1e308). This is a sequel to break_infinity.js, my other library which maxes out at 1e1e308 ( https://github.com/Patashu/break_infinity.js ) and its C# port ( https://github.com/Razenpok/BreakInfinity.cs ). Despite handling a wider range of numbers, execution time is comparable (within 2x/0.5x as fast as break_infinity.js in testing) and it has the same interface, so it can be used as a drop-in replacement for break_infinity.js and decimal.js.
 
 Now with arbitrary real height and base handling in your favourite hyper 4 operators (tetrate, iterated exponentiation, iterated logarithm, super logarithm, super square root) and even in pentate (if you want to do that for some reason)! Using the linear approximation. (Analytical approximation is too hard for me atm.)
 
-The internal representation is as follows: `Decimal.fromComponents(sign, layer, mag)` === `sign*10^10^10^ ... (layer times) mag`. So a layer 0 number is just `sign*mag`, a layer 1 number is `sign*10^mag`, a layer 2 number is `sign*10^10^mag`, and so on.
+The internal representation is as follows: `Decimal.fromComponents(sign, layer, mag)` === `sign*10^10^10^ ... (layer times) mag`. So a layer 0 number is just `sign*mag`, a layer 1 number is `sign*10^mag`, a layer 2 number is `sign*10^10^mag`, and so on. If `layer > 0` and `mag < 0`, then the number's exponent is negative, e.g. `sign*10^-10^10^10^ ... mag`.
 
 * sign is -1, 0 or 1.
 * layer is a non-negative integer.
@@ -11,7 +11,7 @@ The internal representation is as follows: `Decimal.fromComponents(sign, layer, 
 
 Create a Decimal with `new Decimal(string, Number or Decimal)` or with `Decimal.fromComponents(sign, layer, mag)`. Use operations 
 
-IMPORTANT NOTE TO PEOPLE CONVERTING FROM break_infinity.js: log/log2/log10/ln now return Decimal not Number! You'll also need to reconsider your string parsing/displaying functions and consider moving e/exponent calls to log10. Also, if you need to create very small numbers (like 1e-1000), break_eternity.js currently cannot do this - consider reciprocating them to equivalently large numbers, and swapping mul to div and pow to root. ( see https://github.com/Patashu/break_eternity.js/issues/20 for related discussion).
+IMPORTANT NOTE TO PEOPLE CONVERTING FROM break_infinity.js: log/log2/log10/ln now return Decimal not Number! You'll also need to reconsider your string parsing/displaying functions and consider moving e/exponent calls to log10. Support for very small numbers has finally been added, so things like tickspeed multiplier being 1e-400 will be fine now!
 
 Functions you can call include `abs, neg, round, floor, ceil, trunc, add, sub, mul, div, recip, cmp, cmpabs, max, min, maxabs, minabs, log, log10, ln, pow, root, factorial, gamma, exp, sqrt, tetrate, iteratedexp, iteratedlog, layeradd10, layeradd, slog, ssqrt, lambertw, pentate` and more! Javascript operators like `+` and `*` do not work - you need to call the equivalent functions instead.
 

@@ -48,6 +48,8 @@
   var EXP_LIMIT = 9e15; // If we're ABOVE this value, increase a layer. (9e15 is close to the largest integer that can fit in a Number.)
   
   var LAYER_DOWN = Math.log10(9e15); //If we're BELOW this value, drop down a layer. About 15.954.
+  
+  var FIRST_NEG_LAYER = Math.pow(10, -Math.log10(9e15)); //At layer 0, smaller non-zero numbers than this become layer 1 numbers with negative mag. After that the pattern continues as normal.
 
   var NUMBER_EXP_MAX = 308; // The smallest exponent that can appear in a Number, though not all mantissas are valid here.
 
@@ -98,6 +100,10 @@
     var rounded = Math.round(value * Math.pow(10, len - numDigits)) * Math.pow(10, numDigits - len);
     return parseFloat(rounded.toFixed(Math.max(len - numDigits, 0)));
   };
+  
+  var f_maglog10 = function(n) {
+    return Math.sign(n)*Math.log10(Math.abs(n));
+  }
   
   //from HyperCalc source code
   var f_gamma = function(n) {
@@ -344,11 +350,11 @@
         }
         else if (this.layer === 2)
         {
-          return Math.floor(Math.pow(10, this.mag));
+          return Math.floor(Math.sign(this.mag)*Math.pow(10, Math.abs(this.mag)));
         }
         else
         {
-          return Number.POSITIVE_INFINITY;
+          return this.mag*Number.POSITIVE_INFINITY;
         }
       },
       set: function set(value) {
@@ -638,10 +644,6 @@
       return D(value).gte_tolerance(other, tolerance);
     };
 
-    Decimal.absLog10 = function (value) {
-      return D(value).absLog10();
-    };
-    
     Decimal.pLog10 = function (value) {
       return D(value).pLog10();
     };
@@ -664,10 +666,6 @@
 
     Decimal.logarithm = function (value, base) {
       return D(value).logarithm(base);
-    };
-
-    Decimal.pow10 = function (value) {
-      return D(value).powbase10();
     };
 
     Decimal.pow = function (value, other) {
@@ -876,33 +874,60 @@
         return this;
       }
       
-      if (this.mag >= EXP_LIMIT)
+      
+      if (this.layer === 0 && this.mag < 0)
       {
-        if (this.layer === 0 && this.mag < 0)
-        {
-          this.mag = -this.mag;
-          this.sign = -this.sign;
-        }
+        //extract sign from negative mag at layer 0
+        this.mag = -this.mag;
+        this.sign = -this.sign;
+      }
+      
+      //Handle shifting from layer 0 to negative layers.
+      if (this.layer === 0 && this.mag < FIRST_NEG_LAYER)
+      {
         this.layer += 1;
         this.mag = Math.log10(this.mag);
         return this;
       }
+      
+      var absmag = Math.abs(this.mag);
+      var signmag = Math.sign(this.mag);
+      
+      if (absmag >= EXP_LIMIT)
+      {
+        this.layer += 1;
+        this.mag = signmag*Math.log10(absmag);
+        return this;
+      }
       else
       {
-        while (this.mag < LAYER_DOWN && this.layer > 0)
+        while (absmag < LAYER_DOWN && this.layer > 0)
         {
           this.layer -= 1;
-          this.mag = Math.pow(10, this.mag);
+          if (this.layer === 0)
+          {
+            this.mag = Math.pow(10, this.mag);
+          }
+          else
+          {
+            this.mag = signmag*Math.pow(10, absmag);
+            absmag = Math.abs(this.mag);
+            signmag = Math.sign(this.mag);
+          }
         }
-        if (this.layer === 0 && this.mag < 0)
+        if (this.layer === 0)
         {
-          this.mag = -this.mag;
-          this.sign = -this.sign;
-        }
-        else if (this.mag === 0 && this.layer === 0)
-        {
-          //excessive rounding can give us all zeroes
-          this.sign = 0;
+          if (this.mag < 0)
+          {
+            //extract sign from negative mag at layer 0
+            this.mag = -this.mag;
+            this.sign = -this.sign;
+          }
+          else if (this.mag === 0)
+          {
+            //excessive rounding can give us all zeroes
+            this.sign = 0;
+          }
         }
       }
 
@@ -1072,10 +1097,19 @@
       var ecount = parts.length-1;
     
       //Handle numbers that are exactly floats (0 or 1 es).
-      if (ecount < 2)
+      if (ecount === 0)
       {
         var numberAttempt = parseFloat(value);
         if (isFinite(numberAttempt))
+        {
+          return this.fromNumber(numberAttempt);
+        }
+      }
+      else if (ecount === 1)
+      {
+        //Very small numbers ("2e-3000" and so on) may look like valid floats but round to 0.
+        var numberAttempt = parseFloat(value);
+        if (isFinite(numberAttempt) && numberAttempt !== 0)
         {
           return this.fromNumber(numberAttempt);
         }
@@ -1179,7 +1213,7 @@
       }
       else //overflow for any normalized Decimal
       {
-        return Number.POSITIVE_INFINITY;
+        return this.mag > 0 ? Number.POSITIVE_INFINITY : 0;
       }
     };
     
@@ -1324,6 +1358,10 @@
     };
     
     Decimal.prototype.round = function () {
+      if (this.mag < 0)
+      {
+        return Decimal.dZero;
+      }
       if (this.layer === 0)
       {
         return FC(this.sign, 0, Math.round(this.sign*this.mag));
@@ -1332,6 +1370,10 @@
     };
 
     Decimal.prototype.floor = function () {
+      if (this.mag < 0)
+      {
+        return Decimal.dZero;
+      }
       if (this.layer === 0)
       {
         return FC(this.sign, 0, Math.floor(this.sign*this.mag));
@@ -1340,6 +1382,10 @@
     };
 
     Decimal.prototype.ceil = function () {
+      if (this.mag < 0)
+      {
+        return Decimal.dZero;
+      }
       if (this.layer === 0)
       {
         return FC(this.sign, 0, this.Math.ceil(this.sign*this.mag));
@@ -1348,6 +1394,10 @@
     };
 
     Decimal.prototype.trunc = function () {
+      if (this.mag < 0)
+      {
+        return Decimal.dZero;
+      }
       if (this.layer === 0)
       {
         return FC(this.sign, 0, Math.trunc(this.sign*this.mag));
@@ -1357,11 +1407,23 @@
 
     Decimal.prototype.add = function (value) {
       var decimal = D(value);
+      
+      //inf/nan check
+      if (!Number.isFinite(this.layer)) { return this; }
+      if (!Number.isFinite(decimal.layer)) { return decimal; }
+      
+      //Special case - if one of the numbers is 0, return the other number.
+      if (this.sign === 0) { return decimal; }
+      if (decimal.sign === 0) { return this; }
+      
       //Special case - Adding a number to its negation produces 0, no matter how large.
       if (this.sign === -(decimal.sign) && this.layer === decimal.layer && this.mag === decimal.mag) { return FC_NN(0, 0, 0); }
       
       var a;
       var b;
+      
+      //Special case: If one of the numbers is layer 2 or higher, just take the bigger number.
+      if ((this.layer >= 2 || decimal.layer >= 2)) { return this.max(decimal); }
       
       if (Decimal.cmpabs(this, decimal) > 0)
       {
@@ -1374,37 +1436,51 @@
         b = this;
       }
       
-      //Special case: If one of the numbers is layer 2 or higher, just take the bigger number.
-      if ((a.layer >= 2 || b.layer >= 2)) { return a; }
-      
       if (a.layer === 0 && b.layer === 0) { return D(a.sign*a.mag + b.sign*b.mag); }
       
-      if (a.layer === 1 && b.layer === 0)
+      var layera = a.layer*Math.sign(a.mag);
+      var layerb = b.layer*Math.sign(b.mag);
+      
+      //If one of the numbers is 2+ layers higher than the other, just take the bigger number.
+      if (layera - layerb >= 2) { return a; }
+      
+      if (layera === 0 && layerb === -1)
       {
-        if (a.mag-Math.log10(b.mag) > MAX_SIGNIFICANT_DIGITS)
+        if (Math.abs(b.mag-Math.log10(a.mag)) > MAX_SIGNIFICANT_DIGITS)
+        {
+          return a;
+        }
+        else
+        {
+          var magdiff = Math.pow(10, Math.log10(a.mag)-b.mag);
+          var mantissa = (b.sign)+(a.sign*magdiff);
+          return FC(Math.sign(mantissa), 1, b.mag+Math.log10(Math.abs(mantissa)));
+        }
+      }
+      
+      if (layera === 1 && layerb === 0)
+      {
+        if (Math.abs(a.mag-Math.log10(b.mag)) > MAX_SIGNIFICANT_DIGITS)
         {
           return a;
         }
         else
         {
           var magdiff = Math.pow(10, a.mag-Math.log10(b.mag));
-          var mantissa = (b.sign*1)+(a.sign*magdiff);
+          var mantissa = (b.sign)+(a.sign*magdiff);
           return FC(Math.sign(mantissa), 1, Math.log10(b.mag)+Math.log10(Math.abs(mantissa)));
         }
       }
       
-      if (a.layer === 1 && b.layer === 1)
+      if (Math.abs(a.mag-b.mag) > MAX_SIGNIFICANT_DIGITS)
       {
-        if (a.mag-b.mag > MAX_SIGNIFICANT_DIGITS)
-        {
-          return a;
-        }
-        else
-        {
-          var magdiff = Math.pow(10, a.mag-b.mag);
-          var mantissa = (b.sign*1)+(a.sign*magdiff);
-          return FC(Math.sign(mantissa), 1, b.mag+Math.log10(Math.abs(mantissa)));
-        }
+        return a;
+      }
+      else
+      {
+        var magdiff = Math.pow(10, a.mag-b.mag);
+        var mantissa = (b.sign)+(a.sign*magdiff);
+        return FC(Math.sign(mantissa), 1, b.mag+Math.log10(Math.abs(mantissa)));
       }
       
       throw Error("Bad arguments to add: " + this + ", " + value);
@@ -1429,13 +1505,21 @@
     Decimal.prototype.mul = function (value) {
       var decimal = D(value);
       
+      //inf/nan check
+      if (!Number.isFinite(this.layer)) { return this; }
+      if (!Number.isFinite(decimal.layer)) { return decimal; }
+      
       //Special case - if one of the numbers is 0, return 0.
       if (this.sign === 0 || decimal.sign === 0) { return FC_NN(0, 0, 0); }
+      
+      //Special case - Multiplying a number by its own reciprocal yields +/- 1, no matter how large.
+      if (this.layer === decimal.layer && this.mag === -decimal.mag) { return FC_NN(this.sign*decimal.sign, 0, 1); }
             
       var a;
       var b;
       
-      if (Decimal.cmpabs(this, decimal) > 0)
+      //Which number is bigger in terms of its multiplicative distance from 1?
+      if ((this.layer > decimal.layer) || (this.layer == decimal.layer && Math.abs(this.mag) > Math.abs(decimal.mag)))
       {
         a = this;
         b = decimal;
@@ -1446,11 +1530,11 @@
         b = this;
       }
       
-      //Special case: If one of the numbers is layer 3 or higher or one of the numbers is 2+ layers bigger than the other, just take the bigger number.
-      if ((a.layer >= 3 || b.layer >= 3) || (a.layer - b.layer >= 2)) { return FC(a.sign*b.sign, a.layer, a.mag); }
-      
       if (a.layer === 0 && b.layer === 0) { return D(a.sign*b.sign*a.mag*b.mag); }
       
+      //Special case: If one of the numbers is layer 3 or higher or one of the numbers is 2+ layers bigger than the other, just take the bigger number.
+      if (a.layer >= 3 || (a.layer - b.layer >= 2)) { return FC(a.sign*b.sign, a.layer, a.mag); }
+
       if (a.layer === 1 && b.layer === 0)
       { 
         return FC(a.sign*b.sign, 1, a.mag+Math.log10(b.mag));
@@ -1463,30 +1547,14 @@
       
       if (a.layer === 2 && b.layer === 1)
       {
-        if (a.mag-Math.log10(b.mag) > MAX_SIGNIFICANT_DIGITS)
-        {
-          return FC(a.sign*b.sign, a.layer, a.mag);
-        }
-        else
-        {
-          var magdiff = Math.pow(10, a.mag-Math.log10(b.mag));
-          var mantissa = 1+magdiff;
-          return FC(a.sign*b.sign, 2, Math.log10(b.mag)+Math.log10(Math.abs(mantissa)));
-        }
+        var newmag = FC(Math.sign(a.mag), a.layer-1, Math.abs(a.mag)).add(FC(Math.sign(b.mag), b.layer-1, Math.abs(b.mag)));
+        return FC(a.sign*b.sign, 3, newmag.sign*newmag.mag);
       }
       
       if (a.layer === 2 && b.layer === 2)
       {
-        if (a.mag-b.mag > MAX_SIGNIFICANT_DIGITS)
-        {
-          return FC(a.sign*b.sign, a.layer, a.mag);
-        }
-        else
-        {
-          var magdiff = Math.pow(10, a.mag-b.mag);
-          var mantissa = 1+magdiff;
-          return FC(a.sign*b.sign, 2, b.mag+Math.log10(Math.abs(mantissa)));
-        }
+        var newmag = FC(Math.sign(a.mag), a.layer-1, Math.abs(a.mag)).add(FC(Math.sign(b.mag), b.layer-1, Math.abs(b.mag)));
+        return FC(a.sign*b.sign, 3, newmag.sign*newmag.mag);
       }
       
       throw Error("Bad arguments to mul: " + this + ", " + value);
@@ -1502,80 +1570,7 @@
 
     Decimal.prototype.div = function (value) {
       var decimal = D(value);
-      
-      var a = this;
-      var b = decimal;
-      
-      //Special case - Dividing a number by its own magnitude yields +/- 1, no matter how large.
-      if (a.layer === b.layer && a.mag === b.mag) { return FC_NN(a.sign*b.sign, 0, 1); }
-      
-      //Special case - if the first number is 0, return 0.
-      
-      if (a.sign === 0) { return FC_NN(0, 0, 0); }
-      
-      //Special case - if the second number is 0, explode (Divide by 0).
-      
-      if (b.sign === 0) { return Decimal.dNaN; }
-      
-      //NOTE: Unlike add/mul, second number can be bigger in magnitude than first number.
-      
-      //Special case - if the second number is hugely larger than the first number, return 0.
-      
-      if (b.layer - a.layer >= 2) { return FC_NN(0, 0, 0); }
-      
-      //Special case - if the first number is hugely larger than the second number, return it.
-      
-      if (a.layer - b.layer >= 2) { return FC(a.sign*b.sign, a.layer, a.mag); }
-      
-      //Special case - if either number is layer 3 or higher, whichever number is larger wins.
-      if (a.layer >= 3 || b.layer >= 3) { return a.cmpabs(b) > 0 ? FC(a.sign*b.sign, a.layer, a.mag) : FC_NN(0, 0, 0); }
-      
-      if (a.layer === 0 && b.layer === 0) { return D(a.sign*b.sign*a.mag/b.mag); }
-      
-      if (a.layer === 1 && b.layer === 0) { return FC(a.sign*b.sign, 1, a.mag-Math.log10(b.mag)); }
-      
-      if (a.layer === 0 && b.layer === 1) { return FC(a.sign*b.sign, 1, Math.log10(a.mag)-b.mag); }
-      
-      if (a.layer === 1 && b.layer === 1) { return FC(a.sign*b.sign, 1, a.mag-b.mag); }
-      
-      if (a.layer === 2 && b.layer === 1)
-      {
-        if (a.mag < Math.log10(b.mag)) { return FC_NN(0, 0, 0); }
-        
-        if (a.mag-Math.log10(b.mag) > MAX_SIGNIFICANT_DIGITS)
-        {
-          return FC(a.sign*b.sign, a.layer, a.mag);
-        }
-        else
-        {
-          var magdiff = Math.pow(10, a.mag-Math.log10(b.mag));
-          var mantissa = -1+magdiff;
-          return FC(a.sign*b.sign, 2, Math.log10(b.mag)+Math.log10(Math.abs(mantissa)));
-        }
-      }
-      
-      if (a.layer === 1 && b.layer === 2)
-      {
-        return FC_NN(0, 0, 0);
-      }
-      
-      if (a.layer === 2 && b.layer === 2)
-      {
-        if (a.mag < b.mag) { return FC_NN(0, 0, 0); }
-        
-        if (a.mag-b.mag > MAX_SIGNIFICANT_DIGITS)
-        {
-          return FC(a.sign*b.sign, a.layer, a.mag);
-        }
-        else
-        {
-          var magdiff = Math.pow(10, a.mag-b.mag);
-          var mantissa = -1+magdiff;
-          return FC(a.sign*b.sign, 2, b.mag+Math.log10(Math.abs(mantissa)));
-        }
-      }
-      
-      throw Error("Bad arguments to div: " + this + ", " + value);
+      return this.mul(decimal.recip());
     };
 
     Decimal.prototype.divide = function (value) {
@@ -1591,17 +1586,17 @@
     };
 
     Decimal.prototype.recip = function () {
-      if (this.layer === 0)
+      if (this.mag === 0)
+      {
+        return Decimal.dNaN;
+      }
+      else if (this.layer === 0)
       {
         return FC(this.sign, 0, 1/this.mag);
       }
-      else if (this.layer === 1)
-      {
-        return FC(this.sign, 1, -this.mag);
-      }
       else
       {
-        return FC_NN(0, 0, 0);
+        return FC(this.sign, this.layer, -this.mag);
       }
     };
 
@@ -1625,8 +1620,10 @@
 	
 	Decimal.prototype.cmpabs = function (value) {
       var decimal = D(value);
-      if (this.layer > decimal.layer) { return 1; }
-      if (this.layer < decimal.layer) { return -1; }
+      var layera = this.mag > 0 ? this.layer : -this.layer;
+      var layerb = decimal.mag > 0 ? decimal.layer : -decimal.layer;
+      if (layera > layerb) { return 1; }
+      if (layera < layerb) { return -1; }
       if (this.mag > decimal.mag) { return 1; }
       if (this.mag < decimal.mag) { return -1; }
       return 0;
@@ -1726,8 +1723,8 @@
       // return abs(a-b) <= tolerance * max(abs(a), abs(b))
       var magA = this.mag;
       var magB = decimal.mag;
-      if (this.layer > decimal.layer) { magB = Math.log10(magB); }
-      if (this.layer < decimal.layer) { magA = Math.log10(magA); }
+      if (this.layer > decimal.layer) { magB = f_maglog10(magB); }
+      if (this.layer < decimal.layer) { magA = f_maglog10(magA); }
       return Math.abs(magA-magB) <= tolerance*Math.max(Math.abs(magA), Math.abs(magB));
     };
 
@@ -1762,21 +1759,6 @@
       var decimal = D(value);
       return this.eq_tolerance(decimal, tolerance) || this.gt(decimal);
     };
-
-    Decimal.prototype.absLog10 = function () {
-      if (this.sign === 0)
-      {
-        return Decimal.dNaN;
-      }
-      else if (this.layer > 0)
-      {
-        return FC_NN(this.sign, this.layer-1, this.mag);
-      }
-      else
-      {
-        return FC_NN(this.sign, 0, Math.log10(Math.abs(this.mag)));
-      }
-    };
     
     Decimal.prototype.pLog10 = function() {
       if (this.lt(Decimal.dZero)) { return Decimal.dZero; }
@@ -1790,7 +1772,7 @@
       }
       else if (this.layer > 0)
       {
-        return FC_NN(this.sign, this.layer-1, this.mag);
+        return FC_NN(Math.sign(this.mag), this.layer-1, Math.abs(this.mag));
       }
       else
       {
@@ -1831,15 +1813,15 @@
       }
       else if (this.layer === 1)
       {
-        return FC(1, 0, this.mag*3.321928094887362); //log2(10)
+        return FC(Math.sign(this.mag), 0, Math.abs(this.mag)*3.321928094887362); //log2(10)
       }
       else if (this.layer === 2)
       {
-        return FC(1, 1, this.mag+0.5213902276543247); //-log10(log10(2))
+        return FC(Math.sign(this.mag), 1, Math.abs(this.mag)+0.5213902276543247); //-log10(log10(2))
       }
       else
       {
-        return FC_NN(1, this.layer-1, this.mag);
+        return FC_NN(Math.sign(this.mag), this.layer-1, Math.abs(this.mag));
       }
     };
 
@@ -1854,15 +1836,15 @@
       }
       else if (this.layer === 1)
       {
-        return FC(1, 0, this.mag*2.302585092994046); //ln(10)
+        return FC(Math.sign(this.mag), 0, Math.abs(this.mag)*2.302585092994046); //ln(10)
       }
       else if (this.layer === 2)
       {
-        return FC(1, 1, this.mag+0.36221568869946325); //log10(log10(e))
+        return FC(Math.sign(this.mag), 1, Math.abs(this.mag)+0.36221568869946325); //log10(log10(e))
       }
       else
       {
-        return FC_NN(1, this.layer-1, this.mag);
+        return FC_NN(Math.sign(this.mag), this.layer-1, Math.abs(this.mag));
       }
     };
 
@@ -1885,33 +1867,27 @@
       if (b.sign === 0) { return FC_NN(1, 0, 1); }
       //special case: if b is 1, then return a
       if (b.sign === 1 && b.layer === 0 && b.mag === 1) { return a; }
-      //special case: if a is 10, then call powbase10
-      if (a.sign === 1 && a.layer === 0 && a.mag === 10) { return b.powbase10(); }
       
       if (a.layer === 0 && b.layer === 0)
       {
         var newmag = Math.pow(a.sign*a.mag, b.sign*b.mag);
         if (isFinite(newmag)) { return FC(1, 0, newmag); }
-        return FC(1, 1, Math.log10(a.mag)*b.mag);
+        return FC(1, 1, f_maglog10(a.mag)*b.mag).add(1);
       }
-      
-      //TODO: This might not be needed?
-      //Special case: if a is < 1 and b.layer > 0 then return 0
-      if (a.layer === 0 && a.mag < 1) { return FC_NN(0, 0, 0); }
       
       if (a.layer === 1 && b.layer === 0)
       {
-        return FC(1, 2, Math.log10(a.mag)+Math.log10(b.mag));
+        return FC(1, 2, f_maglog10(a.mag)+f_maglog10(b.mag)).add(1);
       }
       
       if (a.layer === 0 && b.layer === 1)
       {
-        return FC(1, 2, Math.log10(Math.log10(a.mag))+b.mag);
+        return FC(1, 2, f_maglog10(f_maglog10(a.mag))+b.mag).add(1);
       }
       
       if (a.layer === 1 && b.layer === 1)
       {
-        return FC(1, 2, Math.log10(a.mag)+b.mag);
+        return FC(1, 2, f_maglog10(a.mag)+b.mag).add(1);
       }
       
       if (a.layer === 2 && b.layer <= 2)
@@ -1936,30 +1912,6 @@
       
       throw Error("Bad arguments to pow: " + this + ", " + value);
     };
-    
-    Decimal.prototype.powbase10 = function () {
-      if (this.sign === 0)
-      {
-        return FC_NN(1, 0, 1);
-      }
-      else if (this.sign === 1)
-      {
-        //mag might be too low and it might immediately be bumped down
-        return FC(1, this.layer+1, this.mag);
-      }
-      else if (this.layer === 0)
-      {
-        //negative layer 0 number - will end up in range (0, 1) though rounding can make it exactly 0 or 1
-        var new_mag = Math.pow(10, -this.mag);
-        if (new_mag === 0) { return FC_NN(0, 0, 0); }
-        return FC_NN(1, 0, new_mag);
-      }
-      else
-      {
-        //negative higher layer number - will always be 0
-        return FC_NN(0, 0, 0);
-      }
-    }
 
     Decimal.prototype.pow_base = function (value) {
       return D(value).pow(this);
@@ -1973,6 +1925,8 @@
       //TODO: Going to worry about negative numbers later and assume stuff is positive for now.
       
       //TODO: Can probably be made slightly less redundant.
+	  
+	  //TODO: This is probably safe to replace with a call to this.pow(value.recip()) at this point.
       
       //special case: if a is 0, return 0
       if (a.sign === 0) { return a; }
@@ -1987,22 +1941,22 @@
       {
         var newmag = Math.pow(a.sign*a.mag, b.sign*(1/b.mag));
         if (isFinite(newmag)) { return FC(1, 0, newmag); }
-        return FC(1, 1, Math.log10(a.mag)/b.mag);
+        return FC(1, 1, f_maglog10(a.mag)/b.mag).add(1);
       }
       
       if (a.layer === 1 && b.layer === 0)
       {
-        return FC(1, 2, Math.log10(a.mag)-Math.log10(b.mag));
+        return FC(1, 2, f_maglog10(a.mag)-f_maglog10(b.mag)).add(1);
       }
       
       if (a.layer === 0 && b.layer === 1)
       {
-        return FC(1, 2, Math.log10(Math.log10(a.mag))-b.mag);
+        return FC(1, 2, f_maglog10(f_maglog10(a.mag))-b.mag).add(1);
       }
       
       if (a.layer === 1 && b.layer === 1)
       {
-        return FC(1, 2, Math.log10(a.mag)-b.mag);
+        return FC(1, 2, f_maglog10(a.mag)-b.mag).add(1);
       }
 
       if (a.layer === 2 && b.layer <= 2)
@@ -2015,8 +1969,8 @@
       
       if (b.layer >= 2 && (b.layer - a.layer) >= 0)
       {
-        //As far as I can tell, if b.layer >= 2 and a is a layer or more behind, then you just return 0 because all precision vanishes.
-        return FC_NN(0, 0, 0);
+        //As far as I can tell, if b.layer >= 2 and a is a layer or more behind, then you just add 1 to b's layer because all precision vanishes.
+        return FC(1, b.layer+1, -b.mag);
       }
       else
       {
@@ -2031,7 +1985,11 @@
     }
 
     Decimal.prototype.factorial = function () {
-      if (this.layer === 0)
+      if (this.mag < 0)
+      {
+        return this.toNumber().add(1).gamma();
+      }
+      else if (this.layer === 0)
       {
         return this.add(1).gamma();
       }
@@ -2047,7 +2005,11 @@
     
     //from HyperCalc source code
     Decimal.prototype.gamma = function () {
-      if (this.layer === 0)
+      if (this.mag < 0)
+      {
+        return this.recip();
+      }
+      else if (this.layer === 0)
       {
         if (this.lt(FC_NN(1, 0, 24)))
         {
@@ -2104,6 +2066,7 @@
     }
 
     Decimal.prototype.exp = function () {
+      if (this.mag < 0) { return Decimal.dOne; }
       if (this.layer === 0 && this.mag <= 709.7) { return D(Math.exp(this.sign*this.mag)); }
       else if (this.layer === 0) { return FC(1, 1, Math.log10(Math.E)*this.mag); }
       else if (this.layer === 1) { return FC(1, 2, Math.log10(0.4342944819032518)+this.mag); }
@@ -2241,6 +2204,8 @@
     //Super-logarithm, one of tetration's inverses, tells you what size power tower you'd have to tetrate base to to get number. By definition, will never be higher than 1.8e308 in break_eternity.js, since a power tower 1.8e308 numbers tall is the largest representable number.
     // https://en.wikipedia.org/wiki/Super-logarithm
     Decimal.prototype.slog = function(base = 10) {
+      if (this.mag < 0) { return Decimal.dNegOne; }
+      
       base = D(base);
       
       var result = 0;
@@ -2464,6 +2429,10 @@
       {
         throw Error("lambertw is unimplemented for results less than -1, sorry!");
       }
+      else if (this.mag < 0)
+      {
+        return D(f_lambertw(this.toNumber()));
+      }
       else if (this.layer === 0)
       {
         return D(f_lambertw(this.sign*this.mag));
@@ -2647,6 +2616,57 @@ for (var i = 0; i < 1000; ++i)
     }
 }
 
+for (var i = 0; i < 1000; ++i)
+{
+    var a = Decimal.randomDecimalForTesting(Math.random() > 0.5 ? 0 : 1);
+    var b = Decimal.randomDecimalForTesting(Math.random() > 0.5 ? 0 : 1);
+    if (Math.random() > 0.5) { a = a.recip(); }
+    if (Math.random() > 0.5) { b = b.recip(); }
+    var c = a.add(b).toNumber();
+    if (Number.isFinite(c) && !Decimal.eq_tolerance(c, a.toNumber()+b.toNumber()))
+    {
+        console.log(a + ", " + b);
+    }
+}
+
+for (var i = 0; i < 100; ++i)
+{
+    var a = Decimal.randomDecimalForTesting(Math.round(Math.random()*4));
+    var b = Decimal.randomDecimalForTesting(Math.round(Math.random()*4));
+    if (Math.random() > 0.5) { a = a.recip(); }
+    if (Math.random() > 0.5) { b = b.recip(); }
+    var c = a.mul(b).toNumber();
+    if (Number.isFinite(c) && Number.isFinite(a.toNumber()) && Number.isFinite(b.toNumber()) && a.toNumber() != 0 && b.toNumber() != 0 && c != 0 && !Decimal.eq_tolerance(c, a.toNumber()*b.toNumber()))
+    {
+        console.log("Test 1: " + a + ", " + b);
+    }
+    else if (!Decimal.mul(a.recip(), b.recip()).eq_tolerance(Decimal.mul(a, b).recip()))
+    {
+        console.log("Test 3: " + a + ", " + b);
+    }
+}
+
+for (var i = 0; i < 10; ++i)
+{
+    var a = Decimal.randomDecimalForTesting(Math.round(Math.random()*4));
+    var b = Decimal.randomDecimalForTesting(Math.round(Math.random()*4));
+    if (Math.random() > 0.5 && a.sign !== 0) { a = a.recip(); }
+    if (Math.random() > 0.5 && b.sign !== 0) { b = b.recip(); }
+    var c = a.pow(b);
+    var d = a.root(b.recip());
+    var e = a.pow(b.recip());
+    var f = a.root(b);
+    
+    if (!c.eq_tolerance(d) && a.sign !== 0 && b.sign !== 0)
+    {
+      console.log("Test 1: " + a + ", " + b);
+    }
+    if (!e.eq_tolerance(f) && a.sign !== 0 && b.sign !== 0)
+    {
+      console.log("Test 2: " + a + ", " + b);
+    }
+}
+
 */
     
     //Pentation/pentate: The result of tetrating 'height' times in a row. An absurdly strong operator - Decimal.pentate(2, 4.28) and Decimal.pentate(10, 2.37) are already too huge for break_eternity.js!
@@ -2692,31 +2712,37 @@ for (var i = 0; i < 1000; ++i)
     
     // trig functions!
     Decimal.prototype.sin = function () {
+      if (this.mag < 0) { return this; }
       if (this.layer === 0) { return D(Math.sin(this.sign*this.mag)); }
       return FC_NN(0, 0, 0);
     };
 
     Decimal.prototype.cos = function () {
+      if (this.mag < 0) { return Decimal.dOne; }
       if (this.layer === 0) { return D(Math.cos(this.sign*this.mag)); }
       return FC_NN(0, 0, 0);
     };
 
     Decimal.prototype.tan = function () {
+      if (this.mag < 0) { return this; }
       if (this.layer === 0) { return D(Math.tan(this.sign*this.mag)); }
       return FC_NN(0, 0, 0);
     };
 
     Decimal.prototype.asin = function () {
+      if (this.mag < 0) { return this; }
       if (this.layer === 0) { return D(Math.asin(this.sign*this.mag)); }
       return FC_NN(Number.NaN, Number.NaN, Number.NaN);
     };
 
     Decimal.prototype.acos = function () {
+      if (this.mag < 0) { return D(Math.acos(this.toNumber())); }
       if (this.layer === 0) { return D(Math.acos(this.sign*this.mag)); }
       return FC_NN(Number.NaN, Number.NaN, Number.NaN);
     };
 
     Decimal.prototype.atan = function () {
+      if (this.mag < 0) { return this; }
       if (this.layer === 0) { return D(Math.atan(this.sign*this.mag)); }
       return D(Math.atan(this.sign*1.8e308));
     };
