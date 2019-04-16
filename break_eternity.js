@@ -99,6 +99,7 @@
     return parseFloat(rounded.toFixed(Math.max(len - numDigits, 0)));
   };
   
+  //from HyperCalc source code
   var f_gamma = function(n) {
     if (!isFinite(n)) { return n; }
     if (n < -50)
@@ -138,6 +139,124 @@
 
     return Math.exp(l)/scal1;
   };
+  
+  var twopi = 6.2831853071795864769252842;  // 2*pi
+  var EXPN1 = 0.36787944117144232159553;  // exp(-1)
+  var OMEGA = 0.56714329040978387299997;  // W(1, 0)
+  //from https://github.com/scipy/scipy/blob/8dba340293fe20e62e173bdf2c10ae208286692f/scipy/special/lambertw.pxd
+  // The evaluation can become inaccurate very close to the branch point
+  // at ``-1/e``. In some corner cases, `lambertw` might currently
+  // fail to converge, or can end up on the wrong branch.
+  var f_lambertw = function(z, tol = 1e-10) {
+    var w;
+    var ew, wew, wewz, wn;
+    
+    if (!Number.isFinite(z)) { return z; }
+    if (z === 0)
+    {
+      return z;
+    }
+    if (z === 1)
+    {
+      //Split out this case because the asymptotic series blows up
+      return OMEGA;
+    }
+    
+    var absz = Math.abs(z);
+    //Get an initial guess for Halley's method
+    if (Math.abs(z + EXPN1) < 0.3)
+    {
+      w = lambertw_branchpt(z);
+    }
+    else if (-1.0 < z && z < 1.5)
+    {
+      // Empirically determined decision boundary where the Pade
+      // approximation is more accurate.
+      w = lambertw_pade0(z);
+    }
+    else
+    {
+      w = lambertw_asy(z);
+    }
+    
+    //Halley's method; see 5.9 in [1]
+    
+    if (w > 0)
+    {
+      for (var i = 0; i < 100; ++i)
+      {
+        ew = Math.exp(-w);
+        wewz = w - z*ew;
+        wn = w - wewz/(w + 1 - (w + 2)*wewz/(2*w + 2));
+        if (Math.abs(wn - w) < tol*Math.abs(wn))
+        {
+          return wn;
+        }
+        else
+        {
+          w = wn;
+        }
+      }
+    }
+    else
+    {
+      for (var i = 0; i < 100; ++i)
+      {
+        ew = Math.exp(w);
+        wew = w*ew;
+        wewz = wew - z;
+        wn = w - wewz/(wew + ew - (w + 2)*wewz/(2*w + 2));
+        if (Math.abs(wn - w) < tol*Math.abs(wn))
+        {
+          return wn;
+        }
+        else
+        {
+          w = wn;
+        }
+      }
+    }
+    
+    throw Error("Iteration failed to converge: " + z);
+    //return Number.NaN;
+  }
+  
+  var lambertw_branchpt = function(z) {
+    //"""Series for W(z, 0) around the branch point; see 4.22 in [1]."""
+    var a = -1.0/3.0;
+    var b = 1.0;
+    var c = -1.0;
+    var p = Math.sqrt(2*(Math.E*z + 1)); //NOTE: I'm assuming that NPY_E is Math.E.
+    
+    return a*z*z + b*z + c; //NOTE: I'm also assuming this is equivalent to calling cevalpoly, but judging by the comments it SHOULD be.
+  }
+  
+  var lambertw_pade0 = function(z) {
+    //"""(3, 2) Pade approximation for W(z, 0) around 0."""
+    
+    var a1 = 12.85106382978723404255;
+    var b1 = 12.34042553191489361902;
+    var c1 = 1.0;
+    var a2 = 32.53191489361702127660;
+    var b2 = 14.34042553191489361702;
+    var c2 = 1.0;
+    /*This only gets evaluated close to 0, so we don't need a more
+      careful algorithm that avoids overflow in the numerator for
+      large z.*/
+    
+    var num = a1*z*z + b1*z + c1;
+    var denom = a2*z*z + b2*z + c2;
+    
+    return z*num/denom;
+  }
+  
+  var lambertw_asy = function(z) {
+    //Compute the W function using the first two terms of the asymptotic series. See 4.20 in [1].
+    
+    var w;
+    w = Math.log(z); //Again, assuming zlog is Math.log.
+    return w = Math.log(w);
+  }
   
   var Decimal =
   /** @class */
@@ -613,6 +732,14 @@
     
     Decimal.slog = function (value, base = 10) {
       return D(value).slog(base);
+    }
+    
+    Decimal.lambertw = function(value) {
+      return D(value).lambertw();
+    }
+    
+    Decimal.ssqrt = function(value) {
+      return D(value).lambertw();
     }
     
     Decimal.pentate = function (value, height = 2, payload = FC_NN(1, 0, 1)) {
@@ -1918,6 +2045,7 @@
       }
     };
     
+    //from HyperCalc source code
     Decimal.prototype.gamma = function () {
       if (this.layer === 0)
       {
@@ -1976,7 +2104,7 @@
     }
 
     Decimal.prototype.exp = function () {
-      if (this.layer === 0 && this.mag <= 709.7) { return FC(1, 0, Math.exp(this.mag)); }
+      if (this.layer === 0 && this.mag <= 709.7) { return D(Math.exp(this.sign*this.mag)); }
       else if (this.layer === 0) { return FC(1, 1, Math.log10(Math.E)*this.mag); }
       else if (this.layer === 1) { return FC(1, 2, Math.log10(0.4342944819032518)+this.mag); }
       else { return FC(this.sign, this.layer+1, this.mag); }
@@ -2010,6 +2138,13 @@
     //If payload != 1, then this is 'iterated exponentiation', the result of exping (payload) to base (this) (height) times. https://andydude.github.io/tetration/archives/tetration2/ident.html
     //Works with negative and positive real heights.
     Decimal.prototype.tetrate = function(height = 2, payload = FC_NN(1, 0, 1)) {
+      if (height === Number.POSITIVE_INFINITY)
+      {
+        //Formula for infinite height power tower.
+        var negln = Decimal.ln(this).neg();
+        return negln.lambertw().div(negln);
+      }
+      
       if (height < 0)
       {
         return Decimal.iteratedlog(payload, this, -height);
@@ -2060,7 +2195,7 @@
     
     //iterated log/repeated log: The result of applying log(base) 'times' times in a row. Approximately equal to subtracting (times) from the number's slog representation. Equivalent to tetrating to a negative height.
     //Works with negative and positive real heights.
-    Decimal.prototype.iteratedlog = function(base = 10, times = 1) {
+    Decimal.prototype.iteratedlog = function(base = 10, times = 1) {      
       if (times < 0)
       {
         return Decimal.tetrate(base, -times, this);
@@ -2107,6 +2242,7 @@
     // https://en.wikipedia.org/wiki/Super-logarithm
     Decimal.prototype.slog = function(base = 10) {
       base = D(base);
+      
       var result = 0;
       var copy = D(this);
       if (copy.layer - base.layer > 3)
@@ -2126,7 +2262,7 @@
         else if (copy.lte(Decimal.dOne))
         {
           return D(result + copy.toNumber() - 1); //<-- THIS IS THE CRITICAL FUNCTION
-          //^ Also have to change tetrate payload handling and layer10 if this is changed!
+          //^ Also have to change tetrate payload handling and layeradd10 if this is changed!
         }
         else
         {
@@ -2320,6 +2456,83 @@
       }
     }
     
+    //The Lambert W function, also called the omega function or product logarithm, is the solution W(x) === x*e^x.
+    // https://en.wikipedia.org/wiki/Lambert_W_function
+    //Some special values, for testing: https://en.wikipedia.org/wiki/Lambert_W_function#Special_values
+    Decimal.prototype.lambertw = function() {
+      if (this.lt(-0.3678794411710499))
+      {
+        throw Error("lambertw is unimplemented for results less than -1, sorry!");
+      }
+      else if (this.layer === 0)
+      {
+        return D(f_lambertw(this.sign*this.mag));
+      }
+      else if (this.layer === 1)
+      {
+        return d_lambertw(this);
+      }
+      else if (this.layer === 2)
+      {
+        return d_lambertw(this);
+      }
+      if (this.layer >= 3)
+      {
+        return FC_NN(this.sign, this.layer-1, this.mag);
+      }
+    }
+  
+    //from https://github.com/scipy/scipy/blob/8dba340293fe20e62e173bdf2c10ae208286692f/scipy/special/lambertw.pxd
+    // The evaluation can become inaccurate very close to the branch point
+    // at ``-1/e``. In some corner cases, `lambertw` might currently
+    // fail to converge, or can end up on the wrong branch.
+    var d_lambertw = function(z, tol = 1e-10) {
+    var w;
+    var ew, wew, wewz, wn;
+    
+    if (!Number.isFinite(z.mag)) { return z; }
+    if (z === 0)
+    {
+      return z;
+    }
+    if (z === 1)
+    {
+      //Split out this case because the asymptotic series blows up
+      return OMEGA;
+    }
+    
+    var absz = Decimal.abs(z);
+    //Get an initial guess for Halley's method
+    w = Decimal.ln(z);
+    
+    //Halley's method; see 5.9 in [1]
+    
+    for (var i = 0; i < 100; ++i)
+    {
+      ew = Decimal.exp(-w);
+      wewz = w.sub(z.mul(ew));
+      wn = w.sub(wewz.div(w.add(1).sub((w.add(2)).mul(wewz).div((Decimal.mul(2, w).add(2))))));
+      if (Decimal.abs(wn.sub(w)).lt(Decimal.abs(wn).mul(tol)))
+      {
+        return wn;
+      }
+      else
+      {
+        w = wn;
+      }
+    }
+    
+    throw Error("Iteration failed to converge: " + z);
+    //return Decimal.dNaN;
+    }
+    
+    //The super square-root function - what number, tetrated to height 2, equals this?
+    //Other sroots are possible to calculate probably through guess and check methods, this one is easy though.
+    // https://en.wikipedia.org/wiki/Tetration#Super-root
+    Decimal.prototype.ssqrt = function() {
+      var lnx = this.ln();
+      return lnx.div(lnx.lambertw());
+    }
 /*
 
 Unit tests for tetrate/iteratedexp/iteratedlog/layeradd10/layeradd/slog:
@@ -2412,6 +2625,26 @@ for (var i = 0; i < 1000; ++i)
 	{
 		console.log(first + ", " + both);
 	}
+}
+
+for (var i = 0; i < 1000; ++i)
+{
+    var xex = new Decimal(-0.3678794411710499+Math.random()*100);
+    var x = Decimal.lambertw(xex);
+    if (!Decimal.eq_tolerance(xex, x.mul(Decimal.exp(x))))
+    {
+        console.log(xex);
+    }
+}
+
+for (var i = 0; i < 1000; ++i)
+{
+    var xex = new Decimal(-0.3678794411710499+Math.exp(Math.random()*100));
+    var x = Decimal.lambertw(xex);
+    if (!Decimal.eq_tolerance(xex, x.mul(Decimal.exp(x))))
+    {
+        console.log(xex);
+    }
 }
 
 */
@@ -2561,6 +2794,8 @@ for (var i = 0; i < 1000; ++i)
 	Decimal.dNaN = FC_NN(Number.NaN, Number.NaN, Number.NaN);
 	Decimal.dInf = FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
 	Decimal.dNegInf = FC_NN(-1, Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY);
+  Decimal.dNumberMax = FC(1, 0, Number.MAX_VALUE);
+  Decimal.dNumberMin = FC(1, 0, Number.MIN_VALUE);
   
   return Decimal;
 
