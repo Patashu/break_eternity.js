@@ -739,7 +739,7 @@
     }
     
     Decimal.ssqrt = function(value) {
-      return D(value).lambertw();
+      return D(value).ssqrt();
     }
     
     Decimal.pentate = function (value, height = 2, payload = FC_NN(1, 0, 1)) {
