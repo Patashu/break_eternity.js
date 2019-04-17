@@ -43,19 +43,19 @@
     return result + truncated;
   };
 
-  var MAX_SIGNIFICANT_DIGITS = 17; // Highest value you can safely put here is Number.MAX_SAFE_INTEGER-MAX_SIGNIFICANT_DIGITS
+  var MAX_SIGNIFICANT_DIGITS = 17; //Maximum number of digits of precision to assume in Number
 
-  var EXP_LIMIT = 9e15; // If we're ABOVE this value, increase a layer. (9e15 is close to the largest integer that can fit in a Number.)
+  var EXP_LIMIT = 9e15; //If we're ABOVE this value, increase a layer. (9e15 is close to the largest integer that can fit in a Number.)
   
   var LAYER_DOWN = Math.log10(9e15); //If we're BELOW this value, drop down a layer. About 15.954.
   
-  var FIRST_NEG_LAYER = Math.pow(10, -Math.log10(9e15)); //At layer 0, smaller non-zero numbers than this become layer 1 numbers with negative mag. After that the pattern continues as normal.
+  var FIRST_NEG_LAYER = 1/9e15; //At layer 0, smaller non-zero numbers than this become layer 1 numbers with negative mag. After that the pattern continues as normal.
 
-  var NUMBER_EXP_MAX = 308; // The smallest exponent that can appear in a Number, though not all mantissas are valid here.
+  var NUMBER_EXP_MAX = 308; //The largest exponent that can appear in a Number, though not all mantissas are valid here.
 
-  var NUMBER_EXP_MIN = -324;
+  var NUMBER_EXP_MIN = -324; //The smallest exponent that can appear in a Number, though not all mantissas are valid here.
   
-  var MAX_ES_IN_A_ROW = 5;
+  var MAX_ES_IN_A_ROW = 5; //For default toString behaviour, when to swap from eee... to (e^n) syntax.
 
   var powerOf10 = function () {
     // We need this lookup table because Math.pow(10, exponent)
@@ -862,16 +862,16 @@
     Decimal.prototype.normalize = function () {
       /*
       PSEUDOCODE:
-      Make anything that is partially 0 (sign is 0 or mag and layer is 0) fully 0.
-      If mag > EXP_LIMIT (9e15), layer += 1, mag = log10(mag).
-      If mag < LAYER_DOWN (15.954) and layer > 0 (not handling negative layers for now), layer -= 1, mag = pow(10, mag).
-      I think zero/negative mag already works fine (10^10^-1 becomes 10^0.1 becomes 1.259), but we may need to do it many times.
-      Finally, if layer === 0 and mag is negative, make it positive and invert sign.
+      Whenever we are partially 0 (sign is 0 or mag and layer is 0), make it fully 0.
+      Whenever we are at or hit layer 0, extract sign from negative mag.
+      If layer === 0 and mag < FIRST_NEG_LAYER (1/9e15), shift to 'first negative layer' (add layer, log10 mag).
+      While abs(mag) > EXP_LIMIT (9e15), layer += 1, mag = maglog10(mag).
+      While abs(mag) < LAYER_DOWN (15.954) and layer > 0, layer -= 1, mag = pow(10, mag).
       
       When we're done, all of the following should be true OR one of the numbers is not IsFinite OR layer is not IsInteger (error state):
       Any 0 is totally zero (0, 0, 0).
-      Anything layer 0 has mag >= 0.
-      Anything layer 1 or higher has mag >= 15.954 and < 9e15.
+      Anything layer 0 has mag 0 OR mag > 1/9e15 and < 9e15.
+      Anything layer 1 or higher has abs(mag) >= 15.954 and < 9e15.
       We will assume in calculations that all Decimals are either erroneous or satisfy these criteria. (Otherwise: Garbage in, garbage out.)
       */
       if (this.sign === 0 || (this.mag === 0 && this.layer === 0))
@@ -881,7 +881,6 @@
         this.layer = 0;
         return this;
       }
-      
       
       if (this.layer === 0 && this.mag < 0)
       {
@@ -1230,7 +1229,7 @@
       }
       else //overflow for any normalized Decimal
       {
-        return this.mag > 0 ? Number.POSITIVE_INFINITY : 0;
+        return this.mag > 0 ? (this.sign > 0 ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY) : 0;
       }
     };
     
@@ -1341,7 +1340,7 @@
         //layer 2+
         if (this.layer <= MAX_ES_IN_A_ROW)
         {
-          return (this.sign === -1 ? "-" : "") + "e".repeat(this.layer, places) + decimalPlaces(this.mag, places);
+          return (this.sign === -1 ? "-" : "") + "e".repeat(this.layer) + decimalPlaces(this.mag, places);
         }
         else
         {
@@ -1381,7 +1380,7 @@
       }
       if (this.layer === 0)
       {
-        return FC(this.sign, 0, Math.round(this.sign*this.mag));
+        return FC(this.sign, 0, Math.round(this.mag));
       }
       return this;
     };
@@ -1393,7 +1392,7 @@
       }
       if (this.layer === 0)
       {
-        return FC(this.sign, 0, Math.floor(this.sign*this.mag));
+        return FC(this.sign, 0, Math.floor(this.mag));
       }
       return this;
     };
@@ -1405,7 +1404,7 @@
       }
       if (this.layer === 0)
       {
-        return FC(this.sign, 0, this.Math.ceil(this.sign*this.mag));
+        return FC(this.sign, 0, Math.ceil(this.mag));
       }
       return this;
     };
@@ -1417,7 +1416,7 @@
       }
       if (this.layer === 0)
       {
-        return FC(this.sign, 0, Math.trunc(this.sign*this.mag));
+        return FC(this.sign, 0, Math.trunc(this.mag));
       }
       return this;
     };
