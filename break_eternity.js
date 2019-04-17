@@ -648,6 +648,10 @@
       return D(value).pLog10();
     };
     
+    Decimal.absLog10 = function (value) {
+      return D(value).absLog10();
+    };
+    
     Decimal.log10 = function (value) {
       return D(value).log10();
     };
@@ -670,6 +674,10 @@
 
     Decimal.pow = function (value, other) {
       return D(value).pow(other);
+    };
+    
+    Decimal.pow10 = function (value) {
+      return D(value).pow10();
     };
     
     Decimal.root = function (value, other) {
@@ -1142,7 +1150,15 @@
       if (mantissa === 0) { this.sign = 0; this.layer = 0; this.mag = 0; return this; }
       var exponent = parseFloat(parts[parts.length-1]);
       //handle numbers like AeBeC and AeeeeBeC
-      if (ecount >= 2) { var me = parseFloat(parts[parts.length-2]); if (isFinite(me)) { exponent += Math.log10(me); } }
+      if (ecount >= 2)
+      {
+        var me = parseFloat(parts[parts.length-2]);
+        if (isFinite(me))
+        {
+          exponent *= Math.sign(me);
+          exponent += f_maglog10(me);
+        }
+      }
       
       //Handle numbers written like eee... (N es) X
       if (!isFinite(mantissa))
@@ -1203,6 +1219,7 @@
     };
 
     Decimal.prototype.toNumber = function () {
+      if (!Number.isFinite(this.layer)) { return Number.NaN; }
       if (this.layer === 0)
       {
         return this.sign*this.mag;
@@ -1765,6 +1782,21 @@
       return this.log10();
     }
 
+    Decimal.prototype.absLog10 = function () {
+      if (this.sign === 0)
+      {
+        return Decimal.dNaN;
+      }
+      else if (this.layer > 0)
+      {
+        return FC(Math.sign(this.mag), this.layer-1, Math.abs(this.mag));
+      }
+      else
+      {
+        return FC(1, 0, Math.log10(this.mag));
+      }
+    };
+    
     Decimal.prototype.log10 = function () {
       if (this.sign <= 0)
       {
@@ -1772,11 +1804,11 @@
       }
       else if (this.layer > 0)
       {
-        return FC_NN(Math.sign(this.mag), this.layer-1, Math.abs(this.mag));
+        return FC(Math.sign(this.mag), this.layer-1, Math.abs(this.mag));
       }
       else
       {
-        return FC_NN(this.sign, 0, Math.log10(this.mag));
+        return FC(this.sign, 0, Math.log10(this.mag));
       }
     };
 
@@ -1796,7 +1828,7 @@
       }
       else if (this.layer === 0 && base.layer === 0)
       {
-        return FC_NN(this.sign, 0, Math.log(this.mag)/Math.log(base.mag));
+        return FC(this.sign, 0, Math.log(this.mag)/Math.log(base.mag));
       }
       
       return Decimal.div(this.log10(), base.log10());
@@ -1809,7 +1841,7 @@
       }
       else if (this.layer === 0)
       {
-        return FC_NN(this.sign, 0, Math.log2(this.mag));
+        return FC(this.sign, 0, Math.log2(this.mag));
       }
       else if (this.layer === 1)
       {
@@ -1821,7 +1853,7 @@
       }
       else
       {
-        return FC_NN(Math.sign(this.mag), this.layer-1, Math.abs(this.mag));
+        return FC(Math.sign(this.mag), this.layer-1, Math.abs(this.mag));
       }
     };
 
@@ -1832,7 +1864,7 @@
       }
       else if (this.layer === 0)
       {
-        return FC_NN(this.sign, 0, Math.log(this.mag));
+        return FC(this.sign, 0, Math.log(this.mag));
       }
       else if (this.layer === 1)
       {
@@ -1844,7 +1876,7 @@
       }
       else
       {
-        return FC_NN(Math.sign(this.mag), this.layer-1, Math.abs(this.mag));
+        return FC(Math.sign(this.mag), this.layer-1, Math.abs(this.mag));
       }
     };
 
@@ -1856,11 +1888,7 @@
       var decimal = D(value);
       var a = this;
       var b = decimal;
-      
-      //TODO: Going to worry about negative numbers later and assume stuff is positive for now.
-      
-      //TODO: Can probably be made slightly less redundant.
-      
+
       //special case: if a is 1, then return 1
       if (a.sign === 1 && a.layer === 0 && a.mag === 1) { return a; }
       //special case: if b is 0, then return 1
@@ -1868,50 +1896,52 @@
       //special case: if b is 1, then return a
       if (b.sign === 1 && b.layer === 0 && b.mag === 1) { return a; }
       
-      if (a.layer === 0 && b.layer === 0)
-      {
-        var newmag = Math.pow(a.sign*a.mag, b.sign*b.mag);
-        if (isFinite(newmag)) { return FC(1, 0, newmag); }
-        return FC(1, 1, f_maglog10(a.mag)*b.mag).add(1);
+      var result = (a.absLog10().mul(b)).pow10();
+
+      if (this.sign === -1 && b.toNumber() % 2 === 1) {
+        return result.neg();
       }
-      
-      if (a.layer === 1 && b.layer === 0)
-      {
-        return FC(1, 2, f_maglog10(a.mag)+f_maglog10(b.mag)).add(1);
-      }
-      
-      if (a.layer === 0 && b.layer === 1)
-      {
-        return FC(1, 2, f_maglog10(f_maglog10(a.mag))+b.mag).add(1);
-      }
-      
-      if (a.layer === 1 && b.layer === 1)
-      {
-        return FC(1, 2, f_maglog10(a.mag)+b.mag).add(1);
-      }
-      
-      if (a.layer === 2 && b.layer <= 2)
-      {
-        var result = Decimal.mul(FC_NN(a.sign, 1, a.mag), FC_NN(b.sign, b.layer, b.mag));
-        result.layer += 1;
-        return result.normalize();
-      }
-      
-      if (b.layer >= 2 && (b.layer - a.layer) >= 0)
-      {
-        //As far as I can tell, if b.layer >= 2 and a is a layer or more behind, then you just add 1 to b's layer because all precision vanishes.
-        return FC(1, b.layer+1, b.mag);
-      }
-      else
-      {
-        //mul of increasingly higher layer (eventually turns into max).
-        var result = Decimal.mul(FC_NN(a.sign, a.layer-1, a.mag), FC_NN(b.sign, b.layer, b.mag));
-        result.layer += 1;
-        return result;
-      }
-      
-      throw Error("Bad arguments to pow: " + this + ", " + value);
+
+      return result;
     };
+    
+    Decimal.prototype.pow10 = function() {
+      /*
+      There are four cases we need to consider:
+      1) positive sign, positive mag (e15, ee15): +1 layer (e.g. 10^15 becomes e15, 10^e15 becomes ee15)
+      2) negative sign, positive mag (-e15, -ee15): +1 layer but sign and mag sign are flipped (e.g. 10^-15 becomes e-15, 10^-e15 becomes ee-15)
+      3) positive sign, negative mag (e-15, ee-15): layer 0 case would have been handled in the Math.pow check, so just return 1
+      4) negative sign, negative mag (-e-15, -ee-15): layer 0 case would have been handled in the Math.pow check, so just return 1
+      */
+      
+      if (!Number.isFinite(this.layer) || !Number.isFinite(this.mag)) { return Decimal.dNaN; }
+      
+      var a = this;
+      
+      //handle layer 0 case - if no precision is lost just use Math.pow, else promote one layer
+      if (a.layer === 0)
+      {
+        var newmag = Math.pow(10, a.sign*a.mag);
+        if (Number.isFinite(newmag) && Math.abs(newmag) > 0.1) { return FC(1, 0, newmag); }
+        else
+        {
+          if (a.sign === 0) { return Decimal.dOne; }
+          else { a = FC_NN(a.sign, a.layer+1, Math.log10(a.mag)); }
+        }
+      }
+      
+      //handle all 4 layer 1+ cases individually
+      if (a.sign > 0 && a.mag > 0)
+      {
+        return FC(a.sign, a.layer+1, a.mag);
+      }
+      if (a.sign < 0 && a.mag > 0)
+      {
+        return FC(-a.sign, a.layer+1, -a.mag);
+      }
+      //both the negative mag cases are identical: one +/- rounding error
+      return Decimal.dOne;
+    }
 
     Decimal.prototype.pow_base = function (value) {
       return D(value).pow(this);
@@ -1919,69 +1949,7 @@
     
     Decimal.prototype.root = function (value) {
       var decimal = D(value);
-      var a = this;
-      var b = decimal;
-      
-      //TODO: Going to worry about negative numbers later and assume stuff is positive for now.
-      
-      //TODO: Can probably be made slightly less redundant.
-	  
-	  //TODO: This is probably safe to replace with a call to this.pow(value.recip()) at this point.
-      
-      //special case: if a is 0, return 0
-      if (a.sign === 0) { return a; }
-      //special case: if b is 0, return NaN
-      if (b.sign === 0) { return FC_NN(Number.NaN, Number.NaN, Number.NaN); }
-      //special case: if a is 1, return a
-      if (a.sign === 1 && a.layer === 0 && a.mag === 1) { return a; }
-      //special case: if b is 1, return a
-      if (b.sign === 1 && b.layer === 0 && b.mag === 1) { return a; }
-      
-      if (a.layer === 0 && b.layer === 0)
-      {
-        var newmag = Math.pow(a.sign*a.mag, b.sign*(1/b.mag));
-        if (isFinite(newmag)) { return FC(1, 0, newmag); }
-        return FC(1, 1, f_maglog10(a.mag)/b.mag).add(1);
-      }
-      
-      if (a.layer === 1 && b.layer === 0)
-      {
-        return FC(1, 2, f_maglog10(a.mag)-f_maglog10(b.mag)).add(1);
-      }
-      
-      if (a.layer === 0 && b.layer === 1)
-      {
-        return FC(1, 2, f_maglog10(f_maglog10(a.mag))-b.mag).add(1);
-      }
-      
-      if (a.layer === 1 && b.layer === 1)
-      {
-        return FC(1, 2, f_maglog10(a.mag)-b.mag).add(1);
-      }
-
-      if (a.layer === 2 && b.layer <= 2)
-      {
-        var result = Decimal.div(FC_NN(a.sign, 1, a.mag), FC_NN(b.sign, b.layer, b.mag));
-        result.layer += 1;
-        result.normalize();
-        return result;
-      }
-      
-      if (b.layer >= 2 && (b.layer - a.layer) >= 0)
-      {
-        //As far as I can tell, if b.layer >= 2 and a is a layer or more behind, then you just add 1 to b's layer because all precision vanishes.
-        return FC(1, b.layer+1, -b.mag);
-      }
-      else
-      {
-        //div of increasingly higher layer.
-        var result = Decimal.div(FC_NN(a.sign, a.layer-1, a.mag), FC_NN(b.sign, b.layer, b.mag));
-        result.layer += 1;
-        result.normalize();
-        return result;
-      }
-      
-      throw Error("Bad arguments to root: " + this + ", " + value);
+      return this.pow(decimal.recip());
     }
 
     Decimal.prototype.factorial = function () {
@@ -2665,6 +2633,15 @@ for (var i = 0; i < 10; ++i)
     {
       console.log("Test 2: " + a + ", " + b);
     }
+}
+
+for (var i = 0; i < 10; ++i)
+{
+    var a = Math.round(Math.random()*18-9);
+    var b = Math.round(Math.random()*100-50);
+    var c = Math.round(Math.random()*18-9);
+    var d = Math.round(Math.random()*100-50);
+    console.log("Decimal.pow(Decimal.fromMantissaExponent(" + a + ", " + b + "), Decimal.fromMantissaExponent(" + c + ", " + d + ")).toString()");
 }
 
 */
