@@ -11,7 +11,7 @@ The internal representation is as follows: `Decimal.fromComponents(sign, layer, 
 
 Create a Decimal with `new Decimal(string, Number or Decimal)` or with `Decimal.fromComponents(sign, layer, mag)`. Use operations 
 
-IMPORTANT NOTE TO PEOPLE CONVERTING FROM break_infinity.js: log/log2/log10/ln now return Decimal not Number! You'll also need to reconsider your string parsing/displaying functions and consider moving e/exponent calls to log10. Support for very small numbers has finally been added, so things like tickspeed multiplier being 1e-400 will be fine now!
+IMPORTANT NOTE TO PEOPLE CONVERTING FROM break_infinity.js: log/log2/log10/ln now return Decimal not Number! You'll also need to reconsider your string parsing/displaying functions and consider moving e/exponent calls to absLog10. Support for very small numbers has finally been added, so things like tickspeed multiplier being 1e-400 will be fine now!
 
 Functions you can call include `abs, neg, round, floor, ceil, trunc, add, sub, mul, div, recip, cmp, cmpabs, max, min, maxabs, minabs, log, log10, ln, pow, root, factorial, gamma, exp, sqrt, tetrate, iteratedexp, iteratedlog, layeradd10, layeradd, slog, ssqrt, lambertw, pentate` and more! Javascript operators like `+` and `*` do not work - you need to call the equivalent functions instead.
 
