@@ -1,0 +1,26 @@
+{
+  "name": "break_eternity.js",
+  "version": "1.0.0",
+  "description": "A Javascript numerical library to represent numbers as large as 10^^1e308 and as small as 10^-10^^1e308. Sequel to break_infinity.js, designed for incremental games.",
+  "main": "break_eternity.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Patashu/break_eternity.js.git"
+  },
+  "keywords": [
+    "bignum",
+    "bignumber",
+    "bigdecimal",
+    "number",
+    "decimal"
+  ],
+  "author": "Patashu",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/Patashu/break_eternity.js/issues"
+  },
+  "homepage": "https://github.com/Patashu/break_eternity.js#readme"
+}
