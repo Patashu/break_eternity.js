@@ -61,6 +61,8 @@ The methods that return a Decimal can be chained.
     
 A list of functions is provided earlier in this readme, or you can use autocomplete or read through the js file to see for yourself.
 
+If you want to just mess around with the library to try it, download break_eternity.js, add <script> </script> tags to the beginning and end respectively, rename it break_eternity.html, open it in chrome, right click -> inspect, go to the Javascript Console, and type in and execute whatever commands you want. Enjoy!
+
 ---
 
 Special thanks:
