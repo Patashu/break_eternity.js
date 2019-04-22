@@ -1888,6 +1888,8 @@
       var a = this;
       var b = decimal;
 
+      //special case: if a is 0, then return 0
+      if (a.sign === 0) { return a; }
       //special case: if a is 1, then return 1
       if (a.sign === 1 && a.layer === 0 && a.mag === 1) { return a; }
       //special case: if b is 0, then return 1

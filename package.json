@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Patashu/break_eternity.js.git"
+    "url": "git+https://github.com/Patashu/break_eternity.js.git"
   },
   "keywords": [
     "bignum",
