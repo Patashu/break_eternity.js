@@ -9,7 +9,7 @@ The internal representation is as follows: `Decimal.fromComponents(sign, layer, 
 * layer is a non-negative integer.
 * mag is a Number, normalized as follows: if it is above 9e15, log10(mag) it and increment layer. If it is below log10(9e15) (about 15.954) and layer > 0, Math.pow(10, mag) it and decrement layer. At layer 0, sign is extracted from negative mags. Zeroes (`this.sign === 0 || (this.mag === 0 && this.layer === 0)`) become `0, 0, 0` in all fields.
 
-Create a Decimal with `new Decimal(string, Number or Decimal)` or with `Decimal.fromComponents(sign, layer, mag)`. Use operations 
+Create a Decimal with `new Decimal(String or Number or Decimal)` or with `Decimal.fromComponents(sign, layer, mag)`. Use operations 
 
 IMPORTANT NOTE TO PEOPLE CONVERTING FROM break_infinity.js: log/log2/log10/ln now return Decimal not Number! You'll also need to reconsider your string parsing/displaying functions and consider moving e/exponent calls to absLog10. Support for very small numbers has finally been added, so things like tickspeed multiplier being 1e-400 will be fine now!
 
