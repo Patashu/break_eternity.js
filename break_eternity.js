@@ -1564,13 +1564,13 @@
       if (a.layer === 2 && b.layer === 1)
       {
         var newmag = FC(Math.sign(a.mag), a.layer-1, Math.abs(a.mag)).add(FC(Math.sign(b.mag), b.layer-1, Math.abs(b.mag)));
-        return FC(a.sign*b.sign, 3, newmag.sign*newmag.mag);
+        return FC(a.sign*b.sign, newmag.layer+1, newmag.sign*newmag.mag);
       }
       
       if (a.layer === 2 && b.layer === 2)
       {
         var newmag = FC(Math.sign(a.mag), a.layer-1, Math.abs(a.mag)).add(FC(Math.sign(b.mag), b.layer-1, Math.abs(b.mag)));
-        return FC(a.sign*b.sign, 3, newmag.sign*newmag.mag);
+        return FC(a.sign*b.sign, newmag.layer+1, newmag.sign*newmag.mag);
       }
       
       throw Error("Bad arguments to mul: " + this + ", " + value);
