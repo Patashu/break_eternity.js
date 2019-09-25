@@ -1126,6 +1126,11 @@
       var newparts = value.split("e^");
       if (newparts.length === 2)
       {
+        this.sign = 1;
+        if (newparts[0].charAt(0) == "-")
+        {
+          this.sign = -1;
+        }
         var layerstring = "";
         for (var i = 0; i < newparts[1].length; ++i)
         {
