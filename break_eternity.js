@@ -2473,6 +2473,10 @@
     //Other sroots are possible to calculate probably through guess and check methods, this one is easy though.
     // https://en.wikipedia.org/wiki/Tetration#Super-root
     Decimal.prototype.ssqrt = function() {
+      if (this.sign == 1 && this.layer >= 3)
+      {
+          return FC_NN(this.sign, this.layer-1, this.mag)
+      }
       var lnx = this.ln();
       return lnx.div(lnx.lambertw());
     }
