@@ -2042,9 +2042,9 @@
     Decimal.prototype.exp = function () {
       if (this.mag < 0) { return Decimal.dOne; }
       if (this.layer === 0 && this.mag <= 709.7) { return D(Math.exp(this.sign*this.mag)); }
-      else if (this.layer === 0) { return FC(1, 1, Math.log10(Math.E)*this.mag); }
-      else if (this.layer === 1) { return FC(1, 2, Math.log10(0.4342944819032518)+this.mag); }
-      else { return FC(this.sign, this.layer+1, this.mag); }
+      else if (this.layer === 0) { return FC(1, 1, this.sign*Math.log10(Math.E)*this.mag); }
+      else if (this.layer === 1) { return FC(1, 2, this.sign*(Math.log10(0.4342944819032518)+this.mag)); }
+      else { return FC(1, this.layer+1, this.sign*this.mag); }
     };
 
     Decimal.prototype.sqr = function () {
