@@ -1444,7 +1444,7 @@
       var b;
       
       //Special case: If one of the numbers is layer 2 or higher, just take the bigger number.
-      if ((this.layer >= 2 || decimal.layer >= 2)) { return this.max(decimal); }
+      if ((this.layer >= 2 || decimal.layer >= 2)) { return this.maxabs(decimal); }
       
       if (Decimal.cmpabs(this, decimal) > 0)
       {
