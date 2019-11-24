@@ -149,14 +149,12 @@
   var twopi = 6.2831853071795864769252842;  // 2*pi
   var EXPN1 = 0.36787944117144232159553;  // exp(-1)
   var OMEGA = 0.56714329040978387299997;  // W(1, 0)
-  //from https://github.com/scipy/scipy/blob/8dba340293fe20e62e173bdf2c10ae208286692f/scipy/special/lambertw.pxd
+  //from https://math.stackexchange.com/a/465183
   // The evaluation can become inaccurate very close to the branch point
-  // at ``-1/e``. In some corner cases, `lambertw` might currently
-  // fail to converge, or can end up on the wrong branch.
   var f_lambertw = function(z, tol = 1e-10) {
     var w;
-    var ew, wew, wewz, wn;
-    
+    var wn;
+
     if (!Number.isFinite(z)) { return z; }
     if (z === 0)
     {
@@ -164,104 +162,33 @@
     }
     if (z === 1)
     {
-      //Split out this case because the asymptotic series blows up
       return OMEGA;
     }
-    
-    var absz = Math.abs(z);
-    //Get an initial guess for Halley's method
-    if (Math.abs(z + EXPN1) < 0.3)
+
+    if (z < 10)
     {
-      w = lambertw_branchpt(z);
-    }
-    else if (-1.0 < z && z < 1.5)
-    {
-      // Empirically determined decision boundary where the Pade
-      // approximation is more accurate.
-      w = lambertw_pade0(z);
+      w = 0;
     }
     else
     {
-      w = lambertw_asy(z);
+      w = Math.log(z)-Math.log(Math.log(z));
     }
-    
-    //Halley's method; see 5.9 in [1]
-    
-    if (w > 0)
+
+    for (var i = 0; i < 100; ++i)
     {
-      for (var i = 0; i < 100; ++i)
+      wn = (z * Math.exp(-w) + w * w)/(w + 1);
+      if (Math.abs(wn - w) < tol*Math.abs(wn))
       {
-        ew = Math.exp(-w);
-        wewz = w - z*ew;
-        wn = w - wewz/(w + 1 - (w + 2)*wewz/(2*w + 2));
-        if (Math.abs(wn - w) < tol*Math.abs(wn))
-        {
-          return wn;
-        }
-        else
-        {
-          w = wn;
-        }
+        return wn;
+      }
+      else
+      {
+        w = wn;
       }
     }
-    else
-    {
-      for (var i = 0; i < 100; ++i)
-      {
-        ew = Math.exp(w);
-        wew = w*ew;
-        wewz = wew - z;
-        wn = w - wewz/(wew + ew - (w + 2)*wewz/(2*w + 2));
-        if (Math.abs(wn - w) < tol*Math.abs(wn))
-        {
-          return wn;
-        }
-        else
-        {
-          w = wn;
-        }
-      }
-    }
-    
+
     throw Error("Iteration failed to converge: " + z);
     //return Number.NaN;
-  }
-  
-  var lambertw_branchpt = function(z) {
-    //"""Series for W(z, 0) around the branch point; see 4.22 in [1]."""
-    var a = -1.0/3.0;
-    var b = 1.0;
-    var c = -1.0;
-    var p = Math.sqrt(2*(Math.E*z + 1)); //NOTE: I'm assuming that NPY_E is Math.E.
-    
-    return a*z*z + b*z + c; //NOTE: I'm also assuming this is equivalent to calling cevalpoly, but judging by the comments it SHOULD be.
-  }
-  
-  var lambertw_pade0 = function(z) {
-    //"""(3, 2) Pade approximation for W(z, 0) around 0."""
-    
-    var a1 = 12.85106382978723404255;
-    var b1 = 12.34042553191489361902;
-    var c1 = 1.0;
-    var a2 = 32.53191489361702127660;
-    var b2 = 14.34042553191489361702;
-    var c2 = 1.0;
-    /*This only gets evaluated close to 0, so we don't need a more
-      careful algorithm that avoids overflow in the numerator for
-      large z.*/
-    
-    var num = a1*z*z + b1*z + c1;
-    var denom = a2*z*z + b2*z + c2;
-    
-    return z*num/denom;
-  }
-  
-  var lambertw_asy = function(z) {
-    //Compute the W function using the first two terms of the asymptotic series. See 4.20 in [1].
-    
-    var w;
-    w = Math.log(z); //Again, assuming zlog is Math.log.
-    return w = Math.log(w);
   }
   
   var Decimal =
