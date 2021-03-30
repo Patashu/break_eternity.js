@@ -757,7 +757,12 @@ export default class Decimal {
    * Adapted from http://www.mathwords.com/a/arithmetic_series.htm
    */
 
-  public static sumArithmeticSeries(numItems, priceStart, priceAdd, currentOwned) {
+  public static sumArithmeticSeries(
+    numItems: DecimalSource,
+    priceStart: DecimalSource,
+    priceAdd: DecimalSource,
+    currentOwned: DecimalSource
+  ): Decimal {
     return this.sumArithmeticSeries_core(D(numItems), D(priceStart), D(priceAdd), D(currentOwned));
   }
   /**
@@ -767,7 +772,11 @@ export default class Decimal {
    * http://cookieclicker.wikia.com/wiki/Frozen_Cookies_(JavaScript_Add-on)#Efficiency.3F_What.27s_that.3F
    */
 
-  public static efficiencyOfPurchase(cost, currentRpS, deltaRpS) {
+  public static efficiencyOfPurchase(
+    cost: DecimalSource,
+    currentRpS: DecimalSource,
+    deltaRpS: DecimalSource
+  ): Decimal {
     return this.efficiencyOfPurchase_core(D(cost), D(currentRpS), D(deltaRpS));
   }
 
