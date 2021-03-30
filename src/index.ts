@@ -1,6 +1,3 @@
-import padEnd from "pad-end";
-// padEnd
-
 // FIXME: Export as type
 // export type CompareResult = -1 | 0 | 1
 export type CompareResult = number;

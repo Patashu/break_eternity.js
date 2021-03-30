@@ -1018,11 +1018,6 @@ optionator@^0.9.1:
     type-check "^0.4.0"
     word-wrap "^1.2.3"
 
-pad-end@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/pad-end/-/pad-end-1.0.2.tgz#6b41a42fdb7effa55858bb77dade52eee388e6cc"
-  integrity sha1-a0GkL9t+/6VYWLt32t5S7uOI5sw=
-
 parent-module@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/parent-module/-/parent-module-1.0.1.tgz#691d2709e78c79fae3a156622452d00762caaaa2"

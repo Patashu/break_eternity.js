@@ -1,3 +1,4 @@
+# Node ignore file: https://raw.githubusercontent.com/github/gitignore/master/Node.gitignore
 
 npm-debug.log
 og
