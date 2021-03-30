@@ -30,7 +30,7 @@ const powerOf10 = (function () {
   const powersOf10: number[] = [];
 
   for (let i = NUMBER_EXP_MIN + 1; i <= NUMBER_EXP_MAX; i++) {
-    powersOf10.push(Number("1e" + i));
+    powersOf10.push(Number(`1e${i}`));
   }
 
   const indexOf0InPowersOf10 = 323;
@@ -113,8 +113,8 @@ const f_gamma = function (n: number) {
   return Math.exp(l) / scal1;
 };
 
-const twopi = 6.2831853071795864769252842; // 2*pi
-const EXPN1 = 0.36787944117144232159553; // exp(-1)
+const _twopi = 6.2831853071795864769252842; // 2*pi
+const _EXPN1 = 0.36787944117144232159553; // exp(-1)
 const OMEGA = 0.56714329040978387299997; // W(1, 0)
 //from https://math.stackexchange.com/a/465183
 // The evaluation can become inaccurate very close to the branch point
@@ -147,7 +147,7 @@ const f_lambertw = function (z: unknown, tol = 1e-10) {
     }
   }
 
-  throw Error("Iteration failed to converge: " + z.toString());
+  throw Error(`Iteration failed to converge: ${z.toString()}`);
   //return Number.NaN;
 };
 
@@ -187,7 +187,7 @@ function d_lambertw(z: unknown, tol = 1e-10) {
     }
   }
 
-  throw Error("Iteration failed to converge: " + z.toString());
+  throw Error(`Iteration failed to converge: ${z.toString()}`);
   //return Decimal.dNaN;
 }
 
@@ -535,31 +535,59 @@ export default class Decimal {
     return D(value).eq_tolerance(other, tolerance);
   }
 
-  public static equals_tolerance(value: DecimalSource, other: DecimalSource, tolerance: number) {
+  public static equals_tolerance(
+    value: DecimalSource,
+    other: DecimalSource,
+    tolerance: number
+  ): boolean {
     return D(value).eq_tolerance(other, tolerance);
   }
 
-  public static neq_tolerance(value: DecimalSource, other: DecimalSource, tolerance: number) {
+  public static neq_tolerance(
+    value: DecimalSource,
+    other: DecimalSource,
+    tolerance: number
+  ): boolean {
     return D(value).neq_tolerance(other, tolerance);
   }
 
-  public static notEquals_tolerance(value: DecimalSource, other: DecimalSource, tolerance: number) {
+  public static notEquals_tolerance(
+    value: DecimalSource,
+    other: DecimalSource,
+    tolerance: number
+  ): boolean {
     return D(value).notEquals_tolerance(other, tolerance);
   }
 
-  public static lt_tolerance(value: DecimalSource, other: DecimalSource, tolerance: number) {
+  public static lt_tolerance(
+    value: DecimalSource,
+    other: DecimalSource,
+    tolerance: number
+  ): boolean {
     return D(value).lt_tolerance(other, tolerance);
   }
 
-  public static lte_tolerance(value: DecimalSource, other: DecimalSource, tolerance: number) {
+  public static lte_tolerance(
+    value: DecimalSource,
+    other: DecimalSource,
+    tolerance: number
+  ): boolean {
     return D(value).lte_tolerance(other, tolerance);
   }
 
-  public static gt_tolerance(value: DecimalSource, other: DecimalSource, tolerance: number) {
+  public static gt_tolerance(
+    value: DecimalSource,
+    other: DecimalSource,
+    tolerance: number
+  ): boolean {
     return D(value).gt_tolerance(other, tolerance);
   }
 
-  public static gte_tolerance(value: DecimalSource, other: DecimalSource, tolerance: number) {
+  public static gte_tolerance(
+    value: DecimalSource,
+    other: DecimalSource,
+    tolerance: number
+  ): boolean {
     return D(value).gte_tolerance(other, tolerance);
   }
 
@@ -587,7 +615,7 @@ export default class Decimal {
     return D(value).ln();
   }
 
-  public static logarithm(value, base) {
+  public static logarithm(value: DecimalSource, base: DecimalSource): Decimal {
     return D(value).logarithm(base);
   }
 
@@ -603,15 +631,15 @@ export default class Decimal {
     return D(value).root(other);
   }
 
-  public static factorial(value: DecimalSource, other: DecimalSource): Decimal {
+  public static factorial(value: DecimalSource, _other?: never): Decimal {
     return D(value).factorial();
   }
 
-  public static gamma(value: DecimalSource, other: DecimalSource): Decimal {
+  public static gamma(value: DecimalSource, _other?: never): Decimal {
     return D(value).gamma();
   }
 
-  public static lngamma(value: DecimalSource, other: DecimalSource): Decimal {
+  public static lngamma(value: DecimalSource, _other?: never): Decimal {
     return D(value).lngamma();
   }
 
@@ -635,27 +663,27 @@ export default class Decimal {
     return D(value).cbrt();
   }
 
-  public static tetrate(value, height = 2, payload = FC_NN(1, 0, 1)) {
+  public static tetrate(value: DecimalSource, height = 2, payload = FC_NN(1, 0, 1)) {
     return D(value).tetrate(height, payload);
   }
 
-  public static iteratedexp(value, height = 2, payload = FC_NN(1, 0, 1)) {
+  public static iteratedexp(value: DecimalSource, height = 2, payload = FC_NN(1, 0, 1)) {
     return D(value).iteratedexp(height, payload);
   }
 
-  public static iteratedlog(value, base = 10, times = 1) {
+  public static iteratedlog(value: DecimalSource, base = 10, times = 1) {
     return D(value).iteratedlog(base, times);
   }
 
-  public static layeradd10(value, diff) {
+  public static layeradd10(value: DecimalSource, diff: DecimalSource) {
     return D(value).layeradd10(diff);
   }
 
-  public static layeradd(value, diff, base = 10) {
+  public static layeradd(value: DecimalSource, diff: any | number, base: any = 10) {
     return D(value).layeradd(diff, base);
   }
 
-  public static slog(value, base = 10) {
+  public static slog(value: DecimalSource, base = 10) {
     return D(value).slog(base);
   }
 
@@ -667,7 +695,7 @@ export default class Decimal {
     return D(value).ssqrt();
   }
 
-  public static pentate(value, height = 2, payload = FC_NN(1, 0, 1)) {
+  public static pentate(value: DecimalSource, height = 2, payload = FC_NN(1, 0, 1)) {
     return D(value).pentate(height, payload);
   }
 
@@ -1979,7 +2007,7 @@ export default class Decimal {
   //Tetration/tetrate: The result of exponentiating 'this' to 'this' 'height' times in a row.  https://en.wikipedia.org/wiki/Tetration
   //If payload != 1, then this is 'iterated exponentiation', the result of exping (payload) to base (this) (height) times. https://andydude.github.io/tetration/archives/tetration2/ident.html
   //Works with negative and positive real heights.
-  public tetrate(height = 2, payload = FC_NN(1, 0, 1)) {
+  public tetrate(height = 2, payload = FC_NN(1, 0, 1)): Decimal {
     if (height === Number.POSITIVE_INFINITY) {
       //Formula for infinite height power tower.
       const negln = Decimal.ln(this).neg();
