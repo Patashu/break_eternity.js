@@ -4,8 +4,8 @@
     ".eslintrc.js",
     ".prettierrc.js",
     "bili.config.ts",
-    "break_eternity.ts",
     "package.json",
+    "src/**/*.ts",
     "tsconfig.json",
     "types/**/*.ts"
   ]

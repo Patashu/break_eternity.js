@@ -1,7 +1,7 @@
 import { Config } from "bili";
 
 const config: Config = {
-  input: "break_eternity.ts",
+  input: "src/index.ts",
   extendRollupConfig: (config) => {
     config.outputConfig.exports = "auto";
     return config;
