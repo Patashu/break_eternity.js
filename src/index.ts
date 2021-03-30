@@ -59,7 +59,7 @@ const ME_NN = function ME_NN(mantissa: number, exponent: number) {
   return Decimal.fromMantissaExponent_noNormalize(mantissa, exponent);
 };
 
-const decimalPlaces = function decimalPlaces(value: number, places: number) {
+const decimalPlaces = function decimalPlaces(value: number, places: number): number {
   const len = places + 1;
   const numDigits = Math.ceil(Math.log10(Math.abs(value)));
   const rounded = Math.round(value * Math.pow(10, len - numDigits)) * Math.pow(10, numDigits - len);
@@ -118,7 +118,7 @@ const _EXPN1 = 0.36787944117144232159553; // exp(-1)
 const OMEGA = 0.56714329040978387299997; // W(1, 0)
 //from https://math.stackexchange.com/a/465183
 // The evaluation can become inaccurate very close to the branch point
-const f_lambertw = function (z: unknown, tol = 1e-10) {
+const f_lambertw = function (z: number, tol = 1e-10): number {
   let w;
   let wn;
 
@@ -155,7 +155,7 @@ const f_lambertw = function (z: unknown, tol = 1e-10) {
 // The evaluation can become inaccurate very close to the branch point
 // at ``-1/e``. In some corner cases, `lambertw` might currently
 // fail to converge, or can end up on the wrong branch.
-function d_lambertw(z: unknown, tol = 1e-10) {
+function d_lambertw(z: Decimal, tol = 1e-10): Decimal {
   let w;
   let ew, wew, wewz, wn;
 
@@ -663,27 +663,27 @@ export default class Decimal {
     return D(value).cbrt();
   }
 
-  public static tetrate(value: DecimalSource, height = 2, payload = FC_NN(1, 0, 1)) {
+  public static tetrate(value: DecimalSource, height = 2, payload = FC_NN(1, 0, 1)): Decimal {
     return D(value).tetrate(height, payload);
   }
 
-  public static iteratedexp(value: DecimalSource, height = 2, payload = FC_NN(1, 0, 1)) {
+  public static iteratedexp(value: DecimalSource, height = 2, payload = FC_NN(1, 0, 1)): Decimal {
     return D(value).iteratedexp(height, payload);
   }
 
-  public static iteratedlog(value: DecimalSource, base = 10, times = 1) {
+  public static iteratedlog(value: DecimalSource, base = 10, times = 1): Decimal {
     return D(value).iteratedlog(base, times);
   }
 
-  public static layeradd10(value: DecimalSource, diff: DecimalSource) {
+  public static layeradd10(value: DecimalSource, diff: DecimalSource): Decimal {
     return D(value).layeradd10(diff);
   }
 
-  public static layeradd(value: DecimalSource, diff: any | number, base: any = 10) {
+  public static layeradd(value: DecimalSource, diff: number, base = 10): Decimal {
     return D(value).layeradd(diff, base);
   }
 
-  public static slog(value: DecimalSource, base = 10) {
+  public static slog(value: DecimalSource, base = 10): Decimal {
     return D(value).slog(base);
   }
 
@@ -695,7 +695,7 @@ export default class Decimal {
     return D(value).ssqrt();
   }
 
-  public static pentate(value: DecimalSource, height = 2, payload = FC_NN(1, 0, 1)) {
+  public static pentate(value: DecimalSource, height = 2, payload = FC_NN(1, 0, 1)): Decimal {
     return D(value).pentate(height, payload);
   }
 
@@ -706,7 +706,12 @@ export default class Decimal {
    * Adapted from Trimps source code.
    */
 
-  public static affordGeometricSeries(resourcesAvailable, priceStart, priceRatio, currentOwned) {
+  public static affordGeometricSeries(
+    resourcesAvailable: DecimalSource,
+    priceStart: DecimalSource,
+    priceRatio: DecimalSource,
+    currentOwned: DecimalSource
+  ): Decimal {
     return this.affordGeometricSeries_core(
       D(resourcesAvailable),
       D(priceStart),
@@ -719,7 +724,12 @@ export default class Decimal {
    * the initial price is priceStart and it multiplies by priceRatio each purchase?
    */
 
-  public static sumGeometricSeries(numItems, priceStart, priceRatio, currentOwned) {
+  public static sumGeometricSeries(
+    numItems: DecimalSource,
+    priceStart: DecimalSource,
+    priceRatio: DecimalSource,
+    currentOwned: DecimalSource
+  ): Decimal {
     return this.sumGeometricSeries_core(numItems, D(priceStart), D(priceRatio), currentOwned);
   }
   /**
@@ -728,7 +738,12 @@ export default class Decimal {
    * how much of it can you buy?
    */
 
-  public static affordArithmeticSeries(resourcesAvailable, priceStart, priceAdd, currentOwned) {
+  public static affordArithmeticSeries(
+    resourcesAvailable: DecimalSource,
+    priceStart: DecimalSource,
+    priceAdd: DecimalSource,
+    currentOwned: DecimalSource
+  ): Decimal {
     return this.affordArithmeticSeries_core(
       D(resourcesAvailable),
       D(priceStart),
@@ -756,7 +771,7 @@ export default class Decimal {
     return this.efficiencyOfPurchase_core(D(cost), D(currentRpS), D(deltaRpS));
   }
 
-  public static randomDecimalForTesting(maxLayers) {
+  public static randomDecimalForTesting(maxLayers: number): Decimal {
     // NOTE: This doesn't follow any kind of sane random distribution, so use this for testing purposes only.
     //5% of the time, return 0
     if (Math.random() * 20 < 1) {
@@ -787,11 +802,11 @@ export default class Decimal {
   }
 
   public static affordGeometricSeries_core(
-    resourcesAvailable,
-    priceStart,
-    priceRatio,
-    currentOwned
-  ) {
+    resourcesAvailable: Decimal,
+    priceStart: Decimal,
+    priceRatio: Decimal,
+    currentOwned: DecimalSource
+  ): Decimal {
     const actualStart = priceStart.mul(priceRatio.pow(currentOwned));
     return Decimal.floor(
       resourcesAvailable
@@ -803,7 +818,12 @@ export default class Decimal {
     );
   }
 
-  public static sumGeometricSeries_core(numItems, priceStart, priceRatio, currentOwned) {
+  public static sumGeometricSeries_core(
+    numItems: DecimalSource,
+    priceStart: Decimal,
+    priceRatio: Decimal,
+    currentOwned: DecimalSource
+  ): Decimal {
     return priceStart
       .mul(priceRatio.pow(currentOwned))
       .mul(Decimal.sub(1, priceRatio.pow(numItems)))
@@ -811,11 +831,11 @@ export default class Decimal {
   }
 
   public static affordArithmeticSeries_core(
-    resourcesAvailable,
-    priceStart,
-    priceAdd,
-    currentOwned
-  ) {
+    resourcesAvailable: Decimal,
+    priceStart: Decimal,
+    priceAdd: Decimal,
+    currentOwned: Decimal
+  ): Decimal {
     // n = (-(a-d/2) + sqrt((a-d/2)^2+2dS))/d
     // where a is actualStart, d is priceAdd and S is resourcesAvailable
     // then floor it and you're done!
@@ -829,13 +849,22 @@ export default class Decimal {
       .floor();
   }
 
-  public static sumArithmeticSeries_core(numItems, priceStart, priceAdd, currentOwned) {
+  public static sumArithmeticSeries_core(
+    numItems: Decimal,
+    priceStart: Decimal,
+    priceAdd: Decimal,
+    currentOwned: Decimal
+  ): Decimal {
     const actualStart = priceStart.add(currentOwned.mul(priceAdd)); // (n/2)*(2*a+(n-1)*d)
 
     return numItems.div(2).mul(actualStart.mul(2).plus(numItems.sub(1).mul(priceAdd)));
   }
 
-  public static efficiencyOfPurchase_core(cost, currentRpS, deltaRpS) {
+  public static efficiencyOfPurchase_core(
+    cost: Decimal,
+    currentRpS: Decimal,
+    deltaRpS: Decimal
+  ): Decimal {
     return cost.div(currentRpS).add(cost.div(deltaRpS));
   }
 
@@ -907,7 +936,7 @@ export default class Decimal {
     return this;
   }
 
-  public fromComponents(sign: number, layer: number, mag: number) {
+  public fromComponents(sign: number, layer: number, mag: number): Decimal {
     this.sign = sign;
     this.layer = layer;
     this.mag = mag;
@@ -916,14 +945,14 @@ export default class Decimal {
     return this;
   }
 
-  public fromComponents_noNormalize(sign: number, layer: number, mag: number) {
+  public fromComponents_noNormalize(sign: number, layer: number, mag: number): Decimal {
     this.sign = sign;
     this.layer = layer;
     this.mag = mag;
     return this;
   }
 
-  public fromMantissaExponent(mantissa: number, exponent: number) {
+  public fromMantissaExponent(mantissa: number, exponent: number): Decimal {
     this.layer = 1;
     this.sign = Math.sign(mantissa);
     mantissa = Math.abs(mantissa);
@@ -933,20 +962,20 @@ export default class Decimal {
     return this;
   }
 
-  public fromMantissaExponent_noNormalize(mantissa: number, exponent: number) {
+  public fromMantissaExponent_noNormalize(mantissa: number, exponent: number): Decimal {
     //The idea of 'normalizing' a break_infinity.js style Decimal doesn't really apply. So just do the same thing.
     this.fromMantissaExponent(mantissa, exponent);
     return this;
   }
 
-  public fromDecimal(value: DecimalSource): Decimal {
+  public fromDecimal(value: Decimal): Decimal {
     this.sign = value.sign;
     this.layer = value.layer;
     this.mag = value.mag;
     return this;
   }
 
-  public fromNumber(value: DecimalSource): Decimal {
+  public fromNumber(value: number): Decimal {
     this.mag = Math.abs(value);
     this.sign = Math.sign(value);
     this.layer = 0;
@@ -954,7 +983,7 @@ export default class Decimal {
     return this;
   }
 
-  public fromString(value: string) {
+  public fromString(value: string): Decimal {
     if (IGNORE_COMMAS) {
       value = value.replace(",", "");
     } else if (COMMAS_ARE_DECIMAL_POINTS) {
@@ -1157,7 +1186,7 @@ export default class Decimal {
     return this;
   }
 
-  public fromValue(value: DecimalSource) {
+  public fromValue(value: DecimalSource): Decimal {
     if (value instanceof Decimal) {
       return this.fromDecimal(value);
     }
@@ -1176,7 +1205,7 @@ export default class Decimal {
     return this;
   }
 
-  public toNumber() {
+  public toNumber(): number {
     if (!Number.isFinite(this.layer)) {
       return Number.NaN;
     }
@@ -1194,7 +1223,7 @@ export default class Decimal {
     }
   }
 
-  public mantissaWithDecimalPlaces(places) {
+  public mantissaWithDecimalPlaces(places: number): number {
     // https://stackoverflow.com/a/37425022
     if (isNaN(this.m)) {
       return Number.NaN;
@@ -1207,7 +1236,7 @@ export default class Decimal {
     return decimalPlaces(this.m, places);
   }
 
-  public magnitudeWithDecimalPlaces(places) {
+  public magnitudeWithDecimalPlaces(places: number): number {
     // https://stackoverflow.com/a/37425022
     if (isNaN(this.mag)) {
       return Number.NaN;
@@ -1220,39 +1249,39 @@ export default class Decimal {
     return decimalPlaces(this.mag, places);
   }
 
-  public toString() {
+  public toString(): string {
     if (this.layer === 0) {
       if ((this.mag < 1e21 && this.mag > 1e-7) || this.mag === 0) {
         return (this.sign * this.mag).toString();
       }
-      return this.m + "e" + this.e;
+      return `${this.m}e${this.e}`;
     } else if (this.layer === 1) {
-      return this.m + "e" + this.e;
+      return `${this.m}e${this.e}`;
     } else {
       //layer 2+
       if (this.layer <= MAX_ES_IN_A_ROW) {
-        return (this.sign === -1 ? "-" : "") + "e".repeat(this.layer) + this.mag;
+        return `${this.sign === -1 ? "-" : ""}${"e".repeat(this.layer)}${this.mag}`;
       } else {
-        return (this.sign === -1 ? "-" : "") + "(e^" + this.layer + ")" + this.mag;
+        return `${this.sign === -1 ? "-" : ""}(e^${this.layer})${this.mag}`;
       }
     }
   }
 
-  public toExponential(places) {
+  public toExponential(places: number): string {
     if (this.layer === 0) {
       return (this.sign * this.mag).toExponential(places);
     }
     return this.toStringWithDecimalPlaces(places);
   }
 
-  public toFixed(places) {
+  public toFixed(places: number): string {
     if (this.layer === 0) {
       return (this.sign * this.mag).toFixed(places);
     }
     return this.toStringWithDecimalPlaces(places);
   }
 
-  public toPrecision(places) {
+  public toPrecision(places: number): string {
     if (this.e <= -7) {
       return this.toExponential(places - 1);
     }
@@ -1264,49 +1293,48 @@ export default class Decimal {
     return this.toExponential(places - 1);
   }
 
-  public valueOf() {
+  public valueOf(): string {
     return this.toString();
   }
 
-  public toJSON() {
+  public toJSON(): string {
     return this.toString();
   }
 
-  public toStringWithDecimalPlaces(places) {
+  public toStringWithDecimalPlaces(places: number): string {
     if (this.layer === 0) {
       if ((this.mag < 1e21 && this.mag > 1e-7) || this.mag === 0) {
         return (this.sign * this.mag).toFixed(places);
       }
-      return decimalPlaces(this.m, places) + "e" + decimalPlaces(this.e, places);
+      return `${decimalPlaces(this.m, places)}e${decimalPlaces(this.e, places)}`;
     } else if (this.layer === 1) {
-      return decimalPlaces(this.m, places) + "e" + decimalPlaces(this.e, places);
+      return `${decimalPlaces(this.m, places)}e${decimalPlaces(this.e, places)}`;
     } else {
       //layer 2+
       if (this.layer <= MAX_ES_IN_A_ROW) {
-        return (
-          (this.sign === -1 ? "-" : "") + "e".repeat(this.layer) + decimalPlaces(this.mag, places)
-        );
+        return `${this.sign === -1 ? "-" : ""}${"e".repeat(this.layer)}${decimalPlaces(
+          this.mag,
+          places
+        )}`;
       } else {
-        return (
-          (this.sign === -1 ? "-" : "") + "(e^" + this.layer + ")" + decimalPlaces(this.mag, places)
-        );
+        return `${this.sign === -1 ? "-" : ""}(e^${this.layer})${decimalPlaces(this.mag, places)}`;
       }
     }
   }
 
-  public abs() {
+  public abs(): Decimal {
     return FC_NN(this.sign === 0 ? 0 : 1, this.layer, this.mag);
   }
 
-  public neg() {
+  public neg(): Decimal {
     return FC_NN(-this.sign, this.layer, this.mag);
   }
 
-  public negate() {
+  public negate(): Decimal {
     return this.neg();
   }
 
-  public negated() {
+  public negated(): Decimal {
     return this.neg();
   }
 
@@ -1314,11 +1342,11 @@ export default class Decimal {
   //     return this.sign;
   //   }
 
-  public sgn() {
+  public sgn(): number {
     return this.sign;
   }
 
-  public round(): Decimal {
+  public round(): this | Decimal {
     if (this.mag < 0) {
       return Decimal.dZero;
     }
@@ -1328,7 +1356,7 @@ export default class Decimal {
     return this;
   }
 
-  public floor() {
+  public floor(): this | Decimal {
     if (this.mag < 0) {
       return Decimal.dZero;
     }
@@ -1338,7 +1366,7 @@ export default class Decimal {
     return this;
   }
 
-  public ceil() {
+  public ceil(): this | Decimal {
     if (this.mag < 0) {
       return Decimal.dZero;
     }
@@ -1348,7 +1376,7 @@ export default class Decimal {
     return this;
   }
 
-  public trunc() {
+  public trunc(): this | Decimal {
     if (this.mag < 0) {
       return Decimal.dZero;
     }
@@ -1358,7 +1386,7 @@ export default class Decimal {
     return this;
   }
 
-  public add(value: DecimalSource): Decimal {
+  public add(value: DecimalSource): this | Decimal {
     const decimal = D(value);
 
     //inf/nan check
@@ -1414,8 +1442,8 @@ export default class Decimal {
       if (Math.abs(b.mag - Math.log10(a.mag)) > MAX_SIGNIFICANT_DIGITS) {
         return a;
       } else {
-        var magdiff = Math.pow(10, Math.log10(a.mag) - b.mag);
-        var mantissa = b.sign + a.sign * magdiff;
+        const magdiff = Math.pow(10, Math.log10(a.mag) - b.mag);
+        const mantissa = b.sign + a.sign * magdiff;
         return FC(Math.sign(mantissa), 1, b.mag + Math.log10(Math.abs(mantissa)));
       }
     }
@@ -1424,8 +1452,8 @@ export default class Decimal {
       if (Math.abs(a.mag - Math.log10(b.mag)) > MAX_SIGNIFICANT_DIGITS) {
         return a;
       } else {
-        var magdiff = Math.pow(10, a.mag - Math.log10(b.mag));
-        var mantissa = b.sign + a.sign * magdiff;
+        const magdiff = Math.pow(10, a.mag - Math.log10(b.mag));
+        const mantissa = b.sign + a.sign * magdiff;
         return FC(Math.sign(mantissa), 1, Math.log10(b.mag) + Math.log10(Math.abs(mantissa)));
       }
     }
@@ -1433,8 +1461,8 @@ export default class Decimal {
     if (Math.abs(a.mag - b.mag) > MAX_SIGNIFICANT_DIGITS) {
       return a;
     } else {
-      var magdiff = Math.pow(10, a.mag - b.mag);
-      var mantissa = b.sign + a.sign * magdiff;
+      const magdiff = Math.pow(10, a.mag - b.mag);
+      const mantissa = b.sign + a.sign * magdiff;
       return FC(Math.sign(mantissa), 1, b.mag + Math.log10(Math.abs(mantissa)));
     }
 
@@ -1552,7 +1580,7 @@ export default class Decimal {
     return this.div(value);
   }
 
-  public recip() {
+  public recip(): Decimal {
     if (this.mag === 0) {
       return Decimal.dNaN;
     } else if (this.layer === 0) {
@@ -1562,11 +1590,11 @@ export default class Decimal {
     }
   }
 
-  public reciprocal() {
+  public reciprocal(): Decimal {
     return this.recip();
   }
 
-  public reciprocate() {
+  public reciprocate(): Decimal {
     return this.recip();
   }
 
@@ -1625,7 +1653,7 @@ export default class Decimal {
   }
 
   public lt(value: DecimalSource): boolean {
-    const decimal = D(value);
+    const decimal = D(value); // FIXME: Remove?
     return this.cmp(value) === -1;
   }
 
@@ -1634,7 +1662,7 @@ export default class Decimal {
   }
 
   public gt(value: DecimalSource): boolean {
-    const decimal = D(value);
+    const decimal = D(value); // FIXME: Remove?
     return this.cmp(value) === 1;
   }
 
@@ -1744,14 +1772,14 @@ export default class Decimal {
     return this.eq_tolerance(decimal, tolerance) || this.gt(decimal);
   }
 
-  public pLog10() {
+  public pLog10(): Decimal {
     if (this.lt(Decimal.dZero)) {
       return Decimal.dZero;
     }
     return this.log10();
   }
 
-  public absLog10() {
+  public absLog10(): Decimal {
     if (this.sign === 0) {
       return Decimal.dNaN;
     } else if (this.layer > 0) {
@@ -1761,7 +1789,7 @@ export default class Decimal {
     }
   }
 
-  public log10() {
+  public log10(): Decimal {
     if (this.sign <= 0) {
       return Decimal.dNaN;
     } else if (this.layer > 0) {
@@ -1771,7 +1799,7 @@ export default class Decimal {
     }
   }
 
-  public log(base: DecimalSource) {
+  public log(base: DecimalSource): Decimal {
     base = D(base);
     if (this.sign <= 0) {
       return Decimal.dNaN;
@@ -1788,7 +1816,7 @@ export default class Decimal {
     return Decimal.div(this.log10(), base.log10());
   }
 
-  public log2() {
+  public log2(): Decimal {
     if (this.sign <= 0) {
       return Decimal.dNaN;
     } else if (this.layer === 0) {
@@ -1802,7 +1830,7 @@ export default class Decimal {
     }
   }
 
-  public ln() {
+  public ln(): Decimal {
     if (this.sign <= 0) {
       return Decimal.dNaN;
     } else if (this.layer === 0) {
@@ -1816,7 +1844,7 @@ export default class Decimal {
     }
   }
 
-  public logarithm(base: DecimalSource) {
+  public logarithm(base: DecimalSource): Decimal {
     return this.log(base);
   }
 
@@ -1851,7 +1879,7 @@ export default class Decimal {
     return result;
   }
 
-  public pow10() {
+  public pow10(): Decimal {
     /*
     There are four cases we need to consider:
     1) positive sign, positive mag (e15, ee15): +1 layer (e.g. 10^15 becomes e15, 10^e15 becomes ee15)
@@ -1902,7 +1930,7 @@ export default class Decimal {
 
   public factorial(): Decimal {
     if (this.mag < 0) {
-      return this.toNumber().add(1).gamma();
+      return this.toNumber().add(1).gamma(); // FIXME: This is an invalid operation
     } else if (this.layer === 0) {
       return this.add(1).gamma();
     } else if (this.layer === 1) {
@@ -1913,7 +1941,7 @@ export default class Decimal {
   }
 
   //from HyperCalc source code
-  public gamma() {
+  public gamma(): Decimal {
     if (this.mag < 0) {
       return this.recip();
     } else if (this.layer === 0) {
@@ -1960,11 +1988,11 @@ export default class Decimal {
     }
   }
 
-  public lngamma() {
+  public lngamma(): Decimal {
     return this.gamma().ln();
   }
 
-  public exp() {
+  public exp(): Decimal {
     if (this.mag < 0) {
       return Decimal.dOne;
     }
@@ -1979,11 +2007,11 @@ export default class Decimal {
     }
   }
 
-  public sqr() {
+  public sqr(): Decimal {
     return this.pow(2);
   }
 
-  public sqrt() {
+  public sqrt(): Decimal {
     if (this.layer === 0) {
       return D(Math.sqrt(this.sign * this.mag));
     } else if (this.layer === 1) {
@@ -1996,18 +2024,18 @@ export default class Decimal {
     }
   }
 
-  public cube() {
+  public cube(): Decimal {
     return this.pow(3);
   }
 
-  public cbrt() {
+  public cbrt(): Decimal {
     return this.pow(1 / 3);
   }
 
   //Tetration/tetrate: The result of exponentiating 'this' to 'this' 'height' times in a row.  https://en.wikipedia.org/wiki/Tetration
   //If payload != 1, then this is 'iterated exponentiation', the result of exping (payload) to base (this) (height) times. https://andydude.github.io/tetration/archives/tetration2/ident.html
   //Works with negative and positive real heights.
-  public tetrate(height = 2, payload = FC_NN(1, 0, 1)): Decimal {
+  public tetrate(height = 2, payload: DecimalSource = FC_NN(1, 0, 1)): Decimal {
     if (height === Number.POSITIVE_INFINITY) {
       //Formula for infinite height power tower.
       const negln = Decimal.ln(this).neg();
@@ -2018,6 +2046,7 @@ export default class Decimal {
       return Decimal.iteratedlog(payload, this, -height);
     }
 
+    // FIXME: Rename
     payload = D(payload);
     const oldheight = height;
     height = Math.trunc(height);
@@ -2055,13 +2084,13 @@ export default class Decimal {
   }
 
   //iteratedexp/iterated exponentiation: - all cases handled in tetrate, so just call it
-  public iteratedexp(height = 2, payload = FC_NN(1, 0, 1)) {
+  public iteratedexp(height = 2, payload = FC_NN(1, 0, 1)): Decimal {
     return this.tetrate(height, payload);
   }
 
   //iterated log/repeated log: The result of applying log(base) 'times' times in a row. Approximately equal to subtracting (times) from the number's slog representation. Equivalent to tetrating to a negative height.
   //Works with negative and positive real heights.
-  public iteratedlog(base = 10, times = 1) {
+  public iteratedlog(base: DecimalSource = 10, times = 1): Decimal {
     if (times < 0) {
       return Decimal.tetrate(base, -times, this);
     }
@@ -2103,7 +2132,7 @@ export default class Decimal {
 
   //Super-logarithm, one of tetration's inverses, tells you what size power tower you'd have to tetrate base to to get number. By definition, will never be higher than 1.8e308 in break_eternity.js, since a power tower 1.8e308 numbers tall is the largest representable number.
   // https://en.wikipedia.org/wiki/Super-logarithm
-  public slog(base = 10) {
+  public slog(base: DecimalSource = 10): Decimal {
     if (this.mag < 0) {
       return Decimal.dNegOne;
     }
@@ -2189,7 +2218,7 @@ export default class Decimal {
 
   //Function for adding/removing layers from a Decimal, even fractional layers (e.g. its slog10 representation).
   //Everything continues to use the linear approximation ATM.
-  public layeradd10(diff: DecimalSource) {
+  public layeradd10(diff: DecimalSource): Decimal {
     diff = Decimal.fromValue_noAlloc(diff).toNumber();
     const result = D(this);
     if (diff >= 1) {
@@ -2217,7 +2246,7 @@ export default class Decimal {
 
     //layeradd10: like adding 'diff' to the number's slog(base) representation. Very similar to tetrate base 10 and iterated log base 10. Also equivalent to adding a fractional amount to the number's layer in its break_eternity.js representation.
     if (diff > 0) {
-      var subtractlayerslater = 0;
+      let subtractlayerslater = 0;
       //Ironically, this edge case would be unnecessary if we had 'negative layers'.
       while (Number.isFinite(result.mag) && result.mag < 10) {
         result.mag = Math.pow(10, result.mag);
@@ -2233,7 +2262,7 @@ export default class Decimal {
       }
 
       //Note that every integer slog10 value, the formula changes, so if we're near such a number, we have to spend exactly enough layerdiff to hit it, and then use the new formula.
-      var diffToNextSlog = Math.log10(Math.log(1e10) / Math.log(result.mag), 10);
+      const diffToNextSlog = Math.log10(Math.log(1e10) / Math.log(result.mag), 10);
       if (diffToNextSlog < diff) {
         result.mag = Math.log10(1e10);
         result.layer++;
@@ -2247,7 +2276,7 @@ export default class Decimal {
         --subtractlayerslater;
       }
     } else if (diff < 0) {
-      var subtractlayerslater = 0;
+      let subtractlayerslater = 0;
 
       while (Number.isFinite(result.mag) && result.mag < 10) {
         result.mag = Math.pow(10, result.mag);
@@ -2259,7 +2288,7 @@ export default class Decimal {
         result.layer++;
       }
 
-      var diffToNextSlog = Math.log10(1 / Math.log10(result.mag));
+      const diffToNextSlog = Math.log10(1 / Math.log10(result.mag));
       if (diffToNextSlog > diff) {
         result.mag = 1e10;
         result.layer--;
@@ -2283,7 +2312,7 @@ export default class Decimal {
   }
 
   //layeradd: like adding 'diff' to the number's slog(base) representation. Very similar to tetrate base 'base' and iterated log base 'base'.
-  public layeradd(diff, base) {
+  public layeradd(diff: number, base: number): Decimal {
     const slogthis = this.slog(base).toNumber();
     const slogdest = slogthis + diff;
     if (slogdest >= 0) {
@@ -2293,14 +2322,16 @@ export default class Decimal {
     } else if (slogdest >= -1) {
       return Decimal.log(Decimal.tetrate(base, slogdest + 1), base);
     } else {
+      // FIXME: Is this supposed to return this value??
       Decimal.log(Decimal.log(Decimal.tetrate(base, slogdest + 2), base), base);
+      throw "Unhandled behavior";
     }
   }
 
   //The Lambert W function, also called the omega function or product logarithm, is the solution W(x) === x*e^x.
   // https://en.wikipedia.org/wiki/Lambert_W_function
   //Some special values, for testing: https://en.wikipedia.org/wiki/Lambert_W_function#Special_values
-  public lambertw() {
+  public lambertw(): Decimal {
     if (this.lt(-0.3678794411710499)) {
       throw Error("lambertw is unimplemented for results less than -1, sorry!");
     } else if (this.mag < 0) {
@@ -2315,12 +2346,14 @@ export default class Decimal {
     if (this.layer >= 3) {
       return FC_NN(this.sign, this.layer - 1, this.mag);
     }
+
+    throw "Unhandled behavior in lambertw()";
   }
 
   //The super square-root function - what number, tetrated to height 2, equals this?
   //Other sroots are possible to calculate probably through guess and check methods, this one is easy though.
   // https://en.wikipedia.org/wiki/Tetration#Super-root
-  public ssqrt() {
+  public ssqrt(): Decimal {
     if (this.sign == 1 && this.layer >= 3) {
       return FC_NN(this.sign, this.layer - 1, this.mag);
     }
@@ -2505,7 +2538,7 @@ for (var i = 0; i < 10; ++i)
 
   //Pentation/pentate: The result of tetrating 'height' times in a row. An absurdly strong operator - Decimal.pentate(2, 4.28) and Decimal.pentate(10, 2.37) are already too huge for break_eternity.js!
   // https://en.wikipedia.org/wiki/Pentation
-  public pentate(height = 2, payload = FC_NN(1, 0, 1)) {
+  public pentate(height = 2, payload = FC_NN(1, 0, 1)): Decimal {
     payload = D(payload);
     const oldheight = height;
     height = Math.trunc(height);
@@ -2541,7 +2574,7 @@ for (var i = 0; i < 10; ++i)
   }
 
   // trig functions!
-  public sin() {
+  public sin(): this | Decimal {
     if (this.mag < 0) {
       return this;
     }
@@ -2551,7 +2584,7 @@ for (var i = 0; i < 10; ++i)
     return FC_NN(0, 0, 0);
   }
 
-  public cos() {
+  public cos(): Decimal {
     if (this.mag < 0) {
       return Decimal.dOne;
     }
@@ -2561,7 +2594,7 @@ for (var i = 0; i < 10; ++i)
     return FC_NN(0, 0, 0);
   }
 
-  public tan() {
+  public tan(): this | Decimal {
     if (this.mag < 0) {
       return this;
     }
@@ -2571,7 +2604,7 @@ for (var i = 0; i < 10; ++i)
     return FC_NN(0, 0, 0);
   }
 
-  public asin() {
+  public asin(): this | Decimal {
     if (this.mag < 0) {
       return this;
     }
@@ -2581,7 +2614,7 @@ for (var i = 0; i < 10; ++i)
     return FC_NN(Number.NaN, Number.NaN, Number.NaN);
   }
 
-  public acos() {
+  public acos(): Decimal {
     if (this.mag < 0) {
       return D(Math.acos(this.toNumber()));
     }
@@ -2591,7 +2624,7 @@ for (var i = 0; i < 10; ++i)
     return FC_NN(Number.NaN, Number.NaN, Number.NaN);
   }
 
-  public atan() {
+  public atan(): this | Decimal {
     if (this.mag < 0) {
       return this;
     }
@@ -2601,27 +2634,27 @@ for (var i = 0; i < 10; ++i)
     return D(Math.atan(this.sign * 1.8e308));
   }
 
-  public sinh() {
+  public sinh(): Decimal {
     return this.exp().sub(this.negate().exp()).div(2);
   }
 
-  public cosh() {
+  public cosh(): Decimal {
     return this.exp().add(this.negate().exp()).div(2);
   }
 
-  public tanh() {
+  public tanh(): Decimal {
     return this.sinh().div(this.cosh());
   }
 
-  public asinh() {
+  public asinh(): Decimal {
     return Decimal.ln(this.add(this.sqr().add(1).sqrt()));
   }
 
-  public acosh() {
+  public acosh(): Decimal {
     return Decimal.ln(this.add(this.sqr().sub(1).sqrt()));
   }
 
-  public atanh() {
+  public atanh(): Decimal {
     if (this.abs().gte(1)) {
       return FC_NN(Number.NaN, Number.NaN, Number.NaN);
     }
@@ -2632,7 +2665,7 @@ for (var i = 0; i < 10; ++i)
   /**
    * Joke function from Realm Grinder
    */
-  public ascensionPenalty(ascensions) {
+  public ascensionPenalty(ascensions: DecimalSource): Decimal {
     if (ascensions === 0) {
       return this;
     }
@@ -2643,23 +2676,23 @@ for (var i = 0; i < 10; ++i)
   /**
    * Joke function from Cookie Clicker. It's 'egg'
    */
-  public egg() {
+  public egg(): Decimal {
     return this.add(9);
   }
 
-  public lessThanOrEqualTo(other) {
+  public lessThanOrEqualTo(other: DecimalSource): boolean {
     return this.cmp(other) < 1;
   }
 
-  public lessThan(other) {
+  public lessThan(other: DecimalSource): boolean {
     return this.cmp(other) < 0;
   }
 
-  public greaterThanOrEqualTo(other) {
+  public greaterThanOrEqualTo(other: DecimalSource): boolean {
     return this.cmp(other) > -1;
   }
 
-  public greaterThan(other) {
+  public greaterThan(other: DecimalSource): boolean {
     return this.cmp(other) > 0;
   }
 
