@@ -1,73 +1,73 @@
 import padEnd from "pad-end";
 // padEnd
 
-var MAX_SIGNIFICANT_DIGITS = 17; //Maximum number of digits of precision to assume in Number
+const MAX_SIGNIFICANT_DIGITS = 17; //Maximum number of digits of precision to assume in Number
 
-var EXP_LIMIT = 9e15; //If we're ABOVE this value, increase a layer. (9e15 is close to the largest integer that can fit in a Number.)
+const EXP_LIMIT = 9e15; //If we're ABOVE this value, increase a layer. (9e15 is close to the largest integer that can fit in a Number.)
 
-var LAYER_DOWN = Math.log10(9e15); //If we're BELOW this value, drop down a layer. About 15.954.
+const LAYER_DOWN = Math.log10(9e15); //If we're BELOW this value, drop down a layer. About 15.954.
 
-var FIRST_NEG_LAYER = 1 / 9e15; //At layer 0, smaller non-zero numbers than this become layer 1 numbers with negative mag. After that the pattern continues as normal.
+const FIRST_NEG_LAYER = 1 / 9e15; //At layer 0, smaller non-zero numbers than this become layer 1 numbers with negative mag. After that the pattern continues as normal.
 
-var NUMBER_EXP_MAX = 308; //The largest exponent that can appear in a Number, though not all mantissas are valid here.
+const NUMBER_EXP_MAX = 308; //The largest exponent that can appear in a Number, though not all mantissas are valid here.
 
-var NUMBER_EXP_MIN = -324; //The smallest exponent that can appear in a Number, though not all mantissas are valid here.
+const NUMBER_EXP_MIN = -324; //The smallest exponent that can appear in a Number, though not all mantissas are valid here.
 
-var MAX_ES_IN_A_ROW = 5; //For default toString behaviour, when to swap from eee... to (e^n) syntax.
+const MAX_ES_IN_A_ROW = 5; //For default toString behaviour, when to swap from eee... to (e^n) syntax.
 
 const IGNORE_COMMAS = true;
 const COMMAS_ARE_DECIMAL_POINTS = false;
 
-var powerOf10 = (function () {
+const powerOf10 = (function () {
   // We need this lookup table because Math.pow(10, exponent)
   // when exponent's absolute value is large is slightly inaccurate.
   // You can fix it with the power of math... or just make a lookup table.
   // Faster AND simpler
-  var powersOf10 = [];
+  const powersOf10 = [];
 
-  for (var i = NUMBER_EXP_MIN + 1; i <= NUMBER_EXP_MAX; i++) {
+  for (let i = NUMBER_EXP_MIN + 1; i <= NUMBER_EXP_MAX; i++) {
     powersOf10.push(Number("1e" + i));
   }
 
-  var indexOf0InPowersOf10 = 323;
+  const indexOf0InPowersOf10 = 323;
   return function (power) {
     return powersOf10[power + indexOf0InPowersOf10];
   };
 })();
 
-var D = function D(value) {
+const D = function D(value) {
   return Decimal.fromValue_noAlloc(value);
 };
 
-var FC = function FC(sign, layer, mag) {
+const FC = function FC(sign, layer, mag) {
   return Decimal.fromComponents(sign, layer, mag);
 };
 
-var FC_NN = function FC_NN(sign, layer, mag) {
+const FC_NN = function FC_NN(sign, layer, mag) {
   return Decimal.fromComponents_noNormalize(sign, layer, mag);
 };
 
-var ME = function ME(mantissa, exponent) {
+const ME = function ME(mantissa, exponent) {
   return Decimal.fromMantissaExponent(mantissa, exponent);
 };
 
-var ME_NN = function ME_NN(mantissa, exponent) {
+const ME_NN = function ME_NN(mantissa, exponent) {
   return Decimal.fromMantissaExponent_noNormalize(mantissa, exponent);
 };
 
-var decimalPlaces = function decimalPlaces(value, places) {
-  var len = places + 1;
-  var numDigits = Math.ceil(Math.log10(Math.abs(value)));
-  var rounded = Math.round(value * Math.pow(10, len - numDigits)) * Math.pow(10, numDigits - len);
+const decimalPlaces = function decimalPlaces(value, places) {
+  const len = places + 1;
+  const numDigits = Math.ceil(Math.log10(Math.abs(value)));
+  const rounded = Math.round(value * Math.pow(10, len - numDigits)) * Math.pow(10, numDigits - len);
   return parseFloat(rounded.toFixed(Math.max(len - numDigits, 0)));
 };
 
-var f_maglog10 = function (n) {
+const f_maglog10 = function (n) {
   return Math.sign(n) * Math.log10(Math.abs(n));
 };
 
 //from HyperCalc source code
-var f_gamma = function (n) {
+const f_gamma = function (n) {
   if (!isFinite(n)) {
     return n;
   }
@@ -78,18 +78,18 @@ var f_gamma = function (n) {
     return 0;
   }
 
-  var scal1 = 1;
+  let scal1 = 1;
   while (n < 10) {
     scal1 = scal1 * n;
     ++n;
   }
 
   n -= 1;
-  var l = 0.9189385332046727; //0.5*Math.log(2*Math.PI)
+  let l = 0.9189385332046727; //0.5*Math.log(2*Math.PI)
   l = l + (n + 0.5) * Math.log(n);
   l = l - n;
-  var n2 = n * n;
-  var np = n;
+  const n2 = n * n;
+  let np = n;
   l = l + 1 / (12 * np);
   np = np * n2;
   l = l + 1 / (360 * np);
@@ -109,14 +109,14 @@ var f_gamma = function (n) {
   return Math.exp(l) / scal1;
 };
 
-var twopi = 6.2831853071795864769252842; // 2*pi
-var EXPN1 = 0.36787944117144232159553; // exp(-1)
-var OMEGA = 0.56714329040978387299997; // W(1, 0)
+const twopi = 6.2831853071795864769252842; // 2*pi
+const EXPN1 = 0.36787944117144232159553; // exp(-1)
+const OMEGA = 0.56714329040978387299997; // W(1, 0)
 //from https://math.stackexchange.com/a/465183
 // The evaluation can become inaccurate very close to the branch point
-var f_lambertw = function (z, tol = 1e-10) {
-  var w;
-  var wn;
+const f_lambertw = function (z, tol = 1e-10) {
+  let w;
+  let wn;
 
   if (!Number.isFinite(z)) {
     return z;
@@ -134,7 +134,7 @@ var f_lambertw = function (z, tol = 1e-10) {
     w = Math.log(z) - Math.log(Math.log(z));
   }
 
-  for (var i = 0; i < 100; ++i) {
+  for (let i = 0; i < 100; ++i) {
     wn = (z * Math.exp(-w) + w * w) / (w + 1);
     if (Math.abs(wn - w) < tol * Math.abs(wn)) {
       return wn;
@@ -152,8 +152,8 @@ var f_lambertw = function (z, tol = 1e-10) {
 // at ``-1/e``. In some corner cases, `lambertw` might currently
 // fail to converge, or can end up on the wrong branch.
 function d_lambertw(z, tol = 1e-10) {
-  var w;
-  var ew, wew, wewz, wn;
+  let w;
+  let ew, wew, wewz, wn;
 
   if (!Number.isFinite(z.mag)) {
     return z;
@@ -166,13 +166,13 @@ function d_lambertw(z, tol = 1e-10) {
     return OMEGA;
   }
 
-  var absz = Decimal.abs(z);
+  const absz = Decimal.abs(z);
   //Get an initial guess for Halley's method
   w = Decimal.ln(z);
 
   //Halley's method; see 5.9 in [1]
 
-  for (var i = 0; i < 100; ++i) {
+  for (let i = 0; i < 100; ++i) {
     ew = Decimal.exp(-w);
     wewz = w.sub(z.mul(ew));
     wn = w.sub(wewz.div(w.add(1).sub(w.add(2).mul(wewz).div(Decimal.mul(2, w).add(2)))));
@@ -219,9 +219,9 @@ export default class Decimal {
     if (this.sign === 0) {
       return 0;
     } else if (this.layer === 0) {
-      var exp = Math.floor(Math.log10(this.mag));
+      const exp = Math.floor(Math.log10(this.mag));
       //handle special case 5e-324
-      var man;
+      let man;
       if (this.mag === 5e-324) {
         man = 5;
       } else {
@@ -229,7 +229,7 @@ export default class Decimal {
       }
       return this.sign * man;
     } else if (this.layer === 1) {
-      var residue = this.mag - Math.floor(this.mag);
+      const residue = this.mag - Math.floor(this.mag);
       return this.sign * Math.pow(10, residue);
     } else {
       //mantissa stops being relevant past 1e9e15 / ee15.954
@@ -708,7 +708,7 @@ export default class Decimal {
       return FC_NN(0, 0, 0);
     }
 
-    var randomsign = Math.random() > 0.5 ? 1 : -1;
+    const randomsign = Math.random() > 0.5 ? 1 : -1;
 
     //5% of the time, return 1 or -1
     if (Math.random() * 20 < 1) {
@@ -716,14 +716,14 @@ export default class Decimal {
     }
 
     //pick a random layer
-    var layer = Math.floor(Math.random() * (maxLayers + 1));
+    const layer = Math.floor(Math.random() * (maxLayers + 1));
 
-    var randomexp = layer === 0 ? Math.random() * 616 - 308 : Math.random() * 16;
+    let randomexp = layer === 0 ? Math.random() * 616 - 308 : Math.random() * 16;
     //10% of the time, make it a simple power of 10
     if (Math.random() > 0.9) {
       randomexp = Math.trunc(randomexp);
     }
-    var randommag = Math.pow(10, randomexp);
+    let randommag = Math.pow(10, randomexp);
     //10% of the time, trunc mag
     if (Math.random() > 0.9) {
       randommag = Math.trunc(randommag);
@@ -737,7 +737,7 @@ export default class Decimal {
     priceRatio,
     currentOwned
   ) {
-    var actualStart = priceStart.mul(priceRatio.pow(currentOwned));
+    const actualStart = priceStart.mul(priceRatio.pow(currentOwned));
     return Decimal.floor(
       resourcesAvailable
         .div(actualStart)
@@ -764,9 +764,9 @@ export default class Decimal {
     // n = (-(a-d/2) + sqrt((a-d/2)^2+2dS))/d
     // where a is actualStart, d is priceAdd and S is resourcesAvailable
     // then floor it and you're done!
-    var actualStart = priceStart.add(currentOwned.mul(priceAdd));
-    var b = actualStart.sub(priceAdd.div(2));
-    var b2 = b.pow(2);
+    const actualStart = priceStart.add(currentOwned.mul(priceAdd));
+    const b = actualStart.sub(priceAdd.div(2));
+    const b2 = b.pow(2);
     return b
       .neg()
       .add(b2.add(priceAdd.mul(resourcesAvailable).mul(2)).sqrt())
@@ -775,7 +775,7 @@ export default class Decimal {
   }
 
   public static sumArithmeticSeries_core(numItems, priceStart, priceAdd, currentOwned) {
-    var actualStart = priceStart.add(currentOwned.mul(priceAdd)); // (n/2)*(2*a+(n-1)*d)
+    const actualStart = priceStart.add(currentOwned.mul(priceAdd)); // (n/2)*(2*a+(n-1)*d)
 
     return numItems.div(2).mul(actualStart.mul(2).plus(numItems.sub(1).mul(priceAdd)));
   }
@@ -819,8 +819,8 @@ export default class Decimal {
       return this;
     }
 
-    var absmag = Math.abs(this.mag);
-    var signmag = Math.sign(this.mag);
+    let absmag = Math.abs(this.mag);
+    let signmag = Math.sign(this.mag);
 
     if (absmag >= EXP_LIMIT) {
       this.layer += 1;
@@ -907,7 +907,7 @@ export default class Decimal {
     }
 
     //Handle x^^^y format.
-    var pentationparts = value.split("^^^");
+    const pentationparts = value.split("^^^");
     if (pentationparts.length === 2) {
       var base = parseFloat(pentationparts[0]);
       var height = parseFloat(pentationparts[1]);
@@ -929,7 +929,7 @@ export default class Decimal {
     }
 
     //Handle x^^y format.
-    var tetrationparts = value.split("^^");
+    const tetrationparts = value.split("^^");
     if (tetrationparts.length === 2) {
       var base = parseFloat(tetrationparts[0]);
       var height = parseFloat(tetrationparts[1]);
@@ -950,7 +950,7 @@ export default class Decimal {
     }
 
     //Handle x^y format.
-    var powparts = value.split("^");
+    const powparts = value.split("^");
     if (powparts.length === 2) {
       var base = parseFloat(powparts[0]);
       var exponent = parseFloat(powparts[1]);
@@ -1006,8 +1006,8 @@ export default class Decimal {
       }
     }
 
-    var parts = value.split("e");
-    var ecount = parts.length - 1;
+    const parts = value.split("e");
+    const ecount = parts.length - 1;
 
     //Handle numbers that are exactly floats (0 or 1 es).
     if (ecount === 0) {
@@ -1024,15 +1024,15 @@ export default class Decimal {
     }
 
     //Handle new (e^N)X format.
-    var newparts = value.split("e^");
+    const newparts = value.split("e^");
     if (newparts.length === 2) {
       this.sign = 1;
       if (newparts[0].charAt(0) == "-") {
         this.sign = -1;
       }
-      var layerstring = "";
-      for (var i = 0; i < newparts[1].length; ++i) {
-        var chrcode = newparts[1].charCodeAt(i);
+      let layerstring = "";
+      for (let i = 0; i < newparts[1].length; ++i) {
+        const chrcode = newparts[1].charCodeAt(i);
         if ((chrcode >= 43 && chrcode <= 57) || chrcode === 101) {
           //is "0" to "9" or "+" or "-" or "." or "e" (or "," or "/")
           layerstring += newparts[1].charAt(i);
@@ -1052,7 +1052,7 @@ export default class Decimal {
       this.mag = 0;
       return this;
     }
-    var mantissa = parseFloat(parts[0]);
+    const mantissa = parseFloat(parts[0]);
     if (mantissa === 0) {
       this.sign = 0;
       this.layer = 0;
@@ -1062,7 +1062,7 @@ export default class Decimal {
     var exponent = parseFloat(parts[parts.length - 1]);
     //handle numbers like AeBeC and AeeeeBeC
     if (ecount >= 2) {
-      var me = parseFloat(parts[parts.length - 2]);
+      const me = parseFloat(parts[parts.length - 2]);
       if (isFinite(me)) {
         exponent *= Math.sign(me);
         exponent += f_maglog10(me);
@@ -1304,7 +1304,7 @@ export default class Decimal {
   }
 
   public add(value) {
-    var decimal = D(value);
+    const decimal = D(value);
 
     //inf/nan check
     if (!Number.isFinite(this.layer)) {
@@ -1327,8 +1327,8 @@ export default class Decimal {
       return FC_NN(0, 0, 0);
     }
 
-    var a;
-    var b;
+    let a;
+    let b;
 
     //Special case: If one of the numbers is layer 2 or higher, just take the bigger number.
     if (this.layer >= 2 || decimal.layer >= 2) {
@@ -1347,8 +1347,8 @@ export default class Decimal {
       return D(a.sign * a.mag + b.sign * b.mag);
     }
 
-    var layera = a.layer * Math.sign(a.mag);
-    var layerb = b.layer * Math.sign(b.mag);
+    const layera = a.layer * Math.sign(a.mag);
+    const layerb = b.layer * Math.sign(b.mag);
 
     //If one of the numbers is 2+ layers higher than the other, just take the bigger number.
     if (layera - layerb >= 2) {
@@ -1403,7 +1403,7 @@ export default class Decimal {
   }
 
   public mul(value) {
-    var decimal = D(value);
+    const decimal = D(value);
 
     //inf/nan check
     if (!Number.isFinite(this.layer)) {
@@ -1423,8 +1423,8 @@ export default class Decimal {
       return FC_NN(this.sign * decimal.sign, 0, 1);
     }
 
-    var a;
-    var b;
+    let a;
+    let b;
 
     //Which number is bigger in terms of its multiplicative distance from 1?
     if (
@@ -1481,7 +1481,7 @@ export default class Decimal {
   }
 
   public div(value) {
-    var decimal = D(value);
+    const decimal = D(value);
     return this.mul(decimal.recip());
   }
 
@@ -1519,7 +1519,7 @@ export default class Decimal {
    * -1 for less than value, 0 for equals value, 1 for greater than value
    */
   public cmp(value) {
-    var decimal = D(value);
+    const decimal = D(value);
     if (this.sign > decimal.sign) {
       return 1;
     }
@@ -1530,9 +1530,9 @@ export default class Decimal {
   }
 
   public cmpabs(value) {
-    var decimal = D(value);
-    var layera = this.mag > 0 ? this.layer : -this.layer;
-    var layerb = decimal.mag > 0 ? decimal.layer : -decimal.layer;
+    const decimal = D(value);
+    const layera = this.mag > 0 ? this.layer : -this.layer;
+    const layerb = decimal.mag > 0 ? decimal.layer : -decimal.layer;
     if (layera > layerb) {
       return 1;
     }
@@ -1553,7 +1553,7 @@ export default class Decimal {
   }
 
   public eq(value) {
-    var decimal = D(value);
+    const decimal = D(value);
     return this.sign === decimal.sign && this.layer === decimal.layer && this.mag === decimal.mag;
   }
 
@@ -1570,7 +1570,7 @@ export default class Decimal {
   }
 
   public lt(value) {
-    var decimal = D(value);
+    const decimal = D(value);
     return this.cmp(value) === -1;
   }
 
@@ -1579,7 +1579,7 @@ export default class Decimal {
   }
 
   public gt(value) {
-    var decimal = D(value);
+    const decimal = D(value);
     return this.cmp(value) === 1;
   }
 
@@ -1588,22 +1588,22 @@ export default class Decimal {
   }
 
   public max(value) {
-    var decimal = D(value);
+    const decimal = D(value);
     return this.lt(decimal) ? decimal : this;
   }
 
   public min(value) {
-    var decimal = D(value);
+    const decimal = D(value);
     return this.gt(decimal) ? decimal : this;
   }
 
   public maxabs(value) {
-    var decimal = D(value);
+    const decimal = D(value);
     return this.cmpabs(decimal) < 0 ? decimal : this;
   }
 
   public minabs(value) {
-    var decimal = D(value);
+    const decimal = D(value);
     return this.cmpabs(decimal) > 0 ? decimal : this;
   }
 
@@ -1620,7 +1620,7 @@ export default class Decimal {
   }
 
   public cmp_tolerance(value, tolerance) {
-    var decimal = D(value);
+    const decimal = D(value);
     return this.eq_tolerance(decimal, tolerance) ? 0 : this.cmp(decimal);
   }
 
@@ -1634,7 +1634,7 @@ export default class Decimal {
    * larger number than (larger number)*1e-9 will be considered equal.
    */
   public eq_tolerance(value, tolerance) {
-    var decimal = D(value); // https://stackoverflow.com/a/33024979
+    const decimal = D(value); // https://stackoverflow.com/a/33024979
     if (tolerance == null) {
       tolerance = 1e-7;
     }
@@ -1646,8 +1646,8 @@ export default class Decimal {
       return false;
     }
     // return abs(a-b) <= tolerance * max(abs(a), abs(b))
-    var magA = this.mag;
-    var magB = decimal.mag;
+    let magA = this.mag;
+    let magB = decimal.mag;
     if (this.layer > decimal.layer) {
       magB = f_maglog10(magB);
     }
@@ -1670,22 +1670,22 @@ export default class Decimal {
   }
 
   public lt_tolerance(value, tolerance) {
-    var decimal = D(value);
+    const decimal = D(value);
     return !this.eq_tolerance(decimal, tolerance) && this.lt(decimal);
   }
 
   public lte_tolerance(value, tolerance) {
-    var decimal = D(value);
+    const decimal = D(value);
     return this.eq_tolerance(decimal, tolerance) || this.lt(decimal);
   }
 
   public gt_tolerance(value, tolerance) {
-    var decimal = D(value);
+    const decimal = D(value);
     return !this.eq_tolerance(decimal, tolerance) && this.gt(decimal);
   }
 
   public gte_tolerance(value, tolerance) {
-    var decimal = D(value);
+    const decimal = D(value);
     return this.eq_tolerance(decimal, tolerance) || this.gt(decimal);
   }
 
@@ -1766,9 +1766,9 @@ export default class Decimal {
   }
 
   public pow(value) {
-    var decimal = D(value);
-    var a = this;
-    var b = decimal;
+    const decimal = D(value);
+    const a = this;
+    const b = decimal;
 
     //special case: if a is 0, then return 0
     if (a.sign === 0) {
@@ -1787,7 +1787,7 @@ export default class Decimal {
       return a;
     }
 
-    var result = a.absLog10().mul(b).pow10();
+    const result = a.absLog10().mul(b).pow10();
 
     if (this.sign === -1 && b.toNumber() % 2 === 1) {
       return result.neg();
@@ -1809,11 +1809,11 @@ export default class Decimal {
       return Decimal.dNaN;
     }
 
-    var a = this;
+    let a = this;
 
     //handle layer 0 case - if no precision is lost just use Math.pow, else promote one layer
     if (a.layer === 0) {
-      var newmag = Math.pow(10, a.sign * a.mag);
+      const newmag = Math.pow(10, a.sign * a.mag);
       if (Number.isFinite(newmag) && Math.abs(newmag) > 0.1) {
         return FC(1, 0, newmag);
       } else {
@@ -1841,7 +1841,7 @@ export default class Decimal {
   }
 
   public root(value) {
-    var decimal = D(value);
+    const decimal = D(value);
     return this.pow(decimal.recip());
   }
 
@@ -1866,15 +1866,15 @@ export default class Decimal {
         return D(f_gamma(this.sign * this.mag));
       }
 
-      var t = this.mag - 1;
-      var l = 0.9189385332046727; //0.5*Math.log(2*Math.PI)
+      const t = this.mag - 1;
+      let l = 0.9189385332046727; //0.5*Math.log(2*Math.PI)
       l = l + (t + 0.5) * Math.log(t);
       l = l - t;
-      var n2 = t * t;
-      var np = t;
-      var lm = 12 * np;
-      var adj = 1 / lm;
-      var l2 = l + adj;
+      const n2 = t * t;
+      let np = t;
+      let lm = 12 * np;
+      let adj = 1 / lm;
+      let l2 = l + adj;
       if (l2 === l) {
         return Decimal.exp(l);
       }
@@ -1891,7 +1891,7 @@ export default class Decimal {
       l = l2;
       np = np * n2;
       lm = 1260 * np;
-      var lt = 1 / lm;
+      let lt = 1 / lm;
       l = l + lt;
       np = np * n2;
       lm = 1680 * np;
@@ -1934,7 +1934,7 @@ export default class Decimal {
     } else if (this.layer === 1) {
       return FC(1, 2, Math.log10(this.mag) - 0.3010299956639812);
     } else {
-      var result = Decimal.div(FC_NN(this.sign, this.layer - 1, this.mag), FC_NN(1, 0, 2));
+      const result = Decimal.div(FC_NN(this.sign, this.layer - 1, this.mag), FC_NN(1, 0, 2));
       result.layer += 1;
       result.normalize();
       return result;
@@ -1955,7 +1955,7 @@ export default class Decimal {
   public tetrate(height = 2, payload = FC_NN(1, 0, 1)) {
     if (height === Number.POSITIVE_INFINITY) {
       //Formula for infinite height power tower.
-      var negln = Decimal.ln(this).neg();
+      const negln = Decimal.ln(this).neg();
       return negln.lambertw().div(negln);
     }
 
@@ -1964,9 +1964,9 @@ export default class Decimal {
     }
 
     payload = D(payload);
-    var oldheight = height;
+    const oldheight = height;
     height = Math.trunc(height);
-    var fracheight = oldheight - height;
+    const fracheight = oldheight - height;
 
     if (fracheight !== 0) {
       if (payload.eq(Decimal.dOne)) {
@@ -1981,7 +1981,7 @@ export default class Decimal {
       }
     }
 
-    for (var i = 0; i < height; ++i) {
+    for (let i = 0; i < height; ++i) {
       payload = this.pow(payload);
       //bail if we're NaN
       if (!isFinite(payload.layer) || !isFinite(payload.mag)) {
@@ -2012,17 +2012,17 @@ export default class Decimal {
     }
 
     base = D(base);
-    var result = D(this);
-    var fulltimes = times;
+    let result = D(this);
+    const fulltimes = times;
     times = Math.trunc(times);
-    var fraction = fulltimes - times;
+    const fraction = fulltimes - times;
     if (result.layer - base.layer > 3) {
-      var layerloss = Math.min(times, result.layer - base.layer - 3);
+      const layerloss = Math.min(times, result.layer - base.layer - 3);
       times -= layerloss;
       result.layer -= layerloss;
     }
 
-    for (var i = 0; i < times; ++i) {
+    for (let i = 0; i < times; ++i) {
       result = result.log(base);
       //bail if we're NaN
       if (!isFinite(result.layer) || !isFinite(result.mag)) {
@@ -2055,15 +2055,15 @@ export default class Decimal {
 
     base = D(base);
 
-    var result = 0;
-    var copy = D(this);
+    let result = 0;
+    let copy = D(this);
     if (copy.layer - base.layer > 3) {
-      var layerloss = copy.layer - base.layer - 3;
+      const layerloss = copy.layer - base.layer - 3;
       result += layerloss;
       copy.layer -= layerloss;
     }
 
-    for (var i = 0; i < 100; ++i) {
+    for (let i = 0; i < 100; ++i) {
       if (copy.lt(Decimal.dZero)) {
         copy = Decimal.pow(base, copy);
         result -= 1;
@@ -2136,7 +2136,7 @@ export default class Decimal {
   //Everything continues to use the linear approximation ATM.
   public layeradd10(diff) {
     diff = Decimal.fromValue_noAlloc(diff).toNumber();
-    var result = D(this);
+    const result = D(this);
     if (diff >= 1) {
       var layeradd = Math.trunc(diff);
       diff -= layeradd;
@@ -2147,7 +2147,7 @@ export default class Decimal {
       diff -= layeradd;
       result.layer += layeradd;
       if (result.layer < 0) {
-        for (var i = 0; i < 100; ++i) {
+        for (let i = 0; i < 100; ++i) {
           result.layer++;
           result.mag = Math.log10(result.mag);
           if (!isFinite(result.mag)) {
@@ -2229,8 +2229,8 @@ export default class Decimal {
 
   //layeradd: like adding 'diff' to the number's slog(base) representation. Very similar to tetrate base 'base' and iterated log base 'base'.
   public layeradd(diff, base) {
-    var slogthis = this.slog(base).toNumber();
-    var slogdest = slogthis + diff;
+    const slogthis = this.slog(base).toNumber();
+    const slogdest = slogthis + diff;
     if (slogdest >= 0) {
       return Decimal.tetrate(base, slogdest);
     } else if (!Number.isFinite(slogdest)) {
@@ -2269,7 +2269,7 @@ export default class Decimal {
     if (this.sign == 1 && this.layer >= 3) {
       return FC_NN(this.sign, this.layer - 1, this.mag);
     }
-    var lnx = this.ln();
+    const lnx = this.ln();
     return lnx.div(lnx.lambertw());
   }
   /*
@@ -2452,9 +2452,9 @@ for (var i = 0; i < 10; ++i)
   // https://en.wikipedia.org/wiki/Pentation
   public pentate(height = 2, payload = FC_NN(1, 0, 1)) {
     payload = D(payload);
-    var oldheight = height;
+    const oldheight = height;
     height = Math.trunc(height);
-    var fracheight = oldheight - height;
+    const fracheight = oldheight - height;
 
     //I have no idea if this is a meaningful approximation for pentation to continuous heights, but it is monotonic and continuous.
     if (fracheight !== 0) {
@@ -2470,7 +2470,7 @@ for (var i = 0; i < 10; ++i)
       }
     }
 
-    for (var i = 0; i < height; ++i) {
+    for (let i = 0; i < height; ++i) {
       payload = this.tetrate(payload);
       //bail if we're NaN
       if (!isFinite(payload.layer) || !isFinite(payload.mag)) {
