@@ -1,6 +1,4 @@
-// FIXME: Export as type
-// export type CompareResult = -1 | 0 | 1
-export type CompareResult = number;
+export type CompareResult = -1 | 0 | 1;
 
 const MAX_SIGNIFICANT_DIGITS = 17; //Maximum number of digits of precision to assume in Number
 
@@ -1629,7 +1627,7 @@ export default class Decimal {
     if (this.sign < decimal.sign) {
       return -1;
     }
-    return this.sign * this.cmpabs(value);
+    return (this.sign * this.cmpabs(value)) as CompareResult;
   }
 
   public cmpabs(value: DecimalSource): CompareResult {
