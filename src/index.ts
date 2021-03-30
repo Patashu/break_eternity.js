@@ -993,18 +993,18 @@ export default class Decimal {
     //Handle x^^^y format.
     const pentationparts = value.split("^^^");
     if (pentationparts.length === 2) {
-      var base = parseFloat(pentationparts[0]);
-      var height = parseFloat(pentationparts[1]);
-      var payload = 1;
-      var heightparts = pentationparts[1].split(";");
+      const base = parseFloat(pentationparts[0]);
+      const height = parseFloat(pentationparts[1]);
+      const heightparts = pentationparts[1].split(";");
+      let payload = 1;
       if (heightparts.length === 2) {
-        var payload = parseFloat(heightparts[1]);
+        payload = parseFloat(heightparts[1]);
         if (!isFinite(payload)) {
           payload = 1;
         }
       }
       if (isFinite(base) && isFinite(height)) {
-        var result = Decimal.pentate(base, height, payload);
+        const result = Decimal.pentate(base, height, payload);
         this.sign = result.sign;
         this.layer = result.layer;
         this.mag = result.mag;
@@ -1015,17 +1015,18 @@ export default class Decimal {
     //Handle x^^y format.
     const tetrationparts = value.split("^^");
     if (tetrationparts.length === 2) {
-      var base = parseFloat(tetrationparts[0]);
-      var height = parseFloat(tetrationparts[1]);
-      var heightparts = tetrationparts[1].split(";");
+      const base = parseFloat(tetrationparts[0]);
+      const height = parseFloat(tetrationparts[1]);
+      const heightparts = tetrationparts[1].split(";");
+      let payload = 1;
       if (heightparts.length === 2) {
-        var payload = parseFloat(heightparts[1]);
+        payload = parseFloat(heightparts[1]);
         if (!isFinite(payload)) {
           payload = 1;
         }
       }
       if (isFinite(base) && isFinite(height)) {
-        var result = Decimal.tetrate(base, height, payload);
+        const result = Decimal.tetrate(base, height, payload);
         this.sign = result.sign;
         this.layer = result.layer;
         this.mag = result.mag;
@@ -1036,10 +1037,10 @@ export default class Decimal {
     //Handle x^y format.
     const powparts = value.split("^");
     if (powparts.length === 2) {
-      var base = parseFloat(powparts[0]);
-      var exponent = parseFloat(powparts[1]);
+      const base = parseFloat(powparts[0]);
+      const exponent = parseFloat(powparts[1]);
       if (isFinite(base) && isFinite(exponent)) {
-        var result = Decimal.pow(base, exponent);
+        const result = Decimal.pow(base, exponent);
         this.sign = result.sign;
         this.layer = result.layer;
         this.mag = result.mag;
@@ -1051,18 +1052,18 @@ export default class Decimal {
     value = value.trim().toLowerCase();
 
     //handle X PT Y format.
-    var ptparts = value.split("pt");
+    let ptparts = value.split("pt");
     if (ptparts.length === 2) {
       base = 10;
       height = parseFloat(ptparts[0]);
       ptparts[1] = ptparts[1].replace("(", "");
       ptparts[1] = ptparts[1].replace(")", "");
-      var payload = parseFloat(ptparts[1]);
+      let payload = parseFloat(ptparts[1]);
       if (!isFinite(payload)) {
         payload = 1;
       }
       if (isFinite(base) && isFinite(height)) {
-        var result = Decimal.tetrate(base, height, payload);
+        const result = Decimal.tetrate(base, height, payload);
         this.sign = result.sign;
         this.layer = result.layer;
         this.mag = result.mag;
@@ -1071,13 +1072,13 @@ export default class Decimal {
     }
 
     //handle XpY format (it's the same thing just with p).
-    var ptparts = value.split("p");
+    ptparts = value.split("p");
     if (ptparts.length === 2) {
       base = 10;
       height = parseFloat(ptparts[0]);
       ptparts[1] = ptparts[1].replace("(", "");
       ptparts[1] = ptparts[1].replace(")", "");
-      var payload = parseFloat(ptparts[1]);
+      let payload = parseFloat(ptparts[1]);
       if (!isFinite(payload)) {
         payload = 1;
       }
@@ -1095,13 +1096,13 @@ export default class Decimal {
 
     //Handle numbers that are exactly floats (0 or 1 es).
     if (ecount === 0) {
-      var numberAttempt = parseFloat(value);
+      const numberAttempt = parseFloat(value);
       if (isFinite(numberAttempt)) {
         return this.fromNumber(numberAttempt);
       }
     } else if (ecount === 1) {
       //Very small numbers ("2e-3000" and so on) may look like valid floats but round to 0.
-      var numberAttempt = parseFloat(value);
+      const numberAttempt = parseFloat(value);
       if (isFinite(numberAttempt) && numberAttempt !== 0) {
         return this.fromNumber(numberAttempt);
       }
@@ -1143,7 +1144,7 @@ export default class Decimal {
       this.mag = 0;
       return this;
     }
-    var exponent = parseFloat(parts[parts.length - 1]);
+    let exponent = parseFloat(parts[parts.length - 1]);
     //handle numbers like AeBeC and AeeeeBeC
     if (ecount >= 2) {
       const me = parseFloat(parts[parts.length - 2]);
@@ -1171,7 +1172,7 @@ export default class Decimal {
       this.sign = Math.sign(mantissa);
       this.layer = ecount;
       if (ecount === 2) {
-        var result = Decimal.mul(FC(1, 2, exponent), D(mantissa));
+        const result = Decimal.mul(FC(1, 2, exponent), D(mantissa));
         this.sign = result.sign;
         this.layer = result.layer;
         this.mag = result.mag;
@@ -1539,14 +1540,14 @@ export default class Decimal {
     }
 
     if (a.layer === 2 && b.layer === 1) {
-      var newmag = FC(Math.sign(a.mag), a.layer - 1, Math.abs(a.mag)).add(
+      const newmag = FC(Math.sign(a.mag), a.layer - 1, Math.abs(a.mag)).add(
         FC(Math.sign(b.mag), b.layer - 1, Math.abs(b.mag))
       );
       return FC(a.sign * b.sign, newmag.layer + 1, newmag.sign * newmag.mag);
     }
 
     if (a.layer === 2 && b.layer === 2) {
-      var newmag = FC(Math.sign(a.mag), a.layer - 1, Math.abs(a.mag)).add(
+      const newmag = FC(Math.sign(a.mag), a.layer - 1, Math.abs(a.mag)).add(
         FC(Math.sign(b.mag), b.layer - 1, Math.abs(b.mag))
       );
       return FC(a.sign * b.sign, newmag.layer + 1, newmag.sign * newmag.mag);
@@ -2262,7 +2263,8 @@ export default class Decimal {
       }
 
       //Note that every integer slog10 value, the formula changes, so if we're near such a number, we have to spend exactly enough layerdiff to hit it, and then use the new formula.
-      const diffToNextSlog = Math.log10(Math.log(1e10) / Math.log(result.mag), 10);
+      // const diffToNextSlog = Math.log10(Math.log(1e10) / Math.log(result.mag), 10); // FIXME: This was broken code, had an extra argument
+      const diffToNextSlog = Math.log10(Math.log(1e10) / Math.log(result.mag));
       if (diffToNextSlog < diff) {
         result.mag = Math.log10(1e10);
         result.layer++;
