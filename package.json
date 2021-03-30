@@ -2,10 +2,18 @@
   "name": "break_eternity.js",
   "version": "1.0.2",
   "description": "A Javascript numerical library to represent numbers as large as 10^^1e308 and as small as 10^-10^^1e308. Sequel to break_infinity.js, designed for incremental games.",
-  "main": "break_eternity.js",
+  "main": "dist/break_infinity.js",
+  "module": "dist/break_infinity.esm.js",
+  "unpkg": "dist/break_infinity.min.js",
+  "types": "dist/index.d.ts",
   "scripts": {
+    "build": "bili",
+    "prepublishOnly": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "files": [
+    "dist"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Patashu/break_eternity.js.git"
@@ -26,11 +34,13 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.20.0",
     "@typescript-eslint/parser": "^4.20.0",
+    "bili": "^5.0.5",
     "eslint": "^7.23.0",
     "eslint-config-prettier": "^8.1.0",
     "eslint-plugin-prettier": "^3.3.1",
     "eslint-plugin-react": "^7.23.1",
     "prettier": "^2.2.1",
+    "rollup-plugin-typescript2": "^0.30.0",
     "typescript": "^4.2.3"
   }
 }

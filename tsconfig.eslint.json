@@ -3,6 +3,7 @@
   "include": [
     ".eslintrc.js",
     ".prettierrc.js",
+    "bili.config.ts",
     "break_eternity.ts",
     "package.json",
     "tsconfig.json",
