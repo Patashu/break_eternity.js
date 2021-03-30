@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    ".eslintrc.js",
+    ".prettierrc.js",
+    "break_eternity.ts",
+    "package.json",
+    "tsconfig.json",
+    "types/**/*.ts"
+  ]
+}
