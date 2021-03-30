@@ -160,14 +160,17 @@ function d_lambertw(z: Decimal, tol = 1e-10): Decimal {
   let ew, wew, wewz, wn;
 
   if (!Number.isFinite(z.mag)) {
+    // FIXME: It checks z.mag, which means it can't be anything but a decimal
     return z;
   }
+  // FIXME: Seems like this should be == Decimal.dZero?
   if (z === 0) {
     return z;
   }
+  // FIXME: Seems like this should be == Decimal.dOne?
   if (z === 1) {
     //Split out this case because the asymptotic series blows up
-    return OMEGA;
+    return OMEGA; // FIXME: Seems like this should return D(OMEGA)?
   }
 
   const absz = Decimal.abs(z);
@@ -603,7 +606,7 @@ export default class Decimal {
     return D(value).log10();
   }
 
-  public static log(value: DecimalSource, base: number): Decimal {
+  public static log(value: DecimalSource, base: DecimalSource): Decimal {
     return D(value).log(base);
   }
 
@@ -663,7 +666,11 @@ export default class Decimal {
     return D(value).cbrt();
   }
 
-  public static tetrate(value: DecimalSource, height = 2, payload = FC_NN(1, 0, 1)): Decimal {
+  public static tetrate(
+    value: DecimalSource,
+    height = 2,
+    payload: DecimalSource = FC_NN(1, 0, 1)
+  ): Decimal {
     return D(value).tetrate(height, payload);
   }
 
@@ -671,7 +678,7 @@ export default class Decimal {
     return D(value).iteratedexp(height, payload);
   }
 
-  public static iteratedlog(value: DecimalSource, base = 10, times = 1): Decimal {
+  public static iteratedlog(value: DecimalSource, base: DecimalSource = 10, times = 1): Decimal {
     return D(value).iteratedlog(base, times);
   }
 
@@ -695,7 +702,11 @@ export default class Decimal {
     return D(value).ssqrt();
   }
 
-  public static pentate(value: DecimalSource, height = 2, payload = FC_NN(1, 0, 1)): Decimal {
+  public static pentate(
+    value: DecimalSource,
+    height = 2,
+    payload: DecimalSource = FC_NN(1, 0, 1)
+  ): Decimal {
     return D(value).pentate(height, payload);
   }
 
@@ -1061,6 +1072,8 @@ export default class Decimal {
     value = value.trim().toLowerCase();
 
     //handle X PT Y format.
+    let base;
+    let height;
     let ptparts = value.split("pt");
     if (ptparts.length === 2) {
       base = 10;
@@ -1913,7 +1926,7 @@ export default class Decimal {
         if (a.sign === 0) {
           return Decimal.dOne;
         } else {
-          a = FC_NN(a.sign, a.layer + 1, Math.log10(a.mag));
+          a = FC_NN(a.sign, a.layer + 1, Math.log10(a.mag)) as this;
         }
       }
     }
@@ -2056,7 +2069,6 @@ export default class Decimal {
       return Decimal.iteratedlog(payload, this, -height);
     }
 
-    // FIXME: Rename
     payload = D(payload);
     const oldheight = height;
     height = Math.trunc(height);
@@ -2323,7 +2335,7 @@ export default class Decimal {
   }
 
   //layeradd: like adding 'diff' to the number's slog(base) representation. Very similar to tetrate base 'base' and iterated log base 'base'.
-  public layeradd(diff: number, base: number): Decimal {
+  public layeradd(diff: number, base: DecimalSource): Decimal {
     const slogthis = this.slog(base).toNumber();
     const slogdest = slogthis + diff;
     if (slogdest >= 0) {
@@ -2549,7 +2561,7 @@ for (var i = 0; i < 10; ++i)
 
   //Pentation/pentate: The result of tetrating 'height' times in a row. An absurdly strong operator - Decimal.pentate(2, 4.28) and Decimal.pentate(10, 2.37) are already too huge for break_eternity.js!
   // https://en.wikipedia.org/wiki/Pentation
-  public pentate(height = 2, payload = FC_NN(1, 0, 1)): Decimal {
+  public pentate(height = 2, payload: DecimalSource = FC_NN(1, 0, 1)): Decimal {
     payload = D(payload);
     const oldheight = height;
     height = Math.trunc(height);
@@ -2570,7 +2582,7 @@ for (var i = 0; i < 10; ++i)
     }
 
     for (let i = 0; i < height; ++i) {
-      payload = this.tetrate(payload);
+      payload = this.tetrate(payload); // FIXME: This seems to be a bug - tetrate only handles numbers but this is a decimal
       //bail if we're NaN
       if (!isFinite(payload.layer) || !isFinite(payload.mag)) {
         return payload;
