@@ -603,7 +603,7 @@ export default class Decimal {
     return D(value).log10();
   }
 
-  public static log(value: DecimalSource, base: number) {
+  public static log(value: DecimalSource, base: number): Decimal {
     return D(value).log(base);
   }
 
@@ -877,7 +877,7 @@ export default class Decimal {
     return cost.div(currentRpS).add(cost.div(deltaRpS));
   }
 
-  public normalize() {
+  public normalize(): this {
     /*
     PSEUDOCODE:
     Whenever we are partially 0 (sign is 0 or mag and layer is 0), make it fully 0.
@@ -945,7 +945,7 @@ export default class Decimal {
     return this;
   }
 
-  public fromComponents(sign: number, layer: number, mag: number): Decimal {
+  public fromComponents(sign: number, layer: number, mag: number): this {
     this.sign = sign;
     this.layer = layer;
     this.mag = mag;
@@ -954,14 +954,14 @@ export default class Decimal {
     return this;
   }
 
-  public fromComponents_noNormalize(sign: number, layer: number, mag: number): Decimal {
+  public fromComponents_noNormalize(sign: number, layer: number, mag: number): this {
     this.sign = sign;
     this.layer = layer;
     this.mag = mag;
     return this;
   }
 
-  public fromMantissaExponent(mantissa: number, exponent: number): Decimal {
+  public fromMantissaExponent(mantissa: number, exponent: number): this {
     this.layer = 1;
     this.sign = Math.sign(mantissa);
     mantissa = Math.abs(mantissa);
@@ -971,20 +971,20 @@ export default class Decimal {
     return this;
   }
 
-  public fromMantissaExponent_noNormalize(mantissa: number, exponent: number): Decimal {
+  public fromMantissaExponent_noNormalize(mantissa: number, exponent: number): this {
     //The idea of 'normalizing' a break_infinity.js style Decimal doesn't really apply. So just do the same thing.
     this.fromMantissaExponent(mantissa, exponent);
     return this;
   }
 
-  public fromDecimal(value: Decimal): Decimal {
+  public fromDecimal(value: Decimal): this {
     this.sign = value.sign;
     this.layer = value.layer;
     this.mag = value.mag;
     return this;
   }
 
-  public fromNumber(value: number): Decimal {
+  public fromNumber(value: number): this {
     this.mag = Math.abs(value);
     this.sign = Math.sign(value);
     this.layer = 0;
@@ -1940,7 +1940,7 @@ export default class Decimal {
 
   public factorial(): Decimal {
     if (this.mag < 0) {
-      return this.toNumber().add(1).gamma(); // FIXME: This is an invalid operation
+      return this.toNumber().add(1).gamma(); // FIXME: This is an invalid operation, number doesn't have an add
     } else if (this.layer === 0) {
       return this.add(1).gamma();
     } else if (this.layer === 1) {
