@@ -25,7 +25,7 @@ const powerOf10 = (function () {
   const powersOf10: number[] = [];
 
   for (let i = NUMBER_EXP_MIN + 1; i <= NUMBER_EXP_MAX; i++) {
-    powersOf10.push(Number(`1e${i}`));
+    powersOf10.push(Number("1e" + i));
   }
 
   const indexOf0InPowersOf10 = 323;
@@ -1272,15 +1272,15 @@ export default class Decimal {
       if ((this.mag < 1e21 && this.mag > 1e-7) || this.mag === 0) {
         return (this.sign * this.mag).toString();
       }
-      return `${this.m}e${this.e}`;
+      return this.m + "e" + this.e;
     } else if (this.layer === 1) {
-      return `${this.m}e${this.e}`;
+      return this.m + "e" + this.e;
     } else {
       //layer 2+
       if (this.layer <= MAX_ES_IN_A_ROW) {
-        return `${this.sign === -1 ? "-" : ""}${"e".repeat(this.layer)}${this.mag}`;
+        return (this.sign === -1 ? "-" : "") + "e".repeat(this.layer) + this.mag;
       } else {
-        return `${this.sign === -1 ? "-" : ""}(e^${this.layer})${this.mag}`;
+        return (this.sign === -1 ? "-" : "") + "(e^" + this.layer + ")" + this.mag;
       }
     }
   }
@@ -1324,18 +1324,19 @@ export default class Decimal {
       if ((this.mag < 1e21 && this.mag > 1e-7) || this.mag === 0) {
         return (this.sign * this.mag).toFixed(places);
       }
-      return `${decimalPlaces(this.m, places)}e${decimalPlaces(this.e, places)}`;
+      return decimalPlaces(this.m, places) + "e" + decimalPlaces(this.e, places);
     } else if (this.layer === 1) {
-      return `${decimalPlaces(this.m, places)}e${decimalPlaces(this.e, places)}`;
+      return decimalPlaces(this.m, places) + "e" + decimalPlaces(this.e, places);
     } else {
       //layer 2+
       if (this.layer <= MAX_ES_IN_A_ROW) {
-        return `${this.sign === -1 ? "-" : ""}${"e".repeat(this.layer)}${decimalPlaces(
-          this.mag,
-          places
-        )}`;
+        return (
+          (this.sign === -1 ? "-" : "") + "e".repeat(this.layer) + decimalPlaces(this.mag, places)
+        );
       } else {
-        return `${this.sign === -1 ? "-" : ""}(e^${this.layer})${decimalPlaces(this.mag, places)}`;
+        return (
+          (this.sign === -1 ? "-" : "") + "(e^" + this.layer + ")" + decimalPlaces(this.mag, places)
+        );
       }
     }
   }
