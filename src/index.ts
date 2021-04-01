@@ -155,7 +155,6 @@ function d_lambertw(z: Decimal, tol = 1e-10): Decimal {
   let ew, wew, wewz, wn;
 
   if (!Number.isFinite(z.mag)) {
-    // FIXME: It checks z.mag, which means it can't be anything but a decimal
     return z;
   }
   // FIXME: Seems like this should be == Decimal.dZero?
@@ -2280,8 +2279,7 @@ export default class Decimal {
       }
 
       //Note that every integer slog10 value, the formula changes, so if we're near such a number, we have to spend exactly enough layerdiff to hit it, and then use the new formula.
-      // const diffToNextSlog = Math.log10(Math.log(1e10) / Math.log(result.mag), 10); // FIXME: This was broken code, had an extra argument
-      const diffToNextSlog = Math.log10(Math.log(1e10) / Math.log(result.mag));
+      const diffToNextSlog = Math.log10(Math.log(1e10) / Math.log(result.mag), 10); // FIXME: This has an extra argument
       if (diffToNextSlog < diff) {
         result.mag = Math.log10(1e10);
         result.layer++;
