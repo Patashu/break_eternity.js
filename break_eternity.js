@@ -1831,7 +1831,7 @@
       
       var result = (a.absLog10().mul(b)).pow10();
 
-      if (this.sign === -1 && b.toNumber() % 2 === 1) {
+      if (this.sign === -1 && Math.abs(b.toNumber() % 2) === 1) {
         return result.neg();
       }
 
