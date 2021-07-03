@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    ".eslintrc.js",
+    ".prettierrc.js",
+    "bili.config.ts",
+    "package.json",
+    "src/**/*.ts",
+    "tsconfig.json",
+    "types/**/*.ts"
+  ]
+}
