@@ -13,11 +13,11 @@ const config: Config = {
     fileName: (context, defaultFileName) => {
       switch (context.format) {
         case "umd":
-          return context.minify ? "break_infinity.min.js" : "break_infinity.js";
+          return context.minify ? "break_eternity.min.js" : "break_eternity.js";
         case "esm":
-          return "break_infinity.esm.js";
+          return "break_eternity.esm.js";
         case "cjs":
-          return "break_infinity.cjs.js";
+          return "break_eternity.cjs.js";
         default:
           return defaultFileName;
       }
