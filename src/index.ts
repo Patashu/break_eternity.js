@@ -1946,7 +1946,7 @@ export default class Decimal {
 
   public factorial(): Decimal {
     if (this.mag < 0) {
-      return this.toNumber().add(1).gamma(); // FIXME: This is an invalid operation, number doesn't have an add
+      return this.add(1).gamma();
     } else if (this.layer === 0) {
       return this.add(1).gamma();
     } else if (this.layer === 1) {
