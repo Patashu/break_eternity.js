@@ -2337,9 +2337,7 @@ export default class Decimal {
     } else if (slogdest >= -1) {
       return Decimal.log(Decimal.tetrate(base, slogdest + 1), base);
     } else {
-      // FIXME: Is this supposed to return this value??
-      Decimal.log(Decimal.log(Decimal.tetrate(base, slogdest + 2), base), base);
-      throw "Unhandled behavior";
+      return Decimal.log(Decimal.log(Decimal.tetrate(base, slogdest + 2), base), base);
     }
   }
 
