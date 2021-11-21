@@ -2277,7 +2277,7 @@ export default class Decimal {
       }
 
       //Note that every integer slog10 value, the formula changes, so if we're near such a number, we have to spend exactly enough layerdiff to hit it, and then use the new formula.
-      const diffToNextSlog = Math.log10(Math.log(1e10) / Math.log(result.mag), 10); // FIXME: This has an extra argument
+      const diffToNextSlog = Math.log10(Math.log(1e10) / Math.log(result.mag));
       if (diffToNextSlog < diff) {
         result.mag = Math.log10(1e10);
         result.layer++;
