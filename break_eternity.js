@@ -751,6 +751,14 @@
     }, {
       key: "toString",
       value: function toString() {
+        if (isNaN(this.layer) || isNaN(this.m) || isNaN(this.e)) {
+          return "NaN";
+        }
+
+        if (this.e === Number.POSITIVE_INFINITY || this.layer === Number.POSITIVE_INFINITY) {
+          return this.sign === 1 ? "Infinity" : "-Infinity";
+        }
+
         if (this.layer === 0) {
           if (this.mag < 1e21 && this.mag > 1e-7 || this.mag === 0) {
             return (this.sign * this.mag).toString();
