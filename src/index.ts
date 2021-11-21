@@ -2574,7 +2574,7 @@ for (var i = 0; i < 10; ++i)
     }
 
     for (let i = 0; i < height; ++i) {
-      payload = this.tetrate(payload); // FIXME: This seems to be a bug - tetrate only handles numbers but this is a decimal
+      payload = this.tetrate(payload.toNumber());
       //bail if we're NaN
       if (!isFinite(payload.layer) || !isFinite(payload.mag)) {
         return payload;
