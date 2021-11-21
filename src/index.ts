@@ -1888,8 +1888,15 @@ export default class Decimal {
 
     const result = a.absLog10().mul(b).pow10();
 
-    if (this.sign === -1 && Math.abs(b.toNumber() % 2) % 2 === 1) {
-      return result.neg();
+    if (this.sign === -1)
+	{
+	  if (Math.abs(b.toNumber() % 2) % 2 === 1) {	
+		return result.neg();
+	  }
+	  else if (Math.abs(b.toNumber() % 2) % 2 === 0) {	
+	    return result;
+	  }
+	  return Decimal.dNaN;
     }
 
     return result;
