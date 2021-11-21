@@ -157,8 +157,7 @@ function d_lambertw(z: Decimal, tol = 1e-10): Decimal {
   if (!Number.isFinite(z.mag)) {
     return z;
   }
-  // FIXME: Seems like this should be == Decimal.dZero?
-  if (z === 0) {
+  if (z === Decimal.dZero) {
     return z;
   }
   // FIXME: Seems like this should be == Decimal.dOne?
