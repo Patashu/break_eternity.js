@@ -162,7 +162,7 @@ function d_lambertw(z: Decimal, tol = 1e-10): Decimal {
   }
   if (z === Decimal.dOne) {
     //Split out this case because the asymptotic series blows up
-    return OMEGA; // FIXME: Seems like this should return D(OMEGA)?
+    return D(OMEGA);
   }
 
   const absz = Decimal.abs(z);
