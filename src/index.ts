@@ -1869,9 +1869,9 @@ export default class Decimal {
     const a = this;
     const b = decimal;
 
-    //special case: if a is 0, then return 0
+    //special case: if a is 0, then return 0 (UNLESS b is 0, then return 1)
     if (a.sign === 0) {
-      return a;
+      return b.eq(0) ? FC_NN(1, 0, 1) : a
     }
     //special case: if a is 1, then return 1
     if (a.sign === 1 && a.layer === 0 && a.mag === 1) {
@@ -1888,7 +1888,7 @@ export default class Decimal {
 
     const result = a.absLog10().mul(b).pow10();
 
-    if (this.sign === -1 && b.toNumber() % 2 === 1) {
+    if (this.sign === -1 && Math.abs(b.toNumber() % 2) % 2 === 1) {
       return result.neg();
     }
 
