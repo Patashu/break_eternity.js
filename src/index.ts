@@ -2534,10 +2534,20 @@ export default class Decimal {
 
   //background info and tables of values for critical functions taken here: https://github.com/Patashu/break_eternity.js/issues/22
   public static slog_critical(base: number, height: number): number {
+	//TODO: for bases above 10, revert to old linear approximation until I can think of something better
+	if (base > 10)
+	{
+		return height-1;
+	}
 	return Decimal.critical_section(base, height, critical_slog_values);
   }
   
   public static tetrate_critical(base: number, height: number): number {
+	//TODO: for bases above 10, revert to old linear approximation until I can think of something better
+	if (base > 10)
+	{
+		return Math.pow(base, height);
+	}
 	return Decimal.critical_section(base, height, critical_tetr_values);
   }
   

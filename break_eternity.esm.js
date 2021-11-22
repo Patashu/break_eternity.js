@@ -2952,11 +2952,21 @@ var Decimal = /*#__PURE__*/function () {
   }, {
     key: "slog_critical",
     value: function slog_critical(base, height) {
+      //TODO: for bases above 10, revert to old linear approximation until I can think of something better
+      if (base > 10) {
+        return height - 1;
+      }
+
       return Decimal.critical_section(base, height, critical_slog_values);
     }
   }, {
     key: "tetrate_critical",
     value: function tetrate_critical(base, height) {
+      //TODO: for bases above 10, revert to old linear approximation until I can think of something better
+      if (base > 10) {
+        return Math.pow(base, height);
+      }
+
       return Decimal.critical_section(base, height, critical_tetr_values);
     }
   }, {
