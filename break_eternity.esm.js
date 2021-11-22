@@ -1770,7 +1770,7 @@ var Decimal = /*#__PURE__*/function () {
         payload = this.pow(payload); //bail if we're NaN
 
         if (!isFinite(payload.layer) || !isFinite(payload.mag)) {
-          return payload;
+          return payload.normalize();
         } //shortcut
 
 
@@ -1822,7 +1822,7 @@ var Decimal = /*#__PURE__*/function () {
         result = result.log(base); //bail if we're NaN
 
         if (!isFinite(result.layer) || !isFinite(result.mag)) {
-          return result;
+          return result.normalize();
         } //give up after 10000 iterations if nothing is happening
 
 
@@ -1904,7 +1904,7 @@ var Decimal = /*#__PURE__*/function () {
             result.mag = Math.log10(result.mag);
 
             if (!isFinite(result.mag)) {
-              return result;
+              return result.normalize();
             }
 
             if (result.layer >= 0) {
@@ -2217,7 +2217,7 @@ var Decimal = /*#__PURE__*/function () {
         payload = this.tetrate(payload.toNumber()); //bail if we're NaN
 
         if (!isFinite(payload.layer) || !isFinite(payload.mag)) {
-          return payload;
+          return payload.normalize();
         } //give up after 10 iterations if nothing is happening
 
 

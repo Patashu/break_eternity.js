@@ -2440,7 +2440,7 @@ export default class Decimal {
       payload = this.pow(payload);
       //bail if we're NaN
       if (!isFinite(payload.layer) || !isFinite(payload.mag)) {
-        return payload;
+        return payload.normalize();
       }
       //shortcut
       if (payload.layer - this.layer > 3) {
@@ -2481,7 +2481,7 @@ export default class Decimal {
       result = result.log(base);
       //bail if we're NaN
       if (!isFinite(result.layer) || !isFinite(result.mag)) {
-        return result;
+        return result.normalize();
       }
       //give up after 10000 iterations if nothing is happening
       if (i > 10000) {
@@ -2594,7 +2594,7 @@ export default class Decimal {
           result.layer++;
           result.mag = Math.log10(result.mag);
           if (!isFinite(result.mag)) {
-            return result;
+            return result.normalize();
           }
           if (result.layer >= 0) {
             break;
@@ -2910,7 +2910,7 @@ for (var i = 0; i < 10; ++i)
       payload = this.tetrate(payload.toNumber());
       //bail if we're NaN
       if (!isFinite(payload.layer) || !isFinite(payload.mag)) {
-        return payload;
+        return payload.normalize();
       }
       //give up after 10 iterations if nothing is happening
       if (i > 10) {
