@@ -1189,6 +1189,26 @@ var Decimal = /*#__PURE__*/function () {
       return this.cmp(value);
     }
   }, {
+    key: "isNan",
+    value: function isNan() {
+      return isNaN(this.sign) || isNaN(this.layer) || isNaN(this.mag);
+    }
+  }, {
+    key: "isFinite",
+    value: function (_isFinite2) {
+      function isFinite() {
+        return _isFinite2.apply(this, arguments);
+      }
+
+      isFinite.toString = function () {
+        return _isFinite2.toString();
+      };
+
+      return isFinite;
+    }(function () {
+      return isFinite(this.sign) && isFinite(this.layer) && isFinite(this.mag);
+    })
+  }, {
     key: "eq",
     value: function eq(value) {
       var decimal = D(value);
@@ -2566,6 +2586,38 @@ var Decimal = /*#__PURE__*/function () {
     value: function compare(value, other) {
       return D(value).cmp(other);
     }
+  }, {
+    key: "isNaN",
+    value: function (_isNaN) {
+      function isNaN(_x) {
+        return _isNaN.apply(this, arguments);
+      }
+
+      isNaN.toString = function () {
+        return _isNaN.toString();
+      };
+
+      return isNaN;
+    }(function (value) {
+      value = D(value);
+      return isNaN(value.sign) || isNaN(value.layer) || isNaN(value.mag);
+    })
+  }, {
+    key: "isFinite",
+    value: function (_isFinite) {
+      function isFinite(_x2) {
+        return _isFinite.apply(this, arguments);
+      }
+
+      isFinite.toString = function () {
+        return _isFinite.toString();
+      };
+
+      return isFinite;
+    }(function (value) {
+      value = D(value);
+      return isFinite(value.sign) && isFinite(value.layer) && isFinite(value.mag);
+    })
   }, {
     key: "eq",
     value: function eq(value, other) {

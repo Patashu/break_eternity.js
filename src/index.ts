@@ -710,6 +710,16 @@ export default class Decimal {
   public static compare(value: DecimalSource, other: DecimalSource): CompareResult {
     return D(value).cmp(other);
   }
+  
+  public static isNaN(value: DecimalSource): boolean {
+	value = D(value);
+	return isNaN(value.sign) || isNaN(value.layer) || isNaN(value.mag);
+  }
+  
+  public static isFinite(value: DecimalSource): boolean {
+	value = D(value);
+	return isFinite(value.sign) && isFinite(value.layer) && isFinite(value.mag);
+  }
 
   public static eq(value: DecimalSource, other: DecimalSource): boolean {
     return D(value).eq(other);
@@ -1921,6 +1931,14 @@ export default class Decimal {
 
   public compare(value: DecimalSource): CompareResult {
     return this.cmp(value);
+  }
+  
+  public isNan(): boolean {
+	return isNaN(this.sign) || isNaN(this.layer) || isNaN(this.mag);
+  }
+  
+  public isFinite(): boolean {
+	return isFinite(this.sign) && isFinite(this.layer) && isFinite(this.mag);
   }
 
   public eq(value: DecimalSource): boolean {

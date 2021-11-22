@@ -63,6 +63,8 @@ export default class Decimal {
     static cmp(value: DecimalSource, other: DecimalSource): CompareResult;
     static cmpabs(value: DecimalSource, other: DecimalSource): CompareResult;
     static compare(value: DecimalSource, other: DecimalSource): CompareResult;
+    static isNaN(value: DecimalSource): boolean;
+    static isFinite(value: DecimalSource): boolean;
     static eq(value: DecimalSource, other: DecimalSource): boolean;
     static equals(value: DecimalSource, other: DecimalSource): boolean;
     static neq(value: DecimalSource, other: DecimalSource): boolean;
@@ -201,6 +203,8 @@ export default class Decimal {
     cmp(value: DecimalSource): CompareResult;
     cmpabs(value: DecimalSource): CompareResult;
     compare(value: DecimalSource): CompareResult;
+    isNan(): boolean;
+    isFinite(): boolean;
     eq(value: DecimalSource): boolean;
     equals(value: DecimalSource): boolean;
     neq(value: DecimalSource): boolean;
