@@ -2357,6 +2357,11 @@ export default class Decimal {
 	  //within the convergence range?
 	  if (this_num <= 1.44466786100976613366 && this_num >= 0.06598803584531253708)
 	  {
+		//hotfix for the very edge of the number range not being handled properly
+		if (this_num > 1.444667861009099)
+		{
+			return new Decimal(Math.E);
+		}
 		//Formula for infinite height power tower.
 		const negln = Decimal.ln(this).neg();
 		return negln.lambertw().div(negln);
@@ -2366,14 +2371,10 @@ export default class Decimal {
 		//explodes to infinity
 		return new Decimal(Number.POSITIVE_INFINITY)
 	  }
-	  else if (this_num >= 0)
-	  {
-		//never converges
-		return Decimal.dNaN;
-	  }
 	  else
 	  {
-		//quickly becomes a complex number
+		//0.06598803584531253708 > this_num >= 0: never converges
+		//this_num < 0: quickly becomes a complex number
 		return Decimal.dNaN;
 	  }
     }
