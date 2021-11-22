@@ -1892,18 +1892,12 @@ var Decimal = /*#__PURE__*/function () {
 
         if (this.eq(Decimal.dZero)) {
           return Decimal.dNegOne;
-        }
-
-        if (this.lt(Decimal.dOne)) {
-          //0 < this < 1: ambiguous (happens multiple times)
-          //this < 0: impossible (as far as I can tell)
-          return Decimal.dNaN;
-        } //TODO: remaining cases are like: if you tetrate 0.9^^-1.01 to 0.9^^-1.99, you reach larger and larger numbers. so we need to figure out which number we're currently on
-        //and we can't call layeradd because that calls slog!
-        //TODO: I'd like to know values of tetrate for base 0<b<1 and height -1>h>-2, and slog for base 0<b<1 and arg inf>a>1
+        } //0 < this < 1: ambiguous (happens multiple times)
+        //this < 0: impossible (as far as I can tell)
+        //this > 1: partially complex (http://myweb.astate.edu/wpaulsen/tetcalc/tetcalc.html base 0.25 for proof)
 
 
-        throw Error("unimplemented for now");
+        return Decimal.dNaN;
       } //slog_n(0) is -1
 
 
