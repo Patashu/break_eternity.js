@@ -2383,7 +2383,7 @@ export default class Decimal {
 	//0^^x oscillates if we define 0^0 == 1 (which in javascript land we do), since then 0^^1 is 0, 0^^2 is 1, 0^^3 is 0, etc. payload is ignored
 	//using the linear approximation for height (TODO: don't know a better way to calculate it ATM)
 	if (this.eq(Decimal.dZero)) {
-		var result = Math.abs(height % 2);
+		var result = Math.abs((height + 1) % 2);
 		if (result > 1)
 		{
 			result = 2 - result;

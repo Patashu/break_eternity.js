@@ -1718,7 +1718,7 @@
 
 
         if (this.eq(Decimal.dZero)) {
-          var result = Math.abs(height % 2);
+          var result = Math.abs((height + 1) % 2);
 
           if (result > 1) {
             result = 2 - result;
