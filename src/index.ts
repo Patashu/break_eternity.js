@@ -2419,14 +2419,21 @@ export default class Decimal {
 		}
 		return payload;
 	}
-	//TODO: base < 0
-	//TODO: very big and very small bases
-	//TODO: investigate negative integer, negative real and negative infinity heights a little more (maybe in Decimal.iteratedlog)
-	//TODO: investigate slog edge cases (in slog, obviously)
+	//TODO: base < 0, but it's hard for me to reason about (probably all non-integer heights are NaN automatically?)
+	//TODO: investigate negative integer, negative real and negative infinity heights a little more (maybe in Decimal.iteratedlog), but it seems fine
+	//TODO: investigate slog edge cases (in slog, obviously). but it's probably fine?
 	
     if (fracheight !== 0) {
       if (payload.eq(Decimal.dOne)) {
-        payload = D(Decimal.tetrate_critical(this.toNumber(), fracheight));
+		//TODO: for bases above 10, revert to old linear approximation until I can think of something better
+		if (this.gt(10))
+		{
+			payload = this.pow(fracheight);
+		}
+		else
+		{
+			payload = D(Decimal.tetrate_critical(this.toNumber(), fracheight));
+		}
       } else {
         if (this.eq(10)) {
           payload = payload.layeradd10(fracheight);
@@ -2543,11 +2550,6 @@ export default class Decimal {
   }
   
   public static tetrate_critical(base: number, height: number): number {
-	//TODO: for bases above 10, revert to old linear approximation until I can think of something better
-	if (base > 10)
-	{
-		return Math.pow(base, height);
-	}
 	return Decimal.critical_section(base, height, critical_tetr_values);
   }
   

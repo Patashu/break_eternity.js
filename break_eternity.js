@@ -1762,7 +1762,12 @@
 
         if (fracheight !== 0) {
           if (payload.eq(Decimal.dOne)) {
-            payload = D(Decimal.tetrate_critical(this.toNumber(), fracheight));
+            //TODO: for bases above 10, revert to old linear approximation until I can think of something better
+            if (this.gt(10)) {
+              payload = this.pow(fracheight);
+            } else {
+              payload = D(Decimal.tetrate_critical(this.toNumber(), fracheight));
+            }
           } else {
             if (this.eq(10)) {
               payload = payload.layeradd10(fracheight);
@@ -2968,11 +2973,6 @@
     }, {
       key: "tetrate_critical",
       value: function tetrate_critical(base, height) {
-        //TODO: for bases above 10, revert to old linear approximation until I can think of something better
-        if (base > 10) {
-          return Math.pow(base, height);
-        }
-
         return Decimal.critical_section(base, height, critical_tetr_values);
       }
     }, {
