@@ -256,6 +256,7 @@ export default class Decimal {
     slog(base?: DecimalSource): Decimal;
     static slog_critical(base: number, height: number): number;
     static tetrate_critical(base: number, height: number): number;
+    static critical_section(base: number, height: number, grid: number[][]): number;
     layeradd10(diff: DecimalSource): Decimal;
     layeradd(diff: number, base: DecimalSource): Decimal;
     lambertw(): Decimal;
