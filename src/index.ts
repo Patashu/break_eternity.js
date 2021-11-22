@@ -2434,8 +2434,6 @@ export default class Decimal {
 		return payload;
 	}
 	//TODO: base < 0, but it's hard for me to reason about (probably all non-integer heights are NaN automatically?)
-	//TODO: investigate negative integer, negative real and negative infinity heights a little more (maybe in Decimal.iteratedlog), but it seems fine
-	//TODO: investigate slog edge cases (in slog, obviously). but it's probably fine?
 	
     if (fracheight !== 0) {
       if (payload.eq(Decimal.dOne)) {
@@ -2531,11 +2529,43 @@ export default class Decimal {
   //Super-logarithm, one of tetration's inverses, tells you what size power tower you'd have to tetrate base to to get number. By definition, will never be higher than 1.8e308 in break_eternity.js, since a power tower 1.8e308 numbers tall is the largest representable number.
   // https://en.wikipedia.org/wiki/Super-logarithm
   public slog(base: DecimalSource = 10): Decimal {
-    if (this.mag < 0) {
+	base = D(base);
+	
+	//special cases:
+	//slog base 0 or lower is NaN
+	if (base.lte(Decimal.dZero)) {
+		return Decimal.dNaN;
+	}
+	//slog base 1 is NaN
+	if (base.eq(Decimal.dOne)) {
+		return Decimal.dNaN;
+	}
+	//need to handle these small, wobbling bases specially
+	if (base.lt(Decimal.dOne))
+	{
+		if (this.eq(Decimal.dOne))
+		{
+			return Decimal.dZero;
+		}
+		if (this.eq(Decimal.dZero))
+		{
+			return Decimal.dNegOne;
+		}
+		if (this.lt(Decimal.dOne))
+		{
+			//0 < this < 1: ambiguous (happens multiple times)
+			//this < 0: impossible (as far as I can tell)
+			return Decimal.dNaN;
+		}
+		//TODO: remaining cases are like: if you tetrate 0.9^^-1.01 to 0.9^^-1.99, you reach larger and larger numbers. so we need to figure out which number we're currently on
+		//and we can't call layeradd because that calls slog!
+		//TODO: I'd like to know values of tetrate for base 0<b<1 and height -1>h>-2, and slog for base 0<b<1 and arg inf>a>1
+		throw Error("unimplemented for now");
+	}
+	//slog_n(0) is -1
+    if (this.mag < 0 || this.eq(Decimal.dZero)) {
       return Decimal.dNegOne;
     }
-
-    base = D(base);
 
     let result = 0;
     let copy = D(this);
