@@ -1675,8 +1675,7 @@ var Decimal = /*#__PURE__*/function () {
 
       if (fracheight !== 0) {
         if (payload.eq(Decimal.dOne)) {
-          ++height;
-          payload = new Decimal(fracheight);
+          payload = D(Decimal.tetrate_critical(this.toNumber(), fracheight));
         } else {
           if (this.eq(10)) {
             payload = payload.layeradd10(fracheight);
@@ -1788,8 +1787,7 @@ var Decimal = /*#__PURE__*/function () {
           copy = Decimal.pow(base, copy);
           result -= 1;
         } else if (copy.lte(Decimal.dOne)) {
-          return D(result + copy.toNumber() - 1); //<-- THIS IS THE CRITICAL FUNCTION
-          //^ Also have to change tetrate payload handling and layeradd10 if this is changed!
+          return D(result + Decimal.slog_critical(base.toNumber(), copy.toNumber()));
         } else {
           result += 1;
           copy = Decimal.log(copy, base);
@@ -1797,61 +1795,13 @@ var Decimal = /*#__PURE__*/function () {
       }
 
       return D(result);
-    } //Approximations taken from the excellent paper https://web.archive.org/web/20090201164836/http://tetration.itgo.com/paper.html !
-    //Not using for now unless I can figure out how to use it in all the related functions.
-
-    /*var slog_criticalfunction_1 = function(x, z) {
-      z = z.toNumber();
-      return -1 + z;
-    }
-        var slog_criticalfunction_2 = function(x, z) {
-      z = z.toNumber();
-      var lnx = x.ln();
-      if (lnx.layer === 0)
-      {
-        lnx = lnx.toNumber();
-        return -1 + z*2*lnx/(1+lnx) - z*z*(1-lnx)/(1+lnx);
-      }
-      else
-      {
-        var term1 = lnx.mul(z*2).div(lnx.add(1));
-        var term2 = Decimal.sub(1, lnx).mul(z*z).div(lnx.add(1));
-        Decimal.dNegOne.add(Decimal.sub(term1, term2));
-      }
-    }
-        var slog_criticalfunction_3 = function(x, z) {
-      z = z.toNumber();
-      var lnx = x.ln();
-      var lnx2 = lnx.sqr();
-      var lnx3 = lnx.cube();
-      if (lnx.layer === 0 && lnx2.layer === 0 && lnx3.layer === 0)
-      {
-        lnx = lnx.toNumber();
-        lnx2 = lnx2.toNumber();
-        lnx3 = lnx3.toNumber();
-            var term1 = 6*z*(lnx+lnx3);
-        var term2 = 3*z*z*(3*lnx2-2*lnx3);
-        var term3 = 2*z*z*z*(1-lnx-2*lnx2+lnx3);
-        var top = term1+term2+term3;
-        var bottom = 2+4*lnx+5*lnx2+2*lnx3;
-            return -1 + top/bottom;
-      }
-      else
-      {
-        var term1 = (lnx.add(lnx3)).mul(6*z);
-        var term2 = (lnx2.mul(3).sub(lnx3.mul(2))).mul(3*z*z);
-        var term3 = (Decimal.dOne.sub(lnx).sub(lnx2.mul(2)).add(lnx3)).mul(2*z*z*z);
-        var top = term1.add(term2).add(term3);
-        var bottom = new Decimal(2).add(lnx.mul(4)).add(lnx2.mul(5)).add(lnx3.mul(2));
-            return Decimal.dNegOne.add(top.div(bottom));
-      }
-    }*/
-    //Function for adding/removing layers from a Decimal, even fractional layers (e.g. its slog10 representation).
-    //Everything continues to use the linear approximation ATM.
+    } //background info and tables of values for critical functions taken here: https://github.com/Patashu/break_eternity.js/issues/22
 
   }, {
     key: "layeradd10",
-    value: function layeradd10(diff) {
+    value: //Function for adding/removing layers from a Decimal, even fractional layers (e.g. its slog10 representation).
+    //Everything continues to use the linear approximation ATM.
+    function layeradd10(diff) {
       diff = Decimal.fromValue_noAlloc(diff).toNumber();
       var result = D(this);
 
@@ -2925,6 +2875,46 @@ var Decimal = /*#__PURE__*/function () {
     key: "efficiencyOfPurchase_core",
     value: function efficiencyOfPurchase_core(cost, currentRpS, deltaRpS) {
       return cost.div(currentRpS).add(cost.div(deltaRpS));
+    }
+  }, {
+    key: "slog_critical",
+    value: function slog_critical(base, height) {
+      var base_e_slog_values = [-1, -0.90603157029014, -0.80786507256596, -0.70646669396340, -0.60294836853664, -0.49849837513117, -0.39430303318768, -0.29147201034755, -0.19097820800866, -0.09361896280296, 0 //1.0
+      ]; //TODO: have multiple arrays, care about base
+
+      height *= 10;
+
+      if (height < 0) {
+        height = 0;
+      }
+
+      if (height > 10) {
+        height = 10;
+      }
+
+      var frac = height - Math.floor(height);
+      var result = base_e_slog_values[Math.floor(height)] * (1 - frac) + base_e_slog_values[Math.ceil(height)] * frac;
+      return result;
+    }
+  }, {
+    key: "tetrate_critical",
+    value: function tetrate_critical(base, height) {
+      var base_e_tetr_values = [1, 1.11211143309340, 1.23103892493161, 1.35838369631113, 1.49605193039935, 1.64635423375119, 1.81213853570186, 1.99697132461829, 2.20538955455724, 2.44325744833852, Math.E //1.0
+      ]; //TODO: have multiple arrays, care about base
+
+      height *= 10;
+
+      if (height < 0) {
+        height = 0;
+      }
+
+      if (height > 10) {
+        height = 10;
+      }
+
+      var frac = height - Math.floor(height);
+      var result = base_e_tetr_values[Math.floor(height)] * (1 - frac) + base_e_tetr_values[Math.ceil(height)] * frac;
+      return result;
     }
   }]);
 

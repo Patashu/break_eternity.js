@@ -254,6 +254,8 @@ export default class Decimal {
     iteratedexp(height?: number, payload?: Decimal): Decimal;
     iteratedlog(base?: DecimalSource, times?: number): Decimal;
     slog(base?: DecimalSource): Decimal;
+    static slog_critical(base: number, height: number): number;
+    static tetrate_critical(base: number, height: number): number;
     layeradd10(diff: DecimalSource): Decimal;
     layeradd(diff: number, base: DecimalSource): Decimal;
     lambertw(): Decimal;
