@@ -751,11 +751,11 @@
     }, {
       key: "toString",
       value: function toString() {
-        if (isNaN(this.layer) || isNaN(this.m) || isNaN(this.e)) {
+        if (isNaN(this.layer) || isNaN(this.sign) || isNaN(this.mag)) {
           return "NaN";
         }
 
-        if (this.e === Number.POSITIVE_INFINITY || this.layer === Number.POSITIVE_INFINITY) {
+        if (this.mag === Number.POSITIVE_INFINITY || this.layer === Number.POSITIVE_INFINITY) {
           return this.sign === 1 ? "Infinity" : "-Infinity";
         }
 
