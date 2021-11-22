@@ -1958,6 +1958,16 @@ var Decimal = /*#__PURE__*/function () {
       while (result.layer < 0) {
         result.layer++;
         result.mag = Math.log10(result.mag);
+      } //bugfix: before we normalize: if we started with 0, we now need to manually fix a layer ourselves!
+
+
+      if (this.sign === 0) {
+        this.sign = 1;
+
+        if (this.mag === 0 && this.layer >= 1) {
+          this.layer -= 1;
+          this.mag = 1;
+        }
       }
 
       result.normalize();
