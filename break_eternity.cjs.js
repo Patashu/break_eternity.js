@@ -1709,7 +1709,7 @@ var Decimal = /*#__PURE__*/function () {
           return Decimal.dNaN;
         }
       } //0^^x oscillates if we define 0^0 == 1 (which in javascript land we do), since then 0^^1 is 0, 0^^2 is 1, 0^^3 is 0, etc. payload is ignored
-      //using the linear approximation for height (TODO: don't know a better way to calculate it ATM)
+      //using the linear approximation for height (TODO: don't know a better way to calculate it ATM, but it wouldn't surprise me if it's just NaN)
 
 
       if (this.eq(Decimal.dZero)) {
@@ -1732,7 +1732,7 @@ var Decimal = /*#__PURE__*/function () {
       var fracheight = oldheight - height;
 
       if (this.gt(Decimal.dZero) && this.lte(1.44466786100976613366)) {
-        //similar to 0^^n, flip-flops between two values, converging slowly (or if it's below 0.06598803584531253708, never. so once again, the fractional part at the end will be a linear approximation (TODO: again pending knowledge of how to approximate better)
+        //similar to 0^^n, flip-flops between two values, converging slowly (or if it's below 0.06598803584531253708, never. so once again, the fractional part at the end will be a linear approximation (TODO: again pending knowledge of how to approximate better, although tbh I think it should in reality just be NaN)
         height = Math.min(10000, height);
 
         for (var i = 0; i < height; ++i) {
