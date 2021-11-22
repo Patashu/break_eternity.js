@@ -225,9 +225,6 @@
       this.sign = Number.NaN;
       this.mag = Number.NaN;
       this.layer = Number.NaN;
-      this.sign = Number.NaN;
-      this.layer = Number.NaN;
-      this.mag = Number.NaN;
 
       if (value instanceof Decimal) {
         this.fromDecimal(value);
@@ -1754,10 +1751,9 @@
           }
 
           return payload;
-        } //TODO: base < 0
-        //TODO: very big and very small bases
-        //TODO: investigate negative integer, negative real and negative infinity heights a little more (maybe in Decimal.iteratedlog)
-        //TODO: investigate slog edge cases (in slog, obviously)
+        } //TODO: base < 0, but it's hard for me to reason about (probably all non-integer heights are NaN automatically?)
+        //TODO: investigate negative integer, negative real and negative infinity heights a little more (maybe in Decimal.iteratedlog), but it seems fine
+        //TODO: investigate slog edge cases (in slog, obviously). but it's probably fine?
 
 
         if (fracheight !== 0) {

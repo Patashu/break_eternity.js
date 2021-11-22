@@ -477,10 +477,6 @@ export default class Decimal {
   public layer: number = Number.NaN;
 
   constructor(value?: DecimalSource) {
-    this.sign = Number.NaN;
-    this.layer = Number.NaN;
-    this.mag = Number.NaN;
-
     if (value instanceof Decimal) {
       this.fromDecimal(value);
     } else if (typeof value === "number") {
