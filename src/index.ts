@@ -2502,7 +2502,7 @@ export default class Decimal {
   }
 
   //Function for adding/removing layers from a Decimal, even fractional layers (e.g. its slog10 representation).
-  //Everything continues to use the linear approximation ATM.
+  //Moving this over to use the same critical section as tetrate/slog.
   public layeradd10(diff: DecimalSource): Decimal {
     diff = Decimal.fromValue_noAlloc(diff).toNumber();
     const result = D(this);
@@ -2528,6 +2528,12 @@ export default class Decimal {
         }
       }
     }
+	if (diff < 0) //we only have critical sections for 0<diff<1. so force it to be
+	{
+	  const layeradd = -1;
+      diff -= layeradd;
+      result.layer += layeradd;
+	}
 
     //layeradd10: like adding 'diff' to the number's slog(base) representation. Very similar to tetrate base 10 and iterated log base 10. Also equivalent to adding a fractional amount to the number's layer in its break_eternity.js representation.
     if (diff > 0) {
@@ -2554,33 +2560,7 @@ export default class Decimal {
         diff -= diffToNextSlog;
       }
 
-      result.mag = Math.pow(result.mag, Math.pow(10, diff));
-
-      while (subtractlayerslater > 0) {
-        result.mag = Math.log10(result.mag);
-        --subtractlayerslater;
-      }
-    } else if (diff < 0) {
-      let subtractlayerslater = 0;
-
-      while (Number.isFinite(result.mag) && result.mag < 10) {
-        result.mag = Math.pow(10, result.mag);
-        ++subtractlayerslater;
-      }
-
-      if (result.mag > 1e10) {
-        result.mag = Math.log10(result.mag);
-        result.layer++;
-      }
-
-      const diffToNextSlog = Math.log10(1 / Math.log10(result.mag));
-      if (diffToNextSlog > diff) {
-        result.mag = 1e10;
-        result.layer--;
-        diff -= diffToNextSlog;
-      }
-
-      result.mag = Math.pow(result.mag, Math.pow(10, diff));
+      result.mag = Math.pow(result.mag, Decimal.tetrate_critical(10, diff));
 
       while (subtractlayerslater > 0) {
         result.mag = Math.log10(result.mag);

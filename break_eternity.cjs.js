@@ -1810,7 +1810,7 @@ var Decimal = /*#__PURE__*/function () {
   }, {
     key: "layeradd10",
     value: //Function for adding/removing layers from a Decimal, even fractional layers (e.g. its slog10 representation).
-    //Everything continues to use the linear approximation ATM.
+    //Moving this over to use the same critical section as tetrate/slog.
     function layeradd10(diff) {
       diff = Decimal.fromValue_noAlloc(diff).toNumber();
       var result = D(this);
@@ -1841,7 +1841,15 @@ var Decimal = /*#__PURE__*/function () {
             }
           }
         }
-      } //layeradd10: like adding 'diff' to the number's slog(base) representation. Very similar to tetrate base 10 and iterated log base 10. Also equivalent to adding a fractional amount to the number's layer in its break_eternity.js representation.
+      }
+
+      if (diff < 0) //we only have critical sections for 0<diff<1. so force it to be
+        {
+          var _layeradd2 = -1;
+
+          diff -= _layeradd2;
+          result.layer += _layeradd2;
+        } //layeradd10: like adding 'diff' to the number's slog(base) representation. Very similar to tetrate base 10 and iterated log base 10. Also equivalent to adding a fractional amount to the number's layer in its break_eternity.js representation.
 
 
       if (diff > 0) {
@@ -1868,38 +1876,11 @@ var Decimal = /*#__PURE__*/function () {
           diff -= diffToNextSlog;
         }
 
-        result.mag = Math.pow(result.mag, Math.pow(10, diff));
+        result.mag = Math.pow(result.mag, Decimal.tetrate_critical(10, diff));
 
         while (subtractlayerslater > 0) {
           result.mag = Math.log10(result.mag);
           --subtractlayerslater;
-        }
-      } else if (diff < 0) {
-        var _subtractlayerslater = 0;
-
-        while (Number.isFinite(result.mag) && result.mag < 10) {
-          result.mag = Math.pow(10, result.mag);
-          ++_subtractlayerslater;
-        }
-
-        if (result.mag > 1e10) {
-          result.mag = Math.log10(result.mag);
-          result.layer++;
-        }
-
-        var _diffToNextSlog = Math.log10(1 / Math.log10(result.mag));
-
-        if (_diffToNextSlog > diff) {
-          result.mag = 1e10;
-          result.layer--;
-          diff -= _diffToNextSlog;
-        }
-
-        result.mag = Math.pow(result.mag, Math.pow(10, diff));
-
-        while (_subtractlayerslater > 0) {
-          result.mag = Math.log10(result.mag);
-          --_subtractlayerslater;
         }
       }
 
