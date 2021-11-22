@@ -2335,11 +2335,66 @@ export default class Decimal {
   //If payload != 1, then this is 'iterated exponentiation', the result of exping (payload) to base (this) (height) times. https://andydude.github.io/tetration/archives/tetration2/ident.html
   //Works with negative and positive real heights.
   public tetrate(height = 2, payload: DecimalSource = FC_NN(1, 0, 1)): Decimal {
+	//x^^1 == x
+	if (height === 1) {
+		return Decimal.pow(this, payload);
+	}
+	//x^^0 == 1
+	if (height === 0) {
+		return new Decimal(payload);
+	}
+	//1^^x == 1
+	if (this.eq(Decimal.dOne)) {
+		return Decimal.dOne;
+	}
+	//-1^^x == -1
+	if (this.eq(-1)) {
+		return Decimal.pow(this, payload);
+	}
+  
     if (height === Number.POSITIVE_INFINITY) {
-      //Formula for infinite height power tower.
-      const negln = Decimal.ln(this).neg();
-      return negln.lambertw().div(negln);
+	  var this_num = this.toNumber();
+	  //within the convergence range?
+	  if (this_num <= 1.44466786100976613366 && this_num >= 0.06598803584531253708)
+	  {
+		//Formula for infinite height power tower.
+		const negln = Decimal.ln(this).neg();
+		return negln.lambertw().div(negln);
+	  }
+	  else if (this_num > 1.44466786100976613366)
+	  {
+		//explodes to infinity
+		return new Decimal(Number.POSITIVE_INFINITY)
+	  }
+	  else if (this_num >= 0)
+	  {
+		//never converges
+		return Decimal.dNaN;
+	  }
+	  else
+	  {
+		//quickly becomes a complex number
+		return Decimal.dNaN;
+	  }
     }
+	//TODO: Number.NEGATIVE_INFINITY height?
+	
+	//0^^x oscillates if we define 0^0 == 1 (which in javascript land we do), since then 0^^1 is 0, 0^^2 is 1, 0^^3 is 0, etc. payload is ignored
+	//using the linear approximation for height (TODO: don't know a better way to calculate it ATM)
+	if (this.eq(Decimal.dZero)) {
+		var result = Math.abs(height % 2);
+		if (result > 1)
+		{
+			result = 2 - result;
+		}
+		return new Decimal(result);
+	}
+	//TODO: 0 < base < 0.06598803584531253708 non-infinite height
+	//TODO: 0.06598803584531253708 < base < 1.44466786100976613366 non-infinite height
+	//TODO: base < 0
+	//TODO: investigate negative, negative infinity and fractional heights a little more (maybe in Decimal.iteratedlog)
+	//TODO: investigate slog edge cases (in slog, obviously)
+	//TODO: ssqrt for 0.69220062 and below
 
     if (height < 0) {
       return Decimal.iteratedlog(payload, this, -height);
@@ -2626,6 +2681,7 @@ export default class Decimal {
   /*
 
 Unit tests for tetrate/iteratedexp/iteratedlog/layeradd10/layeradd/slog:
+(note: these won't be exactly precise with the new slog implementation, but that's okay)
 
 for (var i = 0; i < 1000; ++i)
 {
