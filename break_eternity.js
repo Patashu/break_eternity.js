@@ -1712,8 +1712,7 @@
             //this_num < 0: quickly becomes a complex number
             return Decimal.dNaN;
           }
-        } //TODO: Number.NEGATIVE_INFINITY height?
-        //0^^x oscillates if we define 0^0 == 1 (which in javascript land we do), since then 0^^1 is 0, 0^^2 is 1, 0^^3 is 0, etc. payload is ignored
+        } //0^^x oscillates if we define 0^0 == 1 (which in javascript land we do), since then 0^^1 is 0, 0^^2 is 1, 0^^3 is 0, etc. payload is ignored
         //using the linear approximation for height (TODO: don't know a better way to calculate it ATM)
 
 
@@ -1725,13 +1724,7 @@
           }
 
           return new Decimal(result);
-        } //TODO: 0 < base < 0.06598803584531253708 non-infinite height
-        //TODO: 0.06598803584531253708 < base < 1.44466786100976613366 non-infinite height
-        //TODO: base < 0
-        //TODO: investigate negative, negative infinity and fractional heights a little more (maybe in Decimal.iteratedlog)
-        //TODO: investigate slog edge cases (in slog, obviously)
-        //TODO: ssqrt for 0.69220062 and below
-
+        }
 
         if (height < 0) {
           return Decimal.iteratedlog(payload, this, -height);
@@ -1741,6 +1734,31 @@
         var oldheight = height;
         height = Math.trunc(height);
         var fracheight = oldheight - height;
+
+        if (this.gt(Decimal.dZero) && this.lte(1.44466786100976613366)) {
+          //similar to 0^^n, flip-flops between two values, converging slowly (or if it's below 0.06598803584531253708, never. so once again, the fractional part at the end will be a linear approximation (TODO: again pending knowledge of how to approximate better)
+          height = Math.min(10000, height);
+
+          for (var i = 0; i < height; ++i) {
+            var old_payload = payload;
+            payload = this.pow(payload); //stop early if we converge
+
+            if (old_payload.eq(payload)) {
+              return payload;
+            }
+          }
+
+          if (fracheight != 0) {
+            var next_payload = this.pow(payload);
+            return payload.mul(1 - fracheight).add(next_payload.mul(fracheight));
+          }
+
+          return payload;
+        } //TODO: base < 0
+        //TODO: very big and very small bases
+        //TODO: investigate negative integer, negative real and negative infinity heights a little more (maybe in Decimal.iteratedlog)
+        //TODO: investigate slog edge cases (in slog, obviously)
+
 
         if (fracheight !== 0) {
           if (payload.eq(Decimal.dOne)) {
@@ -1754,7 +1772,7 @@
           }
         }
 
-        for (var i = 0; i < height; ++i) {
+        for (var _i = 0; _i < height; ++_i) {
           payload = this.pow(payload); //bail if we're NaN
 
           if (!isFinite(payload.layer) || !isFinite(payload.mag)) {
@@ -1763,11 +1781,11 @@
 
 
           if (payload.layer - this.layer > 3) {
-            return FC_NN(payload.sign, payload.layer + (height - i - 1), payload.mag);
-          } //give up after 100 iterations if nothing is happening
+            return FC_NN(payload.sign, payload.layer + (height - _i - 1), payload.mag);
+          } //give up after 10000 iterations if nothing is happening
 
 
-          if (i > 100) {
+          if (_i > 10000) {
             return payload;
           }
         }
@@ -1811,10 +1829,10 @@
 
           if (!isFinite(result.layer) || !isFinite(result.mag)) {
             return result;
-          } //give up after 100 iterations if nothing is happening
+          } //give up after 10000 iterations if nothing is happening
 
 
-          if (i > 100) {
+          if (i > 10000) {
             return result;
           }
         } //handle fractional part
