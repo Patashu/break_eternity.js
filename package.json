@@ -1,6 +1,6 @@
 {
   "name": "break_eternity.js",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "A Javascript numerical library to represent numbers as large as 10^^1e308 and as small as 10^-10^^1e308. Sequel to break_infinity.js, designed for incremental games.",
   "main": "dist/break_infinity.js",
   "module": "dist/break_infinity.esm.js",

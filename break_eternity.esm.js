@@ -1756,7 +1756,12 @@ var Decimal = /*#__PURE__*/function () {
           if (this.gt(10)) {
             payload = this.pow(fracheight);
           } else {
-            payload = D(Decimal.tetrate_critical(this.toNumber(), fracheight));
+            payload = D(Decimal.tetrate_critical(this.toNumber(), fracheight)); //TODO: until the critical section grid can handle numbers below 2, scale them to the base
+            //TODO: maybe once the critical section grid has very large bases, this math can be appropriate for them too? I'll think about it
+
+            if (this.lt(2)) {
+              payload = payload.sub(1).mul(this.minus(1)).plus(1);
+            }
           }
         } else {
           if (this.eq(10)) {
