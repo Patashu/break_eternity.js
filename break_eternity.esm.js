@@ -1958,6 +1958,16 @@ var Decimal = /*#__PURE__*/function () {
             result.mag = Math.log10(result.mag);
 
             if (!isFinite(result.mag)) {
+              //another bugfix: if we hit -Infinity mag, then we should return negative infinity, not 0. 0.layeradd10(-1) h its this
+              if (result.sign === 0) {
+                result.sign = 1;
+              } //also this, for 0.layeradd10(-2)
+
+
+              if (result.layer < 0) {
+                result.layer = 0;
+              }
+
               return result.normalize();
             }
 
@@ -1967,14 +1977,6 @@ var Decimal = /*#__PURE__*/function () {
           }
         }
       }
-
-      if (diff < 0) //we only have critical sections for 0<diff<1. so force it to be
-        {
-          var _layeradd2 = -1;
-
-          diff -= _layeradd2;
-          result.layer += _layeradd2;
-        }
 
       while (result.layer < 0) {
         result.layer++;
@@ -1993,7 +1995,7 @@ var Decimal = /*#__PURE__*/function () {
 
       result.normalize(); //layeradd10: like adding 'diff' to the number's slog(base) representation. Very similar to tetrate base 10 and iterated log base 10. Also equivalent to adding a fractional amount to the number's layer in its break_eternity.js representation.
 
-      if (diff > 0) {
+      if (diff !== 0) {
         //slog_10, add diff, tetrate back up
         var slogthis = this.slog(10).toNumber();
         var slogdest = slogthis + diff;
