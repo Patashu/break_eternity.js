@@ -303,31 +303,6 @@ const critical_slog_values = [
 ],
 ];
 
-//to bootstrap layeradd10
-const tetr_10_negative = [ //0 to -2 in -0.1 increments
-1,
-0.84447476379136454295,
-0.71055337430966081747,
-0.59319702965935078424,
-0.48862477597277665151,
-0.39392698954987671956,
-0.30680168773845749531,
-0.22536801631182903449,
-0.14802781633230586912,
-0.073355379431474037506,
-0,
--0.073413324316674049650,
--0.14840329381317253661,
--0.22680103229939237474,
--0.31102451567723894989,
--0.40458426287953460128,
--0.51314225563086986201,
--0.64710771794775944274,
--0.82965666741235812578,
--1.1345680321718982860,
--2 //(actually negative infinity but approached very slowly)
-]
-
 const D = function D(value: DecimalSource): Decimal {
   return Decimal.fromValue_noAlloc(value);
 };
@@ -2699,39 +2674,20 @@ export default class Decimal {
       result.mag = Math.log10(result.mag);
     }
 	//bugfix: before we normalize: if we started with 0, we now need to manually fix a layer ourselves!
-	if (this.sign === 0)
+	if (result.sign === 0)
 	{
-		this.sign = 1;
-		if (this.mag === 0 && this.layer >= 1)
+		result.sign = 1;
+		if (result.mag === 0 && result.layer >= 1)
 		{
-			this.layer -= 1;
-			this.mag = 1;
+			result.layer -= 1;
+			result.mag = 1;
 		}
 	}
     result.normalize();
 
     //layeradd10: like adding 'diff' to the number's slog(base) representation. Very similar to tetrate base 10 and iterated log base 10. Also equivalent to adding a fractional amount to the number's layer in its break_eternity.js representation.
     if (diff !== 0) {
-      //slog_10, add diff, tetrate back up
-	  var slogthis = this.slog(10).toNumber();
-	  var slogdest = slogthis + diff;
-	  if (slogdest >= 0) //safe, only calls layeradd10 for negative height or non-1 payload
-	  {
-		return Decimal.tetrate(10, slogdest);
-	  }
-	  else //must prevent stack overflow - iteratedlog uses layeradd10 for its fractional part
-	  {
-		//mapping: 0 -> 0, -0.1 -> 1, -0.2 -> 2, etc
-		if (slogdest < -2)
-		{
-			return Decimal.dNegInf;
-		}
-		var index = slogdest*-10;
-		var lower = Math.floor(index);
-		var upper = Math.ceil(index);
-		var frac = index-Math.floor(index);
-		return new Decimal(tetr_10_negative[lower]*(1-frac)+tetr_10_negative[upper]*(frac));
-	  }
+	  return result.layeradd(diff, 10); //safe, only calls positive height 1 payload tetration, slog and log
     }
 	
     return result;
