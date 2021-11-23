@@ -1530,7 +1530,7 @@
         if (a.layer === 0) {
           var newmag = Math.pow(10, a.sign * a.mag);
 
-          if (Number.isFinite(newmag) && Math.abs(newmag) > 0.1) {
+          if (Number.isFinite(newmag) && Math.abs(newmag) >= 0.1) {
             return FC(1, 0, newmag);
           } else {
             if (a.sign === 0) {
@@ -1542,11 +1542,11 @@
         } //handle all 4 layer 1+ cases individually
 
 
-        if (a.sign > 0 && a.mag > 0) {
+        if (a.sign > 0 && a.mag >= 0) {
           return FC(a.sign, a.layer + 1, a.mag);
         }
 
-        if (a.sign < 0 && a.mag > 0) {
+        if (a.sign < 0 && a.mag >= 0) {
           return FC(-a.sign, a.layer + 1, -a.mag);
         } //both the negative mag cases are identical: one +/- rounding error
 
@@ -1944,6 +1944,17 @@
         var result = D(this);
 
         if (diff >= 1) {
+          //bug fix: if result is very smol (mag < 0, layer > 0) turn it into 0 first
+          if (result.mag < 0 && result.layer > 0) {
+            result.sign = 0;
+            result.mag = 0;
+            result.layer = 0;
+          } else if (result.sign === -1 && result.layer == 0) {
+            //bug fix - for stuff like -3.layeradd10(1) we need to move the sign to the mag
+            result.sign = 1;
+            result.mag = -result.mag;
+          }
+
           var layeradd = Math.trunc(diff);
           diff -= layeradd;
           result.layer += layeradd;
