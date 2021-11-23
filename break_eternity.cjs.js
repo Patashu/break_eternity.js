@@ -1934,7 +1934,7 @@ var Decimal = /*#__PURE__*/function () {
   }, {
     key: "layeradd10",
     value: //Function for adding/removing layers from a Decimal, even fractional layers (e.g. its slog10 representation).
-    //Moving this over to use the same critical section as tetrate/slog.
+    //Moved this over to use the same critical section as tetrate/slog.
     function layeradd10(diff) {
       diff = Decimal.fromValue_noAlloc(diff).toNumber();
       var result = D(this);
@@ -1973,40 +1973,7 @@ var Decimal = /*#__PURE__*/function () {
 
           diff -= _layeradd2;
           result.layer += _layeradd2;
-        } //layeradd10: like adding 'diff' to the number's slog(base) representation. Very similar to tetrate base 10 and iterated log base 10. Also equivalent to adding a fractional amount to the number's layer in its break_eternity.js representation.
-
-
-      if (diff > 0) {
-        var subtractlayerslater = 0; //Ironically, this edge case would be unnecessary if we had 'negative layers'.
-
-        while (Number.isFinite(result.mag) && result.mag < 10) {
-          result.mag = Math.pow(10, result.mag);
-          ++subtractlayerslater;
-        } //A^(10^B) === C, solve for B
-        //B === log10(logA(C))
-
-
-        if (result.mag > 1e10) {
-          result.mag = Math.log10(result.mag);
-          result.layer++;
-        } //Note that every integer slog10 value, the formula changes, so if we're near such a number, we have to spend exactly enough layerdiff to hit it, and then use the new formula.
-
-
-        var diffToNextSlog = Math.log10(Math.log(1e10) / Math.log(result.mag));
-
-        if (diffToNextSlog < diff) {
-          result.mag = Math.log10(1e10);
-          result.layer++;
-          diff -= diffToNextSlog;
         }
-
-        result.mag = Math.pow(result.mag, Decimal.tetrate_critical(10, diff));
-
-        while (subtractlayerslater > 0) {
-          result.mag = Math.log10(result.mag);
-          --subtractlayerslater;
-        }
-      }
 
       while (result.layer < 0) {
         result.layer++;
@@ -2023,7 +1990,15 @@ var Decimal = /*#__PURE__*/function () {
         }
       }
 
-      result.normalize();
+      result.normalize(); //layeradd10: like adding 'diff' to the number's slog(base) representation. Very similar to tetrate base 10 and iterated log base 10. Also equivalent to adding a fractional amount to the number's layer in its break_eternity.js representation.
+
+      if (diff > 0) {
+        //slog_10, add diff, tetrate back up
+        var slogthis = this.slog(10).toNumber();
+        var slogdest = slogthis + diff;
+        return Decimal.tetrate(10, slogdest);
+      }
+
       return result;
     } //layeradd: like adding 'diff' to the number's slog(base) representation. Very similar to tetrate base 'base' and iterated log base 'base'.
 
