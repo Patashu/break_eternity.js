@@ -2,9 +2,9 @@
   "name": "break_eternity.js",
   "version": "1.2.4",
   "description": "A Javascript numerical library to represent numbers as large as 10^^1e308 and as small as 10^-10^^1e308. Sequel to break_infinity.js, designed for incremental games.",
-  "main": "dist/break_infinity.js",
-  "module": "dist/break_infinity.esm.js",
-  "unpkg": "dist/break_infinity.min.js",
+  "main": "dist/break_eternity.js",
+  "module": "dist/break_eternity.esm.js",
+  "unpkg": "dist/break_eternity.min.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "bili",
