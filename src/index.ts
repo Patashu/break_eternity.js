@@ -190,10 +190,12 @@ const FC_NN = function FC_NN(sign: number, layer: number, mag: number) {
   return Decimal.fromComponents_noNormalize(sign, layer, mag);
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ME = function ME(mantissa: number, exponent: number) {
   return Decimal.fromMantissaExponent(mantissa, exponent);
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ME_NN = function ME_NN(mantissa: number, exponent: number) {
   return Decimal.fromMantissaExponent_noNormalize(mantissa, exponent);
 };
@@ -296,6 +298,7 @@ const f_lambertw = function (z: number, tol = 1e-10): number {
 // fail to converge, or can end up on the wrong branch.
 function d_lambertw(z: Decimal, tol = 1e-10): Decimal {
   let w;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let ew, wew, wewz, wn;
 
   if (!Number.isFinite(z.mag)) {
@@ -309,6 +312,7 @@ function d_lambertw(z: Decimal, tol = 1e-10): Decimal {
     return D(OMEGA);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const absz = Decimal.abs(z);
   //Get an initial guess for Halley's method
   w = Decimal.ln(z);
@@ -1834,6 +1838,7 @@ export default class Decimal {
   }
 
   public lt(value: DecimalSource): boolean {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const decimal = D(value); // FIXME: Remove?
     return this.cmp(value) === -1;
   }
@@ -1843,6 +1848,7 @@ export default class Decimal {
   }
 
   public gt(value: DecimalSource): boolean {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const decimal = D(value); // FIXME: Remove?
     return this.cmp(value) === 1;
   }
@@ -2240,7 +2246,7 @@ export default class Decimal {
     }
 
     if (height === Number.POSITIVE_INFINITY) {
-      var this_num = this.toNumber();
+      const this_num = this.toNumber();
       //within the convergence range?
       if (this_num <= 1.44466786100976613366 && this_num >= 0.06598803584531253708) {
         //hotfix for the very edge of the number range not being handled properly
@@ -2263,7 +2269,7 @@ export default class Decimal {
     //0^^x oscillates if we define 0^0 == 1 (which in javascript land we do), since then 0^^1 is 0, 0^^2 is 1, 0^^3 is 0, etc. payload is ignored
     //using the linear approximation for height (TODO: don't know a better way to calculate it ATM, but it wouldn't surprise me if it's just NaN)
     if (this.eq(Decimal.dZero)) {
-      var result = Math.abs((height + 1) % 2);
+      let result = Math.abs((height + 1) % 2);
       if (result > 1) {
         result = 2 - result;
       }
@@ -2283,7 +2289,7 @@ export default class Decimal {
       //similar to 0^^n, flip-flops between two values, converging slowly (or if it's below 0.06598803584531253708, never. so once again, the fractional part at the end will be a linear approximation (TODO: again pending knowledge of how to approximate better, although tbh I think it should in reality just be NaN)
       height = Math.min(10000, height);
       for (let i = 0; i < height; ++i) {
-        var old_payload: Decimal = payload;
+        const old_payload: Decimal = payload;
         payload = this.pow(payload);
         //stop early if we converge
         if (old_payload.eq(payload)) {
@@ -2291,7 +2297,7 @@ export default class Decimal {
         }
       }
       if (fracheight != 0) {
-        var next_payload = this.pow(payload);
+        const next_payload = this.pow(payload);
         return payload.mul(1 - fracheight).add(next_payload.mul(fracheight));
       }
       return payload;
@@ -2468,12 +2474,12 @@ export default class Decimal {
     if (base > 10) {
       base = 10;
     }
-    var lower = 0;
-    var upper = 0;
+    let lower = 0;
+    let upper = 0;
     //basically, if we're between bases, we interpolate each bases' relevant values together
     //then we interpolate based on what the fractional height is.
     //accuracy could be improved by doing a non-linear interpolation (maybe), by adding more bases and heights (definitely) but this is AFAIK the best you can get without running some pari.gp or mathematica program to calculate exact values
-    for (var i = 0; i < critical_headers.length; ++i) {
+    for (let i = 0; i < critical_headers.length; ++i) {
       if (critical_headers[i] == base) {
         // exact match
         lower = grid[i][Math.floor(height)];
@@ -2481,7 +2487,7 @@ export default class Decimal {
         break;
       } else if (critical_headers[i] < base && critical_headers[i + 1] > base) {
         // interpolate between this and the next
-        var basefrac =
+        const basefrac =
           (base - critical_headers[i]) / (critical_headers[i + 1] - critical_headers[i]);
         lower =
           grid[i][Math.floor(height)] * (1 - basefrac) + grid[i + 1][Math.floor(height)] * basefrac;
@@ -2490,8 +2496,8 @@ export default class Decimal {
         break;
       }
     }
-    var frac = height - Math.floor(height);
-    var result = lower * (1 - frac) + upper * frac;
+    const frac = height - Math.floor(height);
+    const result = lower * (1 - frac) + upper * frac;
     return result;
   }
 
