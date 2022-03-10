@@ -303,10 +303,10 @@ function d_lambertw(z: Decimal, tol = 1e-10): Decimal {
   if (!Number.isFinite(z.mag)) {
     return z;
   }
-  if (z === Decimal.dZero) {
+  if (z.eq(Decimal.dZero)) {
     return z;
   }
-  if (z === Decimal.dOne) {
+  if (z.eq(Decimal.dOne)) {
     //Split out this case because the asymptotic series blows up
     return D(OMEGA);
   }
