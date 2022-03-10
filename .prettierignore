@@ -1,0 +1,6 @@
+node_modules
+dist
+
+# Distributed files
+break_eternity.*js
+index.d.ts
