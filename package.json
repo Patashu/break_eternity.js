@@ -9,7 +9,9 @@
   "scripts": {
     "build": "bili",
     "prepublishOnly": "npm run build",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint . && prettier --check .",
+    "fix": "prettier --write . && eslint --fix ."
   },
   "files": [
     "dist"
