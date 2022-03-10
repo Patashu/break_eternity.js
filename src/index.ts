@@ -34,273 +34,148 @@ const powerOf10 = (function () {
   };
 })();
 
-
 //tetration/slog to real height stuff
 //background info and tables of values for critical functions taken here: https://github.com/Patashu/break_eternity.js/issues/22
 const critical_headers = [2, Math.E, 3, 4, 5, 6, 7, 8, 9, 10];
 const critical_tetr_values = [
-[ // Base 2
-1,
-1.0891168053867777,
-1.1789745164521264,
-1.2701428397304229,
-1.3632066654400328,
-1.4587804913784246,
-1.557523817412741,
-1.660158301473385,
-1.767487542936873,
-1.8804205225512542,
-2,
-],
-[ // Base E
-1, //0.0
-1.11211143309340, //0.1
-1.23103892493161, //0.2
-1.35838369631113, //0.3
-1.49605193039935, //0.4
-1.64635423375119, //0.5
-1.81213853570186, //0.6
-1.99697132461829, //0.7
-2.20538955455724, //0.8
-2.44325744833852, //0.9
-Math.E //1.0
-],
-[ // Base 3
-1,
-1.1187738849693603,
-1.2464963939368214,
-1.38527004705667,
-1.5376664685821402,
-1.7068895236551784,
-1.897001227148399,
-2.1132403089001035,
-2.362480153784171,
-2.6539010333870774,
-3,
-],
-[ // Base 4
-1,
-1.1367350847096405,
-1.2889510672956703,
-1.4606478703324786,
-1.6570295196661111,
-1.8850062585672889,
-2.1539465047453485,
-2.476829779693097,
-2.872061932789197,
-3.3664204535587183,
-4,
-],
-[ // Base 5
-1,
-1.1494592900767588,
-1.319708228183931,
-1.5166291280087583,
-1.748171114438024,
-2.0253263297298045,
-2.3636668498288547,
-2.7858359149579424,
-3.3257226212448145,
-4.035730287722532,
-5,
-],
-[ // Base 6
-1,
-1.159225940787673,
-1.343712473580932,
-1.5611293155111927,
-1.8221199554561318,
-2.14183924486326,
-2.542468319282638,
-3.0574682501653316,
-3.7390572020926873,
-4.6719550537360774,
-6,
-],
-[ // Base 7
-1,
-1.1670905356972596,
-1.3632807444991446,
-1.5979222279405536,
-1.8842640123816674,
-2.2416069644878687,
-2.69893426559423,
-3.3012632110403577,
-4.121250340630164,
-5.281493033448316,
-7,
-],
-[ // Base 8
-1,
-1.1736630594087796,
-1.379783782386201,
-1.6292821855668218,
-1.9378971836180754,
-2.3289975651071977,
-2.8384347394720835,
-3.5232708454565906,
-4.478242031114584,
-5.868592169644505,
-8,
-],
-[ // Base 9
-1,
-1.1793017514670474,
-1.394054150657457,
-1.65664127441059,
-1.985170999970283,
-2.4069682290577457,
-2.9647310119960752,
-3.7278665320924946,
-4.814462547283592,
-6.436522247411611,
-9,
-],
-[ // Base 10
-1,
-1.18422737399915,
-1.4066113788546144,
-1.680911177655277,
-2.027492094355525,
-2.4775152854601967,
-3.080455730250329,
-3.918234505962507,
-5.1332705696484595,
-6.9878696918072905,
-10,
-]
+  [
+    // Base 2
+    1, 1.0891168053867777, 1.1789745164521264, 1.2701428397304229, 1.3632066654400328,
+    1.4587804913784246, 1.557523817412741, 1.660158301473385, 1.767487542936873, 1.8804205225512542,
+    2,
+  ],
+  [
+    // Base E
+    1, //0.0
+    1.1121114330934, //0.1
+    1.23103892493161, //0.2
+    1.35838369631113, //0.3
+    1.49605193039935, //0.4
+    1.64635423375119, //0.5
+    1.81213853570186, //0.6
+    1.99697132461829, //0.7
+    2.20538955455724, //0.8
+    2.44325744833852, //0.9
+    Math.E, //1.0
+  ],
+  [
+    // Base 3
+    1, 1.1187738849693603, 1.2464963939368214, 1.38527004705667, 1.5376664685821402,
+    1.7068895236551784, 1.897001227148399, 2.1132403089001035, 2.362480153784171,
+    2.6539010333870774, 3,
+  ],
+  [
+    // Base 4
+    1, 1.1367350847096405, 1.2889510672956703, 1.4606478703324786, 1.6570295196661111,
+    1.8850062585672889, 2.1539465047453485, 2.476829779693097, 2.872061932789197,
+    3.3664204535587183, 4,
+  ],
+  [
+    // Base 5
+    1, 1.1494592900767588, 1.319708228183931, 1.5166291280087583, 1.748171114438024,
+    2.0253263297298045, 2.3636668498288547, 2.7858359149579424, 3.3257226212448145,
+    4.035730287722532, 5,
+  ],
+  [
+    // Base 6
+    1, 1.159225940787673, 1.343712473580932, 1.5611293155111927, 1.8221199554561318,
+    2.14183924486326, 2.542468319282638, 3.0574682501653316, 3.7390572020926873, 4.6719550537360774,
+    6,
+  ],
+  [
+    // Base 7
+    1, 1.1670905356972596, 1.3632807444991446, 1.5979222279405536, 1.8842640123816674,
+    2.2416069644878687, 2.69893426559423, 3.3012632110403577, 4.121250340630164, 5.281493033448316,
+    7,
+  ],
+  [
+    // Base 8
+    1, 1.1736630594087796, 1.379783782386201, 1.6292821855668218, 1.9378971836180754,
+    2.3289975651071977, 2.8384347394720835, 3.5232708454565906, 4.478242031114584,
+    5.868592169644505, 8,
+  ],
+  [
+    // Base 9
+    1, 1.1793017514670474, 1.394054150657457, 1.65664127441059, 1.985170999970283,
+    2.4069682290577457, 2.9647310119960752, 3.7278665320924946, 4.814462547283592,
+    6.436522247411611, 9,
+  ],
+  [
+    // Base 10
+    1, 1.18422737399915, 1.4066113788546144, 1.680911177655277, 2.027492094355525,
+    2.4775152854601967, 3.080455730250329, 3.918234505962507, 5.1332705696484595,
+    6.9878696918072905, 10,
+  ],
 ];
 const critical_slog_values = [
-[ // Base 2
--1,
--0.9194161097107025,
--0.8335625019330468,
--0.7425599821143978,
--0.6466611521029437,
--0.5462617907227869,
--0.4419033816638769,
--0.3342645487554494,
--0.224140440909962,
--0.11241087890006762,
-0
-],
-[ // Base E
--1, //0.0
--0.90603157029014, //0.1
--0.80786507256596, //0.2
--0.70646669396340, //0.3
--0.60294836853664, //0.4
--0.49849837513117, //0.5
--0.39430303318768, //0.6
--0.29147201034755, //0.7
--0.19097820800866, //0.8
--0.09361896280296, //0.9
-0 //1.0
-],
-[ // Base 3
--1,
--0.9021579584316141,
--0.8005762598234203,
--0.6964780623319391,
--0.5911906810998454,
--0.486050182576545,
--0.3823089430815083,
--0.28106046722897615,
--0.1831906535795894,
--0.08935809204418144,
-0
-],
-[ // Base 4
--1,
--0.8917227442365535,
--0.781258746326964,
--0.6705130326902455,
--0.5612813129406509,
--0.4551067709033134,
--0.35319256652135966,
--0.2563741554088552,
--0.1651412821106526,
--0.0796919581982668,
-0
-],
-[ // Base 5
--1,
--0.8843387974366064,
--0.7678744063886243,
--0.6529563724510552,
--0.5415870994657841,
--0.4352842206588936,
--0.33504449124791424,
--0.24138853420685147,
--0.15445285440944467,
--0.07409659641336663,
-0
-],
-[ // Base 6
--1,
--0.8786709358426346,
--0.7577735191184886,
--0.6399546189952064,
--0.527284921869926,
--0.4211627631006314,
--0.3223479611761232,
--0.23107655627789858,
--0.1472057700818259,
--0.07035171210706326,
-0
-],
-[ // Base 7
--1,
--0.8740862815291583,
--0.7497032990976209,
--0.6297119746181752,
--0.5161838335958787,
--0.41036238255751956,
--0.31277212146489963,
--0.2233976621705518,
--0.1418697367979619,
--0.06762117662323441,
-0
-],
-[ // Base 8
--1,
--0.8702632331800649,
--0.7430366914122081,
--0.6213373075161548,
--0.5072025698095242,
--0.40171437727184167,
--0.30517930701410456,
--0.21736343968190863,
--0.137710238299109,
--0.06550774483471955,
-0
-],
-[ // Base 9
--1,
--0.8670016295947213,
--0.7373984232432306,
--0.6143173985094293,
--0.49973884395492807,
--0.394584953527678,
--0.2989649949848695,
--0.21245647317021688,
--0.13434688362382652,
--0.0638072667348083,
-0
-],
-[ // Base 10
--1,
--0.8641642839543857,
--0.732534623168535,
--0.6083127477059322,
--0.4934049257184696,
--0.3885773075899922,
--0.29376029055315767,
--0.2083678561173622,
--0.13155653399373268,
--0.062401588652553186,
-0
-],
+  [
+    // Base 2
+    -1, -0.9194161097107025, -0.8335625019330468, -0.7425599821143978, -0.6466611521029437,
+    -0.5462617907227869, -0.4419033816638769, -0.3342645487554494, -0.224140440909962,
+    -0.11241087890006762, 0,
+  ],
+  [
+    // Base E
+    -1, //0.0
+    -0.90603157029014, //0.1
+    -0.80786507256596, //0.2
+    -0.7064666939634, //0.3
+    -0.60294836853664, //0.4
+    -0.49849837513117, //0.5
+    -0.39430303318768, //0.6
+    -0.29147201034755, //0.7
+    -0.19097820800866, //0.8
+    -0.09361896280296, //0.9
+    0, //1.0
+  ],
+  [
+    // Base 3
+    -1, -0.9021579584316141, -0.8005762598234203, -0.6964780623319391, -0.5911906810998454,
+    -0.486050182576545, -0.3823089430815083, -0.28106046722897615, -0.1831906535795894,
+    -0.08935809204418144, 0,
+  ],
+  [
+    // Base 4
+    -1, -0.8917227442365535, -0.781258746326964, -0.6705130326902455, -0.5612813129406509,
+    -0.4551067709033134, -0.35319256652135966, -0.2563741554088552, -0.1651412821106526,
+    -0.0796919581982668, 0,
+  ],
+  [
+    // Base 5
+    -1, -0.8843387974366064, -0.7678744063886243, -0.6529563724510552, -0.5415870994657841,
+    -0.4352842206588936, -0.33504449124791424, -0.24138853420685147, -0.15445285440944467,
+    -0.07409659641336663, 0,
+  ],
+  [
+    // Base 6
+    -1, -0.8786709358426346, -0.7577735191184886, -0.6399546189952064, -0.527284921869926,
+    -0.4211627631006314, -0.3223479611761232, -0.23107655627789858, -0.1472057700818259,
+    -0.07035171210706326, 0,
+  ],
+  [
+    // Base 7
+    -1, -0.8740862815291583, -0.7497032990976209, -0.6297119746181752, -0.5161838335958787,
+    -0.41036238255751956, -0.31277212146489963, -0.2233976621705518, -0.1418697367979619,
+    -0.06762117662323441, 0,
+  ],
+  [
+    // Base 8
+    -1, -0.8702632331800649, -0.7430366914122081, -0.6213373075161548, -0.5072025698095242,
+    -0.40171437727184167, -0.30517930701410456, -0.21736343968190863, -0.137710238299109,
+    -0.06550774483471955, 0,
+  ],
+  [
+    // Base 9
+    -1, -0.8670016295947213, -0.7373984232432306, -0.6143173985094293, -0.49973884395492807,
+    -0.394584953527678, -0.2989649949848695, -0.21245647317021688, -0.13434688362382652,
+    -0.0638072667348083, 0,
+  ],
+  [
+    // Base 10
+    -1, -0.8641642839543857, -0.732534623168535, -0.6083127477059322, -0.4934049257184696,
+    -0.3885773075899922, -0.29376029055315767, -0.2083678561173622, -0.13155653399373268,
+    -0.062401588652553186, 0,
+  ],
 ];
 
 const D = function D(value: DecimalSource): Decimal {
@@ -710,15 +585,15 @@ export default class Decimal {
   public static compare(value: DecimalSource, other: DecimalSource): CompareResult {
     return D(value).cmp(other);
   }
-  
+
   public static isNaN(value: DecimalSource): boolean {
-	value = D(value);
-	return isNaN(value.sign) || isNaN(value.layer) || isNaN(value.mag);
+    value = D(value);
+    return isNaN(value.sign) || isNaN(value.layer) || isNaN(value.mag);
   }
-  
+
   public static isFinite(value: DecimalSource): boolean {
-	value = D(value);
-	return isFinite(value.sign) && isFinite(value.layer) && isFinite(value.mag);
+    value = D(value);
+    return isFinite(value.sign) && isFinite(value.layer) && isFinite(value.mag);
   }
 
   public static eq(value: DecimalSource, other: DecimalSource): boolean {
@@ -1540,13 +1415,13 @@ export default class Decimal {
   }
 
   public toString(): string {
-	if (isNaN(this.layer) || isNaN(this.sign) || isNaN(this.mag)) {
+    if (isNaN(this.layer) || isNaN(this.sign) || isNaN(this.mag)) {
       return "NaN";
     }
-	if (this.mag === Number.POSITIVE_INFINITY || this.layer === Number.POSITIVE_INFINITY) {
+    if (this.mag === Number.POSITIVE_INFINITY || this.layer === Number.POSITIVE_INFINITY) {
       return this.sign === 1 ? "Infinity" : "-Infinity";
     }
-	
+
     if (this.layer === 0) {
       if ((this.mag < 1e21 && this.mag > 1e-7) || this.mag === 0) {
         return (this.sign * this.mag).toString();
@@ -1932,13 +1807,13 @@ export default class Decimal {
   public compare(value: DecimalSource): CompareResult {
     return this.cmp(value);
   }
-  
+
   public isNan(): boolean {
-	return isNaN(this.sign) || isNaN(this.layer) || isNaN(this.mag);
+    return isNaN(this.sign) || isNaN(this.layer) || isNaN(this.mag);
   }
-  
+
   public isFinite(): boolean {
-	return isFinite(this.sign) && isFinite(this.layer) && isFinite(this.mag);
+    return isFinite(this.sign) && isFinite(this.layer) && isFinite(this.mag);
   }
 
   public eq(value: DecimalSource): boolean {
@@ -2161,7 +2036,7 @@ export default class Decimal {
 
     //special case: if a is 0, then return 0 (UNLESS b is 0, then return 1)
     if (a.sign === 0) {
-      return b.eq(0) ? FC_NN(1, 0, 1) : a
+      return b.eq(0) ? FC_NN(1, 0, 1) : a;
     }
     //special case: if a is 1, then return 1
     if (a.sign === 1 && a.layer === 0 && a.mag === 1) {
@@ -2178,15 +2053,13 @@ export default class Decimal {
 
     const result = a.absLog10().mul(b).pow10();
 
-    if (this.sign === -1)
-	{
-	  if (Math.abs(b.toNumber() % 2) % 2 === 1) {	
-		return result.neg();
-	  }
-	  else if (Math.abs(b.toNumber() % 2) % 2 === 0) {	
-	    return result;
-	  }
-	  return Decimal.dNaN;
+    if (this.sign === -1) {
+      if (Math.abs(b.toNumber() % 2) % 2 === 1) {
+        return result.neg();
+      } else if (Math.abs(b.toNumber() % 2) % 2 === 0) {
+        return result;
+      }
+      return Decimal.dNaN;
     }
 
     return result;
@@ -2349,109 +2222,95 @@ export default class Decimal {
   //If payload != 1, then this is 'iterated exponentiation', the result of exping (payload) to base (this) (height) times. https://andydude.github.io/tetration/archives/tetration2/ident.html
   //Works with negative and positive real heights.
   public tetrate(height = 2, payload: DecimalSource = FC_NN(1, 0, 1)): Decimal {
-	//x^^1 == x
-	if (height === 1) {
-		return Decimal.pow(this, payload);
-	}
-	//x^^0 == 1
-	if (height === 0) {
-		return new Decimal(payload);
-	}
-	//1^^x == 1
-	if (this.eq(Decimal.dOne)) {
-		return Decimal.dOne;
-	}
-	//-1^^x == -1
-	if (this.eq(-1)) {
-		return Decimal.pow(this, payload);
-	}
-  
-    if (height === Number.POSITIVE_INFINITY) {
-	  var this_num = this.toNumber();
-	  //within the convergence range?
-	  if (this_num <= 1.44466786100976613366 && this_num >= 0.06598803584531253708)
-	  {
-		//hotfix for the very edge of the number range not being handled properly
-		if (this_num > 1.444667861009099)
-		{
-			return new Decimal(Math.E);
-		}
-		//Formula for infinite height power tower.
-		const negln = Decimal.ln(this).neg();
-		return negln.lambertw().div(negln);
-	  }
-	  else if (this_num > 1.44466786100976613366)
-	  {
-		//explodes to infinity
-		return new Decimal(Number.POSITIVE_INFINITY)
-	  }
-	  else
-	  {
-		//0.06598803584531253708 > this_num >= 0: never converges
-		//this_num < 0: quickly becomes a complex number
-		return Decimal.dNaN;
-	  }
+    //x^^1 == x
+    if (height === 1) {
+      return Decimal.pow(this, payload);
     }
-	
-	//0^^x oscillates if we define 0^0 == 1 (which in javascript land we do), since then 0^^1 is 0, 0^^2 is 1, 0^^3 is 0, etc. payload is ignored
-	//using the linear approximation for height (TODO: don't know a better way to calculate it ATM, but it wouldn't surprise me if it's just NaN)
-	if (this.eq(Decimal.dZero)) {
-		var result = Math.abs((height + 1) % 2);
-		if (result > 1)
-		{
-			result = 2 - result;
-		}
-		return new Decimal(result);
-	}
-	
-	if (height < 0) {
+    //x^^0 == 1
+    if (height === 0) {
+      return new Decimal(payload);
+    }
+    //1^^x == 1
+    if (this.eq(Decimal.dOne)) {
+      return Decimal.dOne;
+    }
+    //-1^^x == -1
+    if (this.eq(-1)) {
+      return Decimal.pow(this, payload);
+    }
+
+    if (height === Number.POSITIVE_INFINITY) {
+      var this_num = this.toNumber();
+      //within the convergence range?
+      if (this_num <= 1.44466786100976613366 && this_num >= 0.06598803584531253708) {
+        //hotfix for the very edge of the number range not being handled properly
+        if (this_num > 1.444667861009099) {
+          return new Decimal(Math.E);
+        }
+        //Formula for infinite height power tower.
+        const negln = Decimal.ln(this).neg();
+        return negln.lambertw().div(negln);
+      } else if (this_num > 1.44466786100976613366) {
+        //explodes to infinity
+        return new Decimal(Number.POSITIVE_INFINITY);
+      } else {
+        //0.06598803584531253708 > this_num >= 0: never converges
+        //this_num < 0: quickly becomes a complex number
+        return Decimal.dNaN;
+      }
+    }
+
+    //0^^x oscillates if we define 0^0 == 1 (which in javascript land we do), since then 0^^1 is 0, 0^^2 is 1, 0^^3 is 0, etc. payload is ignored
+    //using the linear approximation for height (TODO: don't know a better way to calculate it ATM, but it wouldn't surprise me if it's just NaN)
+    if (this.eq(Decimal.dZero)) {
+      var result = Math.abs((height + 1) % 2);
+      if (result > 1) {
+        result = 2 - result;
+      }
+      return new Decimal(result);
+    }
+
+    if (height < 0) {
       return Decimal.iteratedlog(payload, this, -height);
     }
-	
-	payload = D(payload);
+
+    payload = D(payload);
     const oldheight = height;
     height = Math.trunc(height);
     const fracheight = oldheight - height;
-	
-	if (this.gt(Decimal.dZero) && this.lte(1.44466786100976613366))
-	{
-		//similar to 0^^n, flip-flops between two values, converging slowly (or if it's below 0.06598803584531253708, never. so once again, the fractional part at the end will be a linear approximation (TODO: again pending knowledge of how to approximate better, although tbh I think it should in reality just be NaN)
-		height = Math.min(10000, height);
-		for (let i = 0; i < height; ++i) {
-			var old_payload: Decimal = payload;
-			payload = this.pow(payload);
-			//stop early if we converge
-			if (old_payload.eq(payload))
-			{
-				return payload;
-			}
-		}
-		if (fracheight != 0)
-		{
-			var next_payload = this.pow(payload);
-			return payload.mul(1-fracheight).add(next_payload.mul(fracheight));
-		}
-		return payload;
-	}
-	//TODO: base < 0, but it's hard for me to reason about (probably all non-integer heights are NaN automatically?)
-	
+
+    if (this.gt(Decimal.dZero) && this.lte(1.44466786100976613366)) {
+      //similar to 0^^n, flip-flops between two values, converging slowly (or if it's below 0.06598803584531253708, never. so once again, the fractional part at the end will be a linear approximation (TODO: again pending knowledge of how to approximate better, although tbh I think it should in reality just be NaN)
+      height = Math.min(10000, height);
+      for (let i = 0; i < height; ++i) {
+        var old_payload: Decimal = payload;
+        payload = this.pow(payload);
+        //stop early if we converge
+        if (old_payload.eq(payload)) {
+          return payload;
+        }
+      }
+      if (fracheight != 0) {
+        var next_payload = this.pow(payload);
+        return payload.mul(1 - fracheight).add(next_payload.mul(fracheight));
+      }
+      return payload;
+    }
+    //TODO: base < 0, but it's hard for me to reason about (probably all non-integer heights are NaN automatically?)
+
     if (fracheight !== 0) {
       if (payload.eq(Decimal.dOne)) {
-		//TODO: for bases above 10, revert to old linear approximation until I can think of something better
-		if (this.gt(10))
-		{
-			payload = this.pow(fracheight);
-		}
-		else
-		{
-			payload = D(Decimal.tetrate_critical(this.toNumber(), fracheight));
-			//TODO: until the critical section grid can handle numbers below 2, scale them to the base
-			//TODO: maybe once the critical section grid has very large bases, this math can be appropriate for them too? I'll think about it
-			if (this.lt(2))
-			{
-				payload = payload.sub(1).mul(this.minus(1)).plus(1);
-			}
-		}
+        //TODO: for bases above 10, revert to old linear approximation until I can think of something better
+        if (this.gt(10)) {
+          payload = this.pow(fracheight);
+        } else {
+          payload = D(Decimal.tetrate_critical(this.toNumber(), fracheight));
+          //TODO: until the critical section grid can handle numbers below 2, scale them to the base
+          //TODO: maybe once the critical section grid has very large bases, this math can be appropriate for them too? I'll think about it
+          if (this.lt(2)) {
+            payload = payload.sub(1).mul(this.minus(1)).plus(1);
+          }
+        }
       } else {
         if (this.eq(10)) {
           payload = payload.layeradd10(fracheight);
@@ -2529,34 +2388,31 @@ export default class Decimal {
   //Super-logarithm, one of tetration's inverses, tells you what size power tower you'd have to tetrate base to to get number. By definition, will never be higher than 1.8e308 in break_eternity.js, since a power tower 1.8e308 numbers tall is the largest representable number.
   // https://en.wikipedia.org/wiki/Super-logarithm
   public slog(base: DecimalSource = 10): Decimal {
-	base = D(base);
-	
-	//special cases:
-	//slog base 0 or lower is NaN
-	if (base.lte(Decimal.dZero)) {
-		return Decimal.dNaN;
-	}
-	//slog base 1 is NaN
-	if (base.eq(Decimal.dOne)) {
-		return Decimal.dNaN;
-	}
-	//need to handle these small, wobbling bases specially
-	if (base.lt(Decimal.dOne))
-	{
-		if (this.eq(Decimal.dOne))
-		{
-			return Decimal.dZero;
-		}
-		if (this.eq(Decimal.dZero))
-		{
-			return Decimal.dNegOne;
-		}
-		//0 < this < 1: ambiguous (happens multiple times)
-		//this < 0: impossible (as far as I can tell)
-		//this > 1: partially complex (http://myweb.astate.edu/wpaulsen/tetcalc/tetcalc.html base 0.25 for proof)
-		return Decimal.dNaN;
-	}
-	//slog_n(0) is -1
+    base = D(base);
+
+    //special cases:
+    //slog base 0 or lower is NaN
+    if (base.lte(Decimal.dZero)) {
+      return Decimal.dNaN;
+    }
+    //slog base 1 is NaN
+    if (base.eq(Decimal.dOne)) {
+      return Decimal.dNaN;
+    }
+    //need to handle these small, wobbling bases specially
+    if (base.lt(Decimal.dOne)) {
+      if (this.eq(Decimal.dOne)) {
+        return Decimal.dZero;
+      }
+      if (this.eq(Decimal.dZero)) {
+        return Decimal.dNegOne;
+      }
+      //0 < this < 1: ambiguous (happens multiple times)
+      //this < 0: impossible (as far as I can tell)
+      //this > 1: partially complex (http://myweb.astate.edu/wpaulsen/tetcalc/tetcalc.html base 0.25 for proof)
+      return Decimal.dNaN;
+    }
+    //slog_n(0) is -1
     if (this.mag < 0 || this.eq(Decimal.dZero)) {
       return Decimal.dNegOne;
     }
@@ -2585,50 +2441,58 @@ export default class Decimal {
 
   //background info and tables of values for critical functions taken here: https://github.com/Patashu/break_eternity.js/issues/22
   public static slog_critical(base: number, height: number): number {
-	//TODO: for bases above 10, revert to old linear approximation until I can think of something better
-	if (base > 10)
-	{
-		return height-1;
-	}
-	return Decimal.critical_section(base, height, critical_slog_values);
+    //TODO: for bases above 10, revert to old linear approximation until I can think of something better
+    if (base > 10) {
+      return height - 1;
+    }
+    return Decimal.critical_section(base, height, critical_slog_values);
   }
-  
+
   public static tetrate_critical(base: number, height: number): number {
-	return Decimal.critical_section(base, height, critical_tetr_values);
+    return Decimal.critical_section(base, height, critical_tetr_values);
   }
-  
+
   public static critical_section(base: number, height: number, grid: number[][]): number {
-	//this part is simple at least, since it's just 0.1 to 0.9
-	height *= 10;
-	if (height < 0) { height = 0; }
-	if (height > 10) { height = 10; }
-	//have to do this complicated song and dance since one of the critical_headers is Math.E, and in the future I'd like 1.5 as well
-	if (base < 2) { base = 2; }
-	if (base > 10) { base = 10; }
-	var lower = 0;
-	var upper = 0;
-	//basically, if we're between bases, we interpolate each bases' relevant values together
-	//then we interpolate based on what the fractional height is.
-	//accuracy could be improved by doing a non-linear interpolation (maybe), by adding more bases and heights (definitely) but this is AFAIK the best you can get without running some pari.gp or mathematica program to calculate exact values
-	for (var i = 0; i < critical_headers.length; ++i)
-	{
-		if (critical_headers[i] == base) // exact match
-		{
-			lower = grid[i][Math.floor(height)];
-			upper = grid[i][Math.ceil(height)];
-			break;
-		}
-		else if (critical_headers[i] < base && critical_headers[i+1] > base) // interpolate between this and the next
-		{
-			var basefrac = (base-critical_headers[i])/(critical_headers[i+1] - critical_headers[i]);
-			lower = grid[i][Math.floor(height)]*(1-basefrac)+grid[i+1][Math.floor(height)]*basefrac;
-			upper = grid[i][Math.ceil(height)]*(1-basefrac)+grid[i+1][Math.ceil(height)]*basefrac;
-			break;
-		}
-	}
-	var frac = height-Math.floor(height);
-	var result = lower*(1-frac)+upper*frac;
-	return result;
+    //this part is simple at least, since it's just 0.1 to 0.9
+    height *= 10;
+    if (height < 0) {
+      height = 0;
+    }
+    if (height > 10) {
+      height = 10;
+    }
+    //have to do this complicated song and dance since one of the critical_headers is Math.E, and in the future I'd like 1.5 as well
+    if (base < 2) {
+      base = 2;
+    }
+    if (base > 10) {
+      base = 10;
+    }
+    var lower = 0;
+    var upper = 0;
+    //basically, if we're between bases, we interpolate each bases' relevant values together
+    //then we interpolate based on what the fractional height is.
+    //accuracy could be improved by doing a non-linear interpolation (maybe), by adding more bases and heights (definitely) but this is AFAIK the best you can get without running some pari.gp or mathematica program to calculate exact values
+    for (var i = 0; i < critical_headers.length; ++i) {
+      if (critical_headers[i] == base) {
+        // exact match
+        lower = grid[i][Math.floor(height)];
+        upper = grid[i][Math.ceil(height)];
+        break;
+      } else if (critical_headers[i] < base && critical_headers[i + 1] > base) {
+        // interpolate between this and the next
+        var basefrac =
+          (base - critical_headers[i]) / (critical_headers[i + 1] - critical_headers[i]);
+        lower =
+          grid[i][Math.floor(height)] * (1 - basefrac) + grid[i + 1][Math.floor(height)] * basefrac;
+        upper =
+          grid[i][Math.ceil(height)] * (1 - basefrac) + grid[i + 1][Math.ceil(height)] * basefrac;
+        break;
+      }
+    }
+    var frac = height - Math.floor(height);
+    var result = lower * (1 - frac) + upper * frac;
+    return result;
   }
 
   //Function for adding/removing layers from a Decimal, even fractional layers (e.g. its slog10 representation).
@@ -2637,15 +2501,16 @@ export default class Decimal {
     diff = Decimal.fromValue_noAlloc(diff).toNumber();
     const result = D(this);
     if (diff >= 1) {
-	  //bug fix: if result is very smol (mag < 0, layer > 0) turn it into 0 first
-	  if (result.mag < 0 && result.layer > 0) {
-		result.sign = 0; result.mag = 0; result.layer = 0;
-	  }
-	  else if (result.sign === -1 && result.layer == 0) {
-		//bug fix - for stuff like -3.layeradd10(1) we need to move the sign to the mag
-		result.sign = 1;
-		result.mag = -result.mag;
-	  }
+      //bug fix: if result is very smol (mag < 0, layer > 0) turn it into 0 first
+      if (result.mag < 0 && result.layer > 0) {
+        result.sign = 0;
+        result.mag = 0;
+        result.layer = 0;
+      } else if (result.sign === -1 && result.layer == 0) {
+        //bug fix - for stuff like -3.layeradd10(1) we need to move the sign to the mag
+        result.sign = 1;
+        result.mag = -result.mag;
+      }
       const layeradd = Math.trunc(diff);
       diff -= layeradd;
       result.layer += layeradd;
@@ -2659,16 +2524,14 @@ export default class Decimal {
           result.layer++;
           result.mag = Math.log10(result.mag);
           if (!isFinite(result.mag)) {
-			//another bugfix: if we hit -Infinity mag, then we should return negative infinity, not 0. 0.layeradd10(-1) h its this
-			if (result.sign === 0)
-			{
-				result.sign = 1;
-			}
-			//also this, for 0.layeradd10(-2)
-			if (result.layer < 0)
-			{
-				result.layer = 0;
-			}
+            //another bugfix: if we hit -Infinity mag, then we should return negative infinity, not 0. 0.layeradd10(-1) h its this
+            if (result.sign === 0) {
+              result.sign = 1;
+            }
+            //also this, for 0.layeradd10(-2)
+            if (result.layer < 0) {
+              result.layer = 0;
+            }
             return result.normalize();
           }
           if (result.layer >= 0) {
@@ -2678,27 +2541,25 @@ export default class Decimal {
       }
     }
 
-	while (result.layer < 0) {
+    while (result.layer < 0) {
       result.layer++;
       result.mag = Math.log10(result.mag);
     }
-	//bugfix: before we normalize: if we started with 0, we now need to manually fix a layer ourselves!
-	if (result.sign === 0)
-	{
-		result.sign = 1;
-		if (result.mag === 0 && result.layer >= 1)
-		{
-			result.layer -= 1;
-			result.mag = 1;
-		}
-	}
+    //bugfix: before we normalize: if we started with 0, we now need to manually fix a layer ourselves!
+    if (result.sign === 0) {
+      result.sign = 1;
+      if (result.mag === 0 && result.layer >= 1) {
+        result.layer -= 1;
+        result.mag = 1;
+      }
+    }
     result.normalize();
 
     //layeradd10: like adding 'diff' to the number's slog(base) representation. Very similar to tetrate base 10 and iterated log base 10. Also equivalent to adding a fractional amount to the number's layer in its break_eternity.js representation.
     if (diff !== 0) {
-	  return result.layeradd(diff, 10); //safe, only calls positive height 1 payload tetration, slog and log
+      return result.layeradd(diff, 10); //safe, only calls positive height 1 payload tetration, slog and log
     }
-	
+
     return result;
   }
 
