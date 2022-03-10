@@ -298,8 +298,7 @@ const f_lambertw = function (z: number, tol = 1e-10): number {
 // fail to converge, or can end up on the wrong branch.
 function d_lambertw(z: Decimal, tol = 1e-10): Decimal {
   let w;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  let ew, wew, wewz, wn;
+  let ew, wewz, wn;
 
   if (!Number.isFinite(z.mag)) {
     return z;
@@ -312,8 +311,6 @@ function d_lambertw(z: Decimal, tol = 1e-10): Decimal {
     return D(OMEGA);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const absz = Decimal.abs(z);
   //Get an initial guess for Halley's method
   w = Decimal.ln(z);
 
@@ -1838,8 +1835,6 @@ export default class Decimal {
   }
 
   public lt(value: DecimalSource): boolean {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const decimal = D(value); // FIXME: Remove?
     return this.cmp(value) === -1;
   }
 
@@ -1848,8 +1843,6 @@ export default class Decimal {
   }
 
   public gt(value: DecimalSource): boolean {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const decimal = D(value); // FIXME: Remove?
     return this.cmp(value) === 1;
   }
 
