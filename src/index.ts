@@ -2077,7 +2077,7 @@ export default class Decimal {
       return Decimal.dNaN;
     }
 
-    let a = this;
+    let a: Decimal = this;
 
     //handle layer 0 case - if no precision is lost just use Math.pow, else promote one layer
     if (a.layer === 0) {
@@ -2088,7 +2088,7 @@ export default class Decimal {
         if (a.sign === 0) {
           return Decimal.dOne;
         } else {
-          a = FC_NN(a.sign, a.layer + 1, Math.log10(a.mag)) as this;
+          a = FC_NN(a.sign, a.layer + 1, Math.log10(a.mag));
         }
       }
     }
