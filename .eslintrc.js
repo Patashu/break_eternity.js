@@ -25,5 +25,7 @@ module.exports = {
     ],
     "@typescript-eslint/restrict-plus-operands": 0, // A lot of strings are built with +
     "@typescript-eslint/no-this-alias": 0, // `this` is aliased in several places
-  }
+    "no-unused-expressions": "off",
+    "@typescript-eslint/no-unused-expressions": ["error"],
+  },
 };
