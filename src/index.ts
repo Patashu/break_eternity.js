@@ -303,10 +303,10 @@ function d_lambertw(z: Decimal, tol = 1e-10): Decimal {
   if (!Number.isFinite(z.mag)) {
     return z;
   }
-  if (z === Decimal.dZero) {
+  if (z.eq(Decimal.dZero)) {
     return z;
   }
-  if (z === Decimal.dOne) {
+  if (z.eq(Decimal.dOne)) {
     //Split out this case because the asymptotic series blows up
     return D(OMEGA);
   }
@@ -317,7 +317,7 @@ function d_lambertw(z: Decimal, tol = 1e-10): Decimal {
   //Halley's method; see 5.9 in [1]
 
   for (let i = 0; i < 100; ++i) {
-    ew = Decimal.exp(-w);
+    ew = w.neg().exp();
     wewz = w.sub(z.mul(ew));
     wn = w.sub(wewz.div(w.add(1).sub(w.add(2).mul(wewz).div(Decimal.mul(2, w).add(2)))));
     if (Decimal.abs(wn.sub(w)).lt(Decimal.abs(wn).mul(tol))) {
