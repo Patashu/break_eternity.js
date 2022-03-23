@@ -395,8 +395,8 @@ export default class Decimal {
       //don't even pretend mantissa is meaningful
       this.sign = Math.sign(value);
       if (this.sign === 0) {
-        this.layer === 0;
-        this.exponent === 0;
+        this.layer = 0;
+        this.exponent = 0;
       }
     }
   }
