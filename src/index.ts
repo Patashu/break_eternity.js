@@ -178,25 +178,25 @@ const critical_slog_values = [
   ],
 ];
 
-const D = function D(value: DecimalSource): Decimal {
+let D = function D(value: DecimalSource): Decimal {
   return Decimal.fromValue_noAlloc(value);
 };
 
-const FC = function (sign: number, layer: number, mag: number) {
+let FC = function (sign: number, layer: number, mag: number) {
   return Decimal.fromComponents(sign, layer, mag);
 };
 
-const FC_NN = function FC_NN(sign: number, layer: number, mag: number) {
+let FC_NN = function FC_NN(sign: number, layer: number, mag: number) {
   return Decimal.fromComponents_noNormalize(sign, layer, mag);
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const ME = function ME(mantissa: number, exponent: number) {
+let ME = function ME(mantissa: number, exponent: number) {
   return Decimal.fromMantissaExponent(mantissa, exponent);
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const ME_NN = function ME_NN(mantissa: number, exponent: number) {
+let ME_NN = function ME_NN(mantissa: number, exponent: number) {
   return Decimal.fromMantissaExponent_noNormalize(mantissa, exponent);
 };
 
@@ -303,10 +303,10 @@ function d_lambertw(z: Decimal, tol = 1e-10): Decimal {
   if (!Number.isFinite(z.mag)) {
     return z;
   }
-  if (z === Decimal.dZero) {
+  if (z.eq(Decimal.dZero)) {
     return z;
   }
-  if (z === Decimal.dOne) {
+  if (z.eq(Decimal.dOne)) {
     //Split out this case because the asymptotic series blows up
     return D(OMEGA);
   }
@@ -317,7 +317,7 @@ function d_lambertw(z: Decimal, tol = 1e-10): Decimal {
   //Halley's method; see 5.9 in [1]
 
   for (let i = 0; i < 100; ++i) {
-    ew = Decimal.exp(-w);
+    ew = w.neg().exp();
     wewz = w.sub(z.mul(ew));
     wn = w.sub(wewz.div(w.add(1).sub(w.add(2).mul(wewz).div(Decimal.mul(2, w).add(2)))));
     if (Decimal.abs(wn.sub(w)).lt(Decimal.abs(wn).mul(tol))) {
@@ -2077,7 +2077,7 @@ export default class Decimal {
       return Decimal.dNaN;
     }
 
-    let a = this;
+    let a: Decimal = this;
 
     //handle layer 0 case - if no precision is lost just use Math.pow, else promote one layer
     if (a.layer === 0) {
@@ -2088,7 +2088,7 @@ export default class Decimal {
         if (a.sign === 0) {
           return Decimal.dOne;
         } else {
-          a = FC_NN(a.sign, a.layer + 1, Math.log10(a.mag)) as this;
+          a = FC_NN(a.sign, a.layer + 1, Math.log10(a.mag));
         }
       }
     }
@@ -2950,3 +2950,13 @@ for (var i = 0; i < 10; ++i)
 }
 
 // return Decimal;
+
+// Optimise Decimal aliases.
+// We can't do this optimisation before Decimal is assigned.
+D = Decimal.fromValue_noAlloc;
+FC = Decimal.fromComponents;
+FC_NN = Decimal.fromComponents_noNormalize;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ME = Decimal.fromMantissaExponent;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ME_NN = Decimal.fromMantissaExponent_noNormalize;

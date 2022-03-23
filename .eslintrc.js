@@ -8,17 +8,15 @@ module.exports = {
     commonjs: true,
     mocha: true
   },
-  plugins: ["@typescript-eslint", "prettier"],
+  plugins: ["@typescript-eslint"],
   extends: [
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended",
     "plugin:@typescript-eslint/recommended-requiring-type-checking",
     "prettier",
-    "plugin:prettier/recommended"
   ],
   rules: {
-    "prettier/prettier": ["error"],
     "@typescript-eslint/no-unused-vars": [
       "warn",
       { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
@@ -27,5 +25,11 @@ module.exports = {
     "@typescript-eslint/no-this-alias": 0, // `this` is aliased in several places
     "no-unused-expressions": "off",
     "@typescript-eslint/no-unused-expressions": ["error"],
+    "@typescript-eslint/unbound-method": [
+      "error",
+      {
+        ignoreStatic: true,
+      },
+    ],
   },
 };

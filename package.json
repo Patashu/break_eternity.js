@@ -9,7 +9,9 @@
   "scripts": {
     "build": "bili",
     "prepublishOnly": "npm run build",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint . && prettier --check .",
+    "fix": "prettier --write . && eslint --fix ."
   },
   "files": [
     "dist"
@@ -37,7 +39,6 @@
     "bili": "^5.0.5",
     "eslint": "^7.23.0",
     "eslint-config-prettier": "^8.1.0",
-    "eslint-plugin-prettier": "^3.3.1",
     "eslint-plugin-react": "^7.23.1",
     "prettier": "^2.2.1",
     "rollup-plugin-typescript2": "^0.31.0",
