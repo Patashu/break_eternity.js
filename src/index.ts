@@ -178,25 +178,25 @@ const critical_slog_values = [
   ],
 ];
 
-const D = function D(value: DecimalSource): Decimal {
+let D = function D(value: DecimalSource): Decimal {
   return Decimal.fromValue_noAlloc(value);
 };
 
-const FC = function (sign: number, layer: number, mag: number) {
+let FC = function (sign: number, layer: number, mag: number) {
   return Decimal.fromComponents(sign, layer, mag);
 };
 
-const FC_NN = function FC_NN(sign: number, layer: number, mag: number) {
+let FC_NN = function FC_NN(sign: number, layer: number, mag: number) {
   return Decimal.fromComponents_noNormalize(sign, layer, mag);
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const ME = function ME(mantissa: number, exponent: number) {
+let ME = function ME(mantissa: number, exponent: number) {
   return Decimal.fromMantissaExponent(mantissa, exponent);
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const ME_NN = function ME_NN(mantissa: number, exponent: number) {
+let ME_NN = function ME_NN(mantissa: number, exponent: number) {
   return Decimal.fromMantissaExponent_noNormalize(mantissa, exponent);
 };
 
@@ -2950,3 +2950,13 @@ for (var i = 0; i < 10; ++i)
 }
 
 // return Decimal;
+
+// Optimise Decimal aliases.
+// We can't do this optimisation before Decimal is assigned.
+D = Decimal.fromValue_noAlloc;
+FC = Decimal.fromComponents;
+FC_NN = Decimal.fromComponents_noNormalize;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ME = Decimal.fromMantissaExponent;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ME_NN = Decimal.fromMantissaExponent_noNormalize;
