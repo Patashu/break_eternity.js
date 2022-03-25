@@ -178,7 +178,7 @@ const critical_slog_values = [
   ],
 ];
 
-let D = function D(value: DecimalSource): Decimal {
+let D = function D(value: DecimalSource): Readonly<Decimal> {
   return Decimal.fromValue_noAlloc(value);
 };
 
@@ -479,7 +479,16 @@ export default class Decimal {
     return new Decimal().fromValue(value);
   }
 
-  public static fromValue_noAlloc(value: DecimalSource): Decimal {
+  /**
+   * Converts a DecimalSource to a Decimal, without constructing a new Decimal
+   * if the provided value is already a Decimal.
+   *
+   * As the return value could be the provided value itself, this function
+   * returns a read-only Decimal to prevent accidental mutations of the value.
+   * Use `new Decimal(value)` to explicitly create a writeable copy if mutation
+   * is required.
+   */
+  public static fromValue_noAlloc(value: DecimalSource): Readonly<Decimal> {
     return value instanceof Decimal ? value : new Decimal(value);
   }
 
@@ -2350,7 +2359,7 @@ export default class Decimal {
     }
 
     base = D(base);
-    let result = D(this);
+    let result = new Decimal(this);
     const fulltimes = times;
     times = Math.trunc(times);
     const fraction = fulltimes - times;
@@ -2417,7 +2426,7 @@ export default class Decimal {
     }
 
     let result = 0;
-    let copy = D(this);
+    let copy = new Decimal(this);
     if (copy.layer - base.layer > 3) {
       const layerloss = copy.layer - base.layer - 3;
       result += layerloss;
@@ -2498,7 +2507,7 @@ export default class Decimal {
   //Moved this over to use the same critical section as tetrate/slog.
   public layeradd10(diff: DecimalSource): Decimal {
     diff = Decimal.fromValue_noAlloc(diff).toNumber();
-    const result = D(this);
+    const result = new Decimal(this);
     if (diff >= 1) {
       //bug fix: if result is very smol (mag < 0, layer > 0) turn it into 0 first
       if (result.mag < 0 && result.layer > 0) {
