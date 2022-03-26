@@ -495,7 +495,22 @@ export default class Decimal {
    * is required.
    */
   public static fromValue_noAlloc(value: DecimalSource): Readonly<Decimal> {
-    return value instanceof Decimal ? value : new Decimal(value);
+    if (value instanceof Decimal) {
+      return value;
+    } else if (typeof value === "string") {
+      const cached = Decimal.fromStringCache.get(value);
+      if (cached !== undefined) {
+        return cached;
+      }
+      return Decimal.fromString(value);
+    } else if (typeof value === "number") {
+      return Decimal.fromNumber(value);
+    } else {
+      // This should never happen... but some users like Prestige Tree Rewritten
+      // pass undefined values in as DecimalSources, so we should handle this
+      // case to not break them.
+      return Decimal.dZero;
+    }
   }
 
   public static abs(value: DecimalSource): Decimal {
