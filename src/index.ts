@@ -1,3 +1,5 @@
+import { LRUCache } from "./lru-cache";
+
 export type CompareResult = -1 | 0 | 1;
 
 const MAX_SIGNIFICANT_DIGITS = 17; //Maximum number of digits of precision to assume in Number
@@ -13,6 +15,8 @@ const NUMBER_EXP_MAX = 308; //The largest exponent that can appear in a Number, 
 const NUMBER_EXP_MIN = -324; //The smallest exponent that can appear in a Number, though not all mantissas are valid here.
 
 const MAX_ES_IN_A_ROW = 5; //For default toString behaviour, when to swap from eee... to (e^n) syntax.
+
+const DEFAULT_FROM_STRING_CACHE_SIZE = 1 << 10; // The default size of the LRU cache used to cache Decimal.fromString.
 
 const IGNORE_COMMAS = true;
 const COMMAS_ARE_DECIMAL_POINTS = false;
@@ -347,6 +351,8 @@ export default class Decimal {
   public static readonly dNegInf = FC_NN(-1, Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY);
   public static readonly dNumberMax = FC(1, 0, Number.MAX_VALUE);
   public static readonly dNumberMin = FC(1, 0, Number.MIN_VALUE);
+
+  private static fromStringCache = new LRUCache<string, Decimal>(DEFAULT_FROM_STRING_CACHE_SIZE);
 
   public sign: number = Number.NaN;
   public mag: number = Number.NaN;
@@ -1156,6 +1162,11 @@ export default class Decimal {
   }
 
   public fromString(value: string): Decimal {
+    const originalValue = value;
+    const cached = Decimal.fromStringCache.get(originalValue);
+    if (cached !== undefined) {
+      return this.fromDecimal(cached);
+    }
     if (IGNORE_COMMAS) {
       value = value.replace(",", "");
     } else if (COMMAS_ARE_DECIMAL_POINTS) {
@@ -1180,6 +1191,9 @@ export default class Decimal {
         this.sign = result.sign;
         this.layer = result.layer;
         this.mag = result.mag;
+        if (Decimal.fromStringCache.maxSize >= 1) {
+          Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+        }
         return this;
       }
     }
@@ -1202,6 +1216,9 @@ export default class Decimal {
         this.sign = result.sign;
         this.layer = result.layer;
         this.mag = result.mag;
+        if (Decimal.fromStringCache.maxSize >= 1) {
+          Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+        }
         return this;
       }
     }
@@ -1216,6 +1233,9 @@ export default class Decimal {
         this.sign = result.sign;
         this.layer = result.layer;
         this.mag = result.mag;
+        if (Decimal.fromStringCache.maxSize >= 1) {
+          Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+        }
         return this;
       }
     }
@@ -1241,6 +1261,9 @@ export default class Decimal {
         this.sign = result.sign;
         this.layer = result.layer;
         this.mag = result.mag;
+        if (Decimal.fromStringCache.maxSize >= 1) {
+          Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+        }
         return this;
       }
     }
@@ -1261,6 +1284,9 @@ export default class Decimal {
         this.sign = result.sign;
         this.layer = result.layer;
         this.mag = result.mag;
+        if (Decimal.fromStringCache.maxSize >= 1) {
+          Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+        }
         return this;
       }
     }
@@ -1272,13 +1298,21 @@ export default class Decimal {
     if (ecount === 0) {
       const numberAttempt = parseFloat(value);
       if (isFinite(numberAttempt)) {
-        return this.fromNumber(numberAttempt);
+        this.fromNumber(numberAttempt);
+        if (Decimal.fromStringCache.size >= 1) {
+          Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+        }
+        return this;
       }
     } else if (ecount === 1) {
       //Very small numbers ("2e-3000" and so on) may look like valid floats but round to 0.
       const numberAttempt = parseFloat(value);
       if (isFinite(numberAttempt) && numberAttempt !== 0) {
-        return this.fromNumber(numberAttempt);
+        this.fromNumber(numberAttempt);
+        if (Decimal.fromStringCache.maxSize >= 1) {
+          Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+        }
+        return this;
       }
     }
 
@@ -1300,6 +1334,9 @@ export default class Decimal {
           this.layer = parseFloat(layerstring);
           this.mag = parseFloat(newparts[1].substr(i + 1));
           this.normalize();
+          if (Decimal.fromStringCache.maxSize >= 1) {
+            Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+          }
           return this;
         }
       }
@@ -1309,6 +1346,9 @@ export default class Decimal {
       this.sign = 0;
       this.layer = 0;
       this.mag = 0;
+      if (Decimal.fromStringCache.maxSize >= 1) {
+        Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+      }
       return this;
     }
     const mantissa = parseFloat(parts[0]);
@@ -1316,6 +1356,9 @@ export default class Decimal {
       this.sign = 0;
       this.layer = 0;
       this.mag = 0;
+      if (Decimal.fromStringCache.maxSize >= 1) {
+        Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+      }
       return this;
     }
     let exponent = parseFloat(parts[parts.length - 1]);
@@ -1350,6 +1393,9 @@ export default class Decimal {
         this.sign = result.sign;
         this.layer = result.layer;
         this.mag = result.mag;
+        if (Decimal.fromStringCache.maxSize >= 1) {
+          Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+        }
         return this;
       } else {
         //at eee and above, mantissa is too small to be recognizable!
@@ -1358,6 +1404,9 @@ export default class Decimal {
     }
 
     this.normalize();
+    if (Decimal.fromStringCache.maxSize >= 1) {
+      Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+    }
     return this;
   }
 
@@ -2067,7 +2116,7 @@ export default class Decimal {
       } else if (Math.abs(b.toNumber() % 2) % 2 === 0) {
         return result;
       }
-      return Decimal.dNaN;
+      return result;
     }
 
     return result;
