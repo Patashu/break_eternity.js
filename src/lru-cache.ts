@@ -13,7 +13,12 @@ export class LRUCache<K, V> {
   maxSize: number;
 
   /**
-   * @param maxSize The maximum size for this cache.
+   * @param maxSize The maximum size for this cache. We recommend setting this
+   * to be one less than a power of 2, as most hashtables - including V8's
+   * Object hashtable (https://crsrc.org/c/v8/src/objects/ordered-hash-table.cc)
+   * - uses powers of two for hashtable sizes. It can't exactly be a power of
+   * two, as a .set() call could temporarily set the size of the map to be
+   * maxSize + 1.
    */
   constructor(maxSize: number) {
     this.maxSize = maxSize;

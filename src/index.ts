@@ -16,7 +16,7 @@ const NUMBER_EXP_MIN = -324; //The smallest exponent that can appear in a Number
 
 const MAX_ES_IN_A_ROW = 5; //For default toString behaviour, when to swap from eee... to (e^n) syntax.
 
-const DEFAULT_FROM_STRING_CACHE_SIZE = 1 << 10; // The default size of the LRU cache used to cache Decimal.fromString.
+const DEFAULT_FROM_STRING_CACHE_SIZE = 1 << (10 - 1); // The default size of the LRU cache used to cache Decimal.fromString.
 
 const IGNORE_COMMAS = true;
 const COMMAS_ARE_DECIMAL_POINTS = false;
