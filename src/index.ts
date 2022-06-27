@@ -348,9 +348,9 @@ export default class Decimal {
   public static readonly dNumberMax = FC(1, 0, Number.MAX_VALUE);
   public static readonly dNumberMin = FC(1, 0, Number.MIN_VALUE);
 
-  public sign: number = Number.NaN;
-  public mag: number = Number.NaN;
-  public layer: number = Number.NaN;
+  public sign = 0;
+  public mag = 0;
+  public layer = 0;
 
   constructor(value?: DecimalSource) {
     if (value instanceof Decimal) {
@@ -359,10 +359,6 @@ export default class Decimal {
       this.fromNumber(value);
     } else if (typeof value === "string") {
       this.fromString(value);
-    } else {
-      this.sign = 0;
-      this.layer = 0;
-      this.mag = 0;
     }
   }
 
