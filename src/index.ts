@@ -2127,7 +2127,7 @@ export default class Decimal {
       } else if (Math.abs(b.toNumber() % 2) % 2 === 0) {
         return result;
       }
-      return result;
+      return Decimal.dNaN;
     }
 
     return result;
