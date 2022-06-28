@@ -312,7 +312,7 @@ function d_lambertw(z: Decimal, tol = 1e-10): Decimal {
   }
   if (z.eq(Decimal.dOne)) {
     //Split out this case because the asymptotic series blows up
-    return D(OMEGA);
+    return Decimal.fromNumber(OMEGA);
   }
 
   //Get an initial guess for Halley's method
@@ -354,9 +354,9 @@ export default class Decimal {
 
   private static fromStringCache = new LRUCache<string, Decimal>(DEFAULT_FROM_STRING_CACHE_SIZE);
 
-  public sign: number = Number.NaN;
-  public mag: number = Number.NaN;
-  public layer: number = Number.NaN;
+  public sign = 0;
+  public mag = 0;
+  public layer = 0;
 
   constructor(value?: DecimalSource) {
     if (value instanceof Decimal) {
@@ -365,10 +365,6 @@ export default class Decimal {
       this.fromNumber(value);
     } else if (typeof value === "string") {
       this.fromString(value);
-    } else {
-      this.sign = 0;
-      this.layer = 0;
-      this.mag = 0;
     }
   }
 
@@ -1674,7 +1670,7 @@ export default class Decimal {
     }
 
     if (a.layer === 0 && b.layer === 0) {
-      return D(a.sign * a.mag + b.sign * b.mag);
+      return Decimal.fromNumber(a.sign * a.mag + b.sign * b.mag);
     }
 
     const layera = a.layer * Math.sign(a.mag);
@@ -1769,7 +1765,7 @@ export default class Decimal {
     }
 
     if (a.layer === 0 && b.layer === 0) {
-      return D(a.sign * b.sign * a.mag * b.mag);
+      return Decimal.fromNumber(a.sign * b.sign * a.mag * b.mag);
     }
 
     //Special case: If one of the numbers is layer 3 or higher or one of the numbers is 2+ layers bigger than the other, just take the bigger number.
@@ -2204,7 +2200,7 @@ export default class Decimal {
       return this.recip();
     } else if (this.layer === 0) {
       if (this.lt(FC_NN(1, 0, 24))) {
-        return D(f_gamma(this.sign * this.mag));
+        return Decimal.fromNumber(f_gamma(this.sign * this.mag));
       }
 
       const t = this.mag - 1;
@@ -2255,7 +2251,7 @@ export default class Decimal {
       return Decimal.dOne;
     }
     if (this.layer === 0 && this.mag <= 709.7) {
-      return D(Math.exp(this.sign * this.mag));
+      return Decimal.fromNumber(Math.exp(this.sign * this.mag));
     } else if (this.layer === 0) {
       return FC(1, 1, this.sign * Math.log10(Math.E) * this.mag);
     } else if (this.layer === 1) {
@@ -2271,7 +2267,7 @@ export default class Decimal {
 
   public sqrt(): Decimal {
     if (this.layer === 0) {
-      return D(Math.sqrt(this.sign * this.mag));
+      return Decimal.fromNumber(Math.sqrt(this.sign * this.mag));
     } else if (this.layer === 1) {
       return FC(1, 2, Math.log10(this.mag) - 0.3010299956639812);
     } else {
@@ -2317,14 +2313,15 @@ export default class Decimal {
       if (this_num <= 1.44466786100976613366 && this_num >= 0.06598803584531253708) {
         //hotfix for the very edge of the number range not being handled properly
         if (this_num > 1.444667861009099) {
-          return new Decimal(Math.E);
+          return Decimal.fromNumber(Math.E);
         }
         //Formula for infinite height power tower.
         const negln = Decimal.ln(this).neg();
         return negln.lambertw().div(negln);
       } else if (this_num > 1.44466786100976613366) {
         //explodes to infinity
-        return new Decimal(Number.POSITIVE_INFINITY);
+        // TODO: replace this with Decimal.dInf
+        return Decimal.fromNumber(Number.POSITIVE_INFINITY);
       } else {
         //0.06598803584531253708 > this_num >= 0: never converges
         //this_num < 0: quickly becomes a complex number
@@ -2339,7 +2336,7 @@ export default class Decimal {
       if (result > 1) {
         result = 2 - result;
       }
-      return new Decimal(result);
+      return Decimal.fromNumber(result);
     }
 
     if (height < 0) {
@@ -2376,7 +2373,7 @@ export default class Decimal {
         if (this.gt(10)) {
           payload = this.pow(fracheight);
         } else {
-          payload = D(Decimal.tetrate_critical(this.toNumber(), fracheight));
+          payload = Decimal.fromNumber(Decimal.tetrate_critical(this.toNumber(), fracheight));
           //TODO: until the critical section grid can handle numbers below 2, scale them to the base
           //TODO: maybe once the critical section grid has very large bases, this math can be appropriate for them too? I'll think about it
           if (this.lt(2)) {
@@ -2423,7 +2420,7 @@ export default class Decimal {
     }
 
     base = D(base);
-    let result = new Decimal(this);
+    let result = Decimal.fromDecimal(this);
     const fulltimes = times;
     times = Math.trunc(times);
     const fraction = fulltimes - times;
@@ -2490,7 +2487,7 @@ export default class Decimal {
     }
 
     let result = 0;
-    let copy = new Decimal(this);
+    let copy = Decimal.fromDecimal(this);
     if (copy.layer - base.layer > 3) {
       const layerloss = copy.layer - base.layer - 3;
       result += layerloss;
@@ -2502,13 +2499,13 @@ export default class Decimal {
         copy = Decimal.pow(base, copy);
         result -= 1;
       } else if (copy.lte(Decimal.dOne)) {
-        return D(result + Decimal.slog_critical(base.toNumber(), copy.toNumber()));
+        return Decimal.fromNumber(result + Decimal.slog_critical(base.toNumber(), copy.toNumber()));
       } else {
         result += 1;
         copy = Decimal.log(copy, base);
       }
     }
-    return D(result);
+    return Decimal.fromNumber(result);
   }
 
   //background info and tables of values for critical functions taken here: https://github.com/Patashu/break_eternity.js/issues/22
@@ -2571,7 +2568,7 @@ export default class Decimal {
   //Moved this over to use the same critical section as tetrate/slog.
   public layeradd10(diff: DecimalSource): Decimal {
     diff = Decimal.fromValue_noAlloc(diff).toNumber();
-    const result = new Decimal(this);
+    const result = Decimal.fromDecimal(this);
     if (diff >= 1) {
       //bug fix: if result is very smol (mag < 0, layer > 0) turn it into 0 first
       if (result.mag < 0 && result.layer > 0) {
@@ -2657,9 +2654,9 @@ export default class Decimal {
     if (this.lt(-0.3678794411710499)) {
       throw Error("lambertw is unimplemented for results less than -1, sorry!");
     } else if (this.mag < 0) {
-      return D(f_lambertw(this.toNumber()));
+      return Decimal.fromNumber(f_lambertw(this.toNumber()));
     } else if (this.layer === 0) {
-      return D(f_lambertw(this.sign * this.mag));
+      return Decimal.fromNumber(f_lambertw(this.sign * this.mag));
     } else if (this.layer === 1) {
       return d_lambertw(this);
     } else if (this.layer === 2) {
@@ -2871,7 +2868,7 @@ for (var i = 0; i < 10; ++i)
     if (fracheight !== 0) {
       if (payload.eq(Decimal.dOne)) {
         ++height;
-        payload = new Decimal(fracheight);
+        payload = Decimal.fromNumber(fracheight);
       } else {
         if (this.eq(10)) {
           payload = payload.layeradd10(fracheight);
@@ -2902,7 +2899,7 @@ for (var i = 0; i < 10; ++i)
       return this;
     }
     if (this.layer === 0) {
-      return D(Math.sin(this.sign * this.mag));
+      return Decimal.fromNumber(Math.sin(this.sign * this.mag));
     }
     return FC_NN(0, 0, 0);
   }
@@ -2912,7 +2909,7 @@ for (var i = 0; i < 10; ++i)
       return Decimal.dOne;
     }
     if (this.layer === 0) {
-      return D(Math.cos(this.sign * this.mag));
+      return Decimal.fromNumber(Math.cos(this.sign * this.mag));
     }
     return FC_NN(0, 0, 0);
   }
@@ -2922,7 +2919,7 @@ for (var i = 0; i < 10; ++i)
       return this;
     }
     if (this.layer === 0) {
-      return D(Math.tan(this.sign * this.mag));
+      return Decimal.fromNumber(Math.tan(this.sign * this.mag));
     }
     return FC_NN(0, 0, 0);
   }
@@ -2932,17 +2929,17 @@ for (var i = 0; i < 10; ++i)
       return this;
     }
     if (this.layer === 0) {
-      return D(Math.asin(this.sign * this.mag));
+      return Decimal.fromNumber(Math.asin(this.sign * this.mag));
     }
     return FC_NN(Number.NaN, Number.NaN, Number.NaN);
   }
 
   public acos(): Decimal {
     if (this.mag < 0) {
-      return D(Math.acos(this.toNumber()));
+      return Decimal.fromNumber(Math.acos(this.toNumber()));
     }
     if (this.layer === 0) {
-      return D(Math.acos(this.sign * this.mag));
+      return Decimal.fromNumber(Math.acos(this.sign * this.mag));
     }
     return FC_NN(Number.NaN, Number.NaN, Number.NaN);
   }
@@ -2952,9 +2949,9 @@ for (var i = 0; i < 10; ++i)
       return this;
     }
     if (this.layer === 0) {
-      return D(Math.atan(this.sign * this.mag));
+      return Decimal.fromNumber(Math.atan(this.sign * this.mag));
     }
-    return D(Math.atan(this.sign * 1.8e308));
+    return Decimal.fromNumber(Math.atan(this.sign * 1.8e308));
   }
 
   public sinh(): Decimal {
@@ -2982,7 +2979,7 @@ for (var i = 0; i < 10; ++i)
       return FC_NN(Number.NaN, Number.NaN, Number.NaN);
     }
 
-    return Decimal.ln(this.add(1).div(D(1).sub(this))).div(2);
+    return Decimal.ln(this.add(1).div(Decimal.fromNumber(1).sub(this))).div(2);
   }
 
   /**
