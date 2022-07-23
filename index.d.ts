@@ -267,7 +267,8 @@ export default class Decimal {
     tetrate(height?: number, payload?: DecimalSource): Decimal;
     iteratedexp(height?: number, payload?: Decimal): Decimal;
     iteratedlog(base?: DecimalSource, times?: number): Decimal;
-    slog(base?: DecimalSource): Decimal;
+    slog(base?: DecimalSource, iterations?: number): Decimal;
+    slog_internal(base?: DecimalSource): Decimal;
     static slog_critical(base: number, height: number): number;
     static tetrate_critical(base: number, height: number): number;
     static critical_section(base: number, height: number, grid: number[][]): number;

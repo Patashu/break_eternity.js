@@ -2456,7 +2456,35 @@ export default class Decimal {
 
   //Super-logarithm, one of tetration's inverses, tells you what size power tower you'd have to tetrate base to to get number. By definition, will never be higher than 1.8e308 in break_eternity.js, since a power tower 1.8e308 numbers tall is the largest representable number.
   // https://en.wikipedia.org/wiki/Super-logarithm
-  public slog(base: DecimalSource = 10): Decimal {
+  // NEW: Accept a number of iterations, and use binary search to, after making an initial guess, hone in on the true value, assuming tetration as the ground truth.
+  public slog(base: DecimalSource = 10, iterations = 43): Decimal {
+    let step_size = 0.001;
+    let has_changed_directions_once = false;
+    let previously_rose = false;
+    let result = this.slog_internal(base).toNumber();
+    for (var i = 1; i < iterations; ++i)
+    {
+      let new_decimal = new Decimal(base).tetrate(result);
+      let currently_rose = new_decimal.gt(this);
+      if (iterations > 1)
+      {
+        if (previously_rose != currently_rose)
+        {
+          has_changed_directions_once = true;
+        }
+      }
+      previously_rose = currently_rose;
+      if (has_changed_directions_once)
+      {
+        step_size /= 2;
+      }
+      step_size = Math.abs(step_size) * (currently_rose ? -1 : 1);
+      result += step_size;
+    }
+    return Decimal.fromNumber(result);
+  }
+  
+  public slog_internal(base: DecimalSource = 10): Decimal {
     base = D(base);
 
     //special cases:
