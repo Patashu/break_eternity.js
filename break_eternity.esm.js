@@ -3357,6 +3357,7 @@ var Decimal = /*#__PURE__*/function () {
       var upper = 0; //basically, if we're between bases, we interpolate each bases' relevant values together
       //then we interpolate based on what the fractional height is.
       //accuracy could be improved by doing a non-linear interpolation (maybe), by adding more bases and heights (definitely) but this is AFAIK the best you can get without running some pari.gp or mathematica program to calculate exact values
+      //however, do note http://myweb.astate.edu/wpaulsen/tetcalc/tetcalc.html can do it for arbitrary heights but not for arbitrary bases (2, e, 10 present)
 
       for (var i = 0; i < critical_headers.length; ++i) {
         if (critical_headers[i] == base) {
@@ -3373,8 +3374,10 @@ var Decimal = /*#__PURE__*/function () {
         }
       }
 
-      var frac = height - Math.floor(height);
-      var result = lower * (1 - frac) + upper * frac;
+      var frac = height - Math.floor(height); //improvement - you get more accuracy (especially around 0.9-1.0) by doing log, then frac, then powing the result
+      //(we could pre-log the lookup table, but then fractional bases would get Weird)
+
+      var result = Math.pow(base, Math.log(lower) / Math.log(base) * (1 - frac) + Math.log(upper) / Math.log(base) * frac);
       return result;
     }
   }]);
