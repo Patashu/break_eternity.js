@@ -17,8 +17,163 @@ function _defineProperties(target, props) {
 function _createClass(Constructor, protoProps, staticProps) {
   if (protoProps) _defineProperties(Constructor.prototype, protoProps);
   if (staticProps) _defineProperties(Constructor, staticProps);
+  Object.defineProperty(Constructor, "prototype", {
+    writable: false
+  });
   return Constructor;
 }
+
+/**
+ * A LRU cache intended for caching pure functions.
+ */
+var LRUCache = /*#__PURE__*/function () {
+  /**
+   * @param maxSize The maximum size for this cache. We recommend setting this
+   * to be one less than a power of 2, as most hashtables - including V8's
+   * Object hashtable (https://crsrc.org/c/v8/src/objects/ordered-hash-table.cc)
+   * - uses powers of two for hashtable sizes. It can't exactly be a power of
+   * two, as a .set() call could temporarily set the size of the map to be
+   * maxSize + 1.
+   */
+  function LRUCache(maxSize) {
+    _classCallCheck(this, LRUCache);
+
+    this.map = new Map(); // Invariant: Exactly one of the below is true before and after calling a
+    // LRUCache method:
+    // - first and last are both undefined, and map.size() is 0.
+    // - first and last are the same object, and map.size() is 1.
+    // - first and last are different objects, and map.size() is greater than 1.
+
+    this.first = undefined;
+    this.last = undefined;
+    this.maxSize = maxSize;
+  }
+
+  _createClass(LRUCache, [{
+    key: "size",
+    get: function get() {
+      return this.map.size;
+    }
+    /**
+     * Gets the specified key from the cache, or undefined if it is not in the
+     * cache.
+     * @param key The key to get.
+     * @returns The cached value, or undefined if key is not in the cache.
+     */
+
+  }, {
+    key: "get",
+    value: function get(key) {
+      var node = this.map.get(key);
+
+      if (node === undefined) {
+        return undefined;
+      } // It is guaranteed that there is at least one item in the cache.
+      // Therefore, first and last are guaranteed to be a ListNode...
+      // but if there is only one item, they might be the same.
+      // Update the order of the list to make this node the first node in the
+      // list.
+      // This isn't needed if this node is already the first node in the list.
+
+
+      if (node !== this.first) {
+        // As this node is DIFFERENT from the first node, it is guaranteed that
+        // there are at least two items in the cache.
+        // However, this node could possibly be the last item.
+        if (node === this.last) {
+          // This node IS the last node.
+          this.last = node.prev; // From the invariants, there must be at least two items in the cache,
+          // so node - which is the original "last node" - must have a defined
+          // previous node. Therefore, this.last - set above - must be defined
+          // here.
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
+          this.last.next = undefined;
+        } else {
+          // This node is somewhere in the middle of the list, so there must be at
+          // least THREE items in the list, and this node's prev and next must be
+          // defined here.
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          node.prev.next = node.next; // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
+          node.next.prev = node.prev;
+        }
+
+        node.next = this.first; // From the invariants, there must be at least two items in the cache, so
+        // this.first must be a valid ListNode.
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
+        this.first.prev = node;
+        this.first = node;
+      }
+
+      return node.value;
+    }
+    /**
+     * Sets an entry in the cache.
+     *
+     * @param key The key of the entry.
+     * @param value The value of the entry.
+     * @throws Error, if the map already contains the key.
+     */
+
+  }, {
+    key: "set",
+    value: function set(key, value) {
+      // Ensure that this.maxSize >= 1.
+      if (this.maxSize < 1) {
+        return;
+      }
+
+      if (this.map.has(key)) {
+        throw new Error("Cannot update existing keys in the cache");
+      }
+
+      var node = new ListNode(key, value); // Move node to the front of the list.
+
+      if (this.first === undefined) {
+        // If the first is undefined, the last is undefined too.
+        // Therefore, this cache has no items in it.
+        this.first = node;
+        this.last = node;
+      } else {
+        // This cache has at least one item in it.
+        node.next = this.first;
+        this.first.prev = node;
+        this.first = node;
+      }
+
+      this.map.set(key, node);
+
+      while (this.map.size > this.maxSize) {
+        // We are guaranteed that this.maxSize >= 1,
+        // so this.map.size is guaranteed to be >= 2,
+        // so this.first and this.last must be different valid ListNodes,
+        // and this.last.prev must also be a valid ListNode (possibly this.first).
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        var last = this.last;
+        this.map["delete"](last.key);
+        this.last = last.prev; // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
+        this.last.next = undefined;
+      }
+    }
+  }]);
+
+  return LRUCache;
+}();
+/**
+ * A node in a doubly linked list.
+ */
+
+var ListNode = /*#__PURE__*/_createClass(function ListNode(key, value) {
+  _classCallCheck(this, ListNode);
+
+  this.next = undefined;
+  this.prev = undefined;
+  this.key = key;
+  this.value = value;
+});
 
 var MAX_SIGNIFICANT_DIGITS = 17; //Maximum number of digits of precision to assume in Number
 
@@ -32,6 +187,8 @@ var NUMBER_EXP_MAX = 308; //The largest exponent that can appear in a Number, th
 var NUMBER_EXP_MIN = -324; //The smallest exponent that can appear in a Number, though not all mantissas are valid here.
 
 var MAX_ES_IN_A_ROW = 5; //For default toString behaviour, when to swap from eee... to (e^n) syntax.
+
+var DEFAULT_FROM_STRING_CACHE_SIZE = (1 << 10) - 1; // The default size of the LRU cache used to cache Decimal.fromString.
 
 var powerOf10 = function () {
   // We need this lookup table because Math.pow(10, exponent)
@@ -53,10 +210,30 @@ var powerOf10 = function () {
 
 
 var critical_headers = [2, Math.E, 3, 4, 5, 6, 7, 8, 9, 10];
-var critical_tetr_values = [[1, 1.0891168053867777, 1.1789745164521264, 1.2701428397304229, 1.3632066654400328, 1.4587804913784246, 1.557523817412741, 1.660158301473385, 1.767487542936873, 1.8804205225512542, 2], [1, 1.11211143309340, 1.23103892493161, 1.35838369631113, 1.49605193039935, 1.64635423375119, 1.81213853570186, 1.99697132461829, 2.20538955455724, 2.44325744833852, Math.E //1.0
-], [1, 1.1187738849693603, 1.2464963939368214, 1.38527004705667, 1.5376664685821402, 1.7068895236551784, 1.897001227148399, 2.1132403089001035, 2.362480153784171, 2.6539010333870774, 3], [1, 1.1367350847096405, 1.2889510672956703, 1.4606478703324786, 1.6570295196661111, 1.8850062585672889, 2.1539465047453485, 2.476829779693097, 2.872061932789197, 3.3664204535587183, 4], [1, 1.1494592900767588, 1.319708228183931, 1.5166291280087583, 1.748171114438024, 2.0253263297298045, 2.3636668498288547, 2.7858359149579424, 3.3257226212448145, 4.035730287722532, 5], [1, 1.159225940787673, 1.343712473580932, 1.5611293155111927, 1.8221199554561318, 2.14183924486326, 2.542468319282638, 3.0574682501653316, 3.7390572020926873, 4.6719550537360774, 6], [1, 1.1670905356972596, 1.3632807444991446, 1.5979222279405536, 1.8842640123816674, 2.2416069644878687, 2.69893426559423, 3.3012632110403577, 4.121250340630164, 5.281493033448316, 7], [1, 1.1736630594087796, 1.379783782386201, 1.6292821855668218, 1.9378971836180754, 2.3289975651071977, 2.8384347394720835, 3.5232708454565906, 4.478242031114584, 5.868592169644505, 8], [1, 1.1793017514670474, 1.394054150657457, 1.65664127441059, 1.985170999970283, 2.4069682290577457, 2.9647310119960752, 3.7278665320924946, 4.814462547283592, 6.436522247411611, 9], [1, 1.18422737399915, 1.4066113788546144, 1.680911177655277, 2.027492094355525, 2.4775152854601967, 3.080455730250329, 3.918234505962507, 5.1332705696484595, 6.9878696918072905, 10]];
-var critical_slog_values = [[-1, -0.9194161097107025, -0.8335625019330468, -0.7425599821143978, -0.6466611521029437, -0.5462617907227869, -0.4419033816638769, -0.3342645487554494, -0.224140440909962, -0.11241087890006762, 0], [-1, -0.90603157029014, -0.80786507256596, -0.70646669396340, -0.60294836853664, -0.49849837513117, -0.39430303318768, -0.29147201034755, -0.19097820800866, -0.09361896280296, 0 //1.0
-], [-1, -0.9021579584316141, -0.8005762598234203, -0.6964780623319391, -0.5911906810998454, -0.486050182576545, -0.3823089430815083, -0.28106046722897615, -0.1831906535795894, -0.08935809204418144, 0], [-1, -0.8917227442365535, -0.781258746326964, -0.6705130326902455, -0.5612813129406509, -0.4551067709033134, -0.35319256652135966, -0.2563741554088552, -0.1651412821106526, -0.0796919581982668, 0], [-1, -0.8843387974366064, -0.7678744063886243, -0.6529563724510552, -0.5415870994657841, -0.4352842206588936, -0.33504449124791424, -0.24138853420685147, -0.15445285440944467, -0.07409659641336663, 0], [-1, -0.8786709358426346, -0.7577735191184886, -0.6399546189952064, -0.527284921869926, -0.4211627631006314, -0.3223479611761232, -0.23107655627789858, -0.1472057700818259, -0.07035171210706326, 0], [-1, -0.8740862815291583, -0.7497032990976209, -0.6297119746181752, -0.5161838335958787, -0.41036238255751956, -0.31277212146489963, -0.2233976621705518, -0.1418697367979619, -0.06762117662323441, 0], [-1, -0.8702632331800649, -0.7430366914122081, -0.6213373075161548, -0.5072025698095242, -0.40171437727184167, -0.30517930701410456, -0.21736343968190863, -0.137710238299109, -0.06550774483471955, 0], [-1, -0.8670016295947213, -0.7373984232432306, -0.6143173985094293, -0.49973884395492807, -0.394584953527678, -0.2989649949848695, -0.21245647317021688, -0.13434688362382652, -0.0638072667348083, 0], [-1, -0.8641642839543857, -0.732534623168535, -0.6083127477059322, -0.4934049257184696, -0.3885773075899922, -0.29376029055315767, -0.2083678561173622, -0.13155653399373268, -0.062401588652553186, 0]];
+var critical_tetr_values = [[// Base 2 (using http://myweb.astate.edu/wpaulsen/tetcalc/tetcalc.html )
+1, 1.0891180521811202527, 1.1789767925673958433, 1.2701455431742086633, 1.3632090180450091941, 1.4587818160364217007, 1.5575237916251418333, 1.6601571006859253673, 1.7674858188369780435, 1.8804192098842727359, 2], [// Base E (using http://myweb.astate.edu/wpaulsen/tetcalc/tetcalc.html )
+1, 1.1121114330934078681, 1.2310389249316089299, 1.3583836963111376089, 1.4960519303993531879, 1.6463542337511945810, 1.8121385357018724464, 1.9969713246183068478, 2.2053895545527544330, 2.4432574483385252544, Math.E //1.0
+], [// Base 3
+1, 1.1187738849693603, 1.2464963939368214, 1.38527004705667, 1.5376664685821402, 1.7068895236551784, 1.897001227148399, 2.1132403089001035, 2.362480153784171, 2.6539010333870774, 3], [// Base 4
+1, 1.1367350847096405, 1.2889510672956703, 1.4606478703324786, 1.6570295196661111, 1.8850062585672889, 2.1539465047453485, 2.476829779693097, 2.872061932789197, 3.3664204535587183, 4], [// Base 5
+1, 1.1494592900767588, 1.319708228183931, 1.5166291280087583, 1.748171114438024, 2.0253263297298045, 2.3636668498288547, 2.7858359149579424, 3.3257226212448145, 4.035730287722532, 5], [// Base 6
+1, 1.159225940787673, 1.343712473580932, 1.5611293155111927, 1.8221199554561318, 2.14183924486326, 2.542468319282638, 3.0574682501653316, 3.7390572020926873, 4.6719550537360774, 6], [// Base 7
+1, 1.1670905356972596, 1.3632807444991446, 1.5979222279405536, 1.8842640123816674, 2.2416069644878687, 2.69893426559423, 3.3012632110403577, 4.121250340630164, 5.281493033448316, 7], [// Base 8
+1, 1.1736630594087796, 1.379783782386201, 1.6292821855668218, 1.9378971836180754, 2.3289975651071977, 2.8384347394720835, 3.5232708454565906, 4.478242031114584, 5.868592169644505, 8], [// Base 9
+1, 1.1793017514670474, 1.394054150657457, 1.65664127441059, 1.985170999970283, 2.4069682290577457, 2.9647310119960752, 3.7278665320924946, 4.814462547283592, 6.436522247411611, 9], [// Base 10 (using http://myweb.astate.edu/wpaulsen/tetcalc/tetcalc.html )
+1, 1.1840100246247336579, 1.4061375836156954169, 1.6802272208863963918, 2.026757028388618927, 2.4770056063449647580, 3.0805252717554819987, 3.9191964192627283911, 5.1351528408331864230, 6.9899611795347148455, 10]];
+var critical_slog_values = [[// Base 2
+-1, -0.9194161097107025, -0.8335625019330468, -0.7425599821143978, -0.6466611521029437, -0.5462617907227869, -0.4419033816638769, -0.3342645487554494, -0.224140440909962, -0.11241087890006762, 0], [// Base E
+-1, -0.90603157029014, -0.80786507256596, -0.7064666939634, -0.60294836853664, -0.49849837513117, -0.39430303318768, -0.29147201034755, -0.19097820800866, -0.09361896280296, 0 //1.0
+], [// Base 3
+-1, -0.9021579584316141, -0.8005762598234203, -0.6964780623319391, -0.5911906810998454, -0.486050182576545, -0.3823089430815083, -0.28106046722897615, -0.1831906535795894, -0.08935809204418144, 0], [// Base 4
+-1, -0.8917227442365535, -0.781258746326964, -0.6705130326902455, -0.5612813129406509, -0.4551067709033134, -0.35319256652135966, -0.2563741554088552, -0.1651412821106526, -0.0796919581982668, 0], [// Base 5
+-1, -0.8843387974366064, -0.7678744063886243, -0.6529563724510552, -0.5415870994657841, -0.4352842206588936, -0.33504449124791424, -0.24138853420685147, -0.15445285440944467, -0.07409659641336663, 0], [// Base 6
+-1, -0.8786709358426346, -0.7577735191184886, -0.6399546189952064, -0.527284921869926, -0.4211627631006314, -0.3223479611761232, -0.23107655627789858, -0.1472057700818259, -0.07035171210706326, 0], [// Base 7
+-1, -0.8740862815291583, -0.7497032990976209, -0.6297119746181752, -0.5161838335958787, -0.41036238255751956, -0.31277212146489963, -0.2233976621705518, -0.1418697367979619, -0.06762117662323441, 0], [// Base 8
+-1, -0.8702632331800649, -0.7430366914122081, -0.6213373075161548, -0.5072025698095242, -0.40171437727184167, -0.30517930701410456, -0.21736343968190863, -0.137710238299109, -0.06550774483471955, 0], [// Base 9
+-1, -0.8670016295947213, -0.7373984232432306, -0.6143173985094293, -0.49973884395492807, -0.394584953527678, -0.2989649949848695, -0.21245647317021688, -0.13434688362382652, -0.0638072667348083, 0], [// Base 10
+-1, -0.8641642839543857, -0.732534623168535, -0.6083127477059322, -0.4934049257184696, -0.3885773075899922, -0.29376029055315767, -0.2083678561173622, -0.13155653399373268, -0.062401588652553186, 0]];
 
 var D = function D(value) {
   return Decimal.fromValue_noAlloc(value);
@@ -68,7 +245,7 @@ var FC = function FC(sign, layer, mag) {
 
 var FC_NN = function FC_NN(sign, layer, mag) {
   return Decimal.fromComponents_noNormalize(sign, layer, mag);
-};
+}; // eslint-disable-next-line @typescript-eslint/no-unused-vars
 
 var decimalPlaces = function decimalPlaces(value, places) {
   var len = places + 1;
@@ -180,21 +357,20 @@ function d_lambertw(z) {
     return z;
   }
 
-  if (z === Decimal.dZero) {
+  if (z.eq(Decimal.dZero)) {
     return z;
   }
 
-  if (z === Decimal.dOne) {
+  if (z.eq(Decimal.dOne)) {
     //Split out this case because the asymptotic series blows up
-    return D(OMEGA);
-  }
+    return Decimal.fromNumber(OMEGA);
+  } //Get an initial guess for Halley's method
 
-  Decimal.abs(z); //Get an initial guess for Halley's method
 
   w = Decimal.ln(z); //Halley's method; see 5.9 in [1]
 
   for (var i = 0; i < 100; ++i) {
-    ew = Decimal.exp(-w);
+    ew = w.neg().exp();
     wewz = w.sub(z.mul(ew));
     wn = w.sub(wewz.div(w.add(1).sub(w.add(2).mul(wewz).div(Decimal.mul(2, w).add(2)))));
 
@@ -216,9 +392,9 @@ var Decimal = /*#__PURE__*/function () {
   function Decimal(value) {
     _classCallCheck(this, Decimal);
 
-    this.sign = Number.NaN;
-    this.mag = Number.NaN;
-    this.layer = Number.NaN;
+    this.sign = 0;
+    this.mag = 0;
+    this.layer = 0;
 
     if (value instanceof Decimal) {
       this.fromDecimal(value);
@@ -226,10 +402,6 @@ var Decimal = /*#__PURE__*/function () {
       this.fromNumber(value);
     } else if (typeof value === "string") {
       this.fromString(value);
-    } else {
-      this.sign = 0;
-      this.layer = 0;
-      this.mag = 0;
     }
   }
 
@@ -266,8 +438,8 @@ var Decimal = /*#__PURE__*/function () {
         this.sign = Math.sign(value);
 
         if (this.sign === 0) {
-          this.layer === 0;
-          this.exponent === 0;
+          this.layer = 0;
+          this.exponent = 0;
         }
       }
     }
@@ -444,6 +616,13 @@ var Decimal = /*#__PURE__*/function () {
   }, {
     key: "fromString",
     value: function fromString(value) {
+      var originalValue = value;
+      var cached = Decimal.fromStringCache.get(originalValue);
+
+      if (cached !== undefined) {
+        return this.fromDecimal(cached);
+      }
+
       {
         value = value.replace(",", "");
       } //Handle x^^^y format.
@@ -472,6 +651,11 @@ var Decimal = /*#__PURE__*/function () {
           this.sign = result.sign;
           this.layer = result.layer;
           this.mag = result.mag;
+
+          if (Decimal.fromStringCache.maxSize >= 1) {
+            Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+          }
+
           return this;
         }
       } //Handle x^^y format.
@@ -502,6 +686,11 @@ var Decimal = /*#__PURE__*/function () {
           this.sign = _result.sign;
           this.layer = _result.layer;
           this.mag = _result.mag;
+
+          if (Decimal.fromStringCache.maxSize >= 1) {
+            Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+          }
+
           return this;
         }
       } //Handle x^y format.
@@ -520,6 +709,11 @@ var Decimal = /*#__PURE__*/function () {
           this.sign = _result2.sign;
           this.layer = _result2.layer;
           this.mag = _result2.mag;
+
+          if (Decimal.fromStringCache.maxSize >= 1) {
+            Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+          }
+
           return this;
         }
       } //Handle various cases involving it being a Big Number.
@@ -549,6 +743,11 @@ var Decimal = /*#__PURE__*/function () {
           this.sign = _result3.sign;
           this.layer = _result3.layer;
           this.mag = _result3.mag;
+
+          if (Decimal.fromStringCache.maxSize >= 1) {
+            Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+          }
+
           return this;
         }
       } //handle XpY format (it's the same thing just with p).
@@ -574,6 +773,11 @@ var Decimal = /*#__PURE__*/function () {
           this.sign = _result4.sign;
           this.layer = _result4.layer;
           this.mag = _result4.mag;
+
+          if (Decimal.fromStringCache.maxSize >= 1) {
+            Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+          }
+
           return this;
         }
       }
@@ -585,14 +789,26 @@ var Decimal = /*#__PURE__*/function () {
         var numberAttempt = parseFloat(value);
 
         if (isFinite(numberAttempt)) {
-          return this.fromNumber(numberAttempt);
+          this.fromNumber(numberAttempt);
+
+          if (Decimal.fromStringCache.size >= 1) {
+            Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+          }
+
+          return this;
         }
       } else if (ecount === 1) {
         //Very small numbers ("2e-3000" and so on) may look like valid floats but round to 0.
         var _numberAttempt = parseFloat(value);
 
         if (isFinite(_numberAttempt) && _numberAttempt !== 0) {
-          return this.fromNumber(_numberAttempt);
+          this.fromNumber(_numberAttempt);
+
+          if (Decimal.fromStringCache.maxSize >= 1) {
+            Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+          }
+
+          return this;
         }
       } //Handle new (e^N)X format.
 
@@ -619,6 +835,11 @@ var Decimal = /*#__PURE__*/function () {
             this.layer = parseFloat(layerstring);
             this.mag = parseFloat(newparts[1].substr(i + 1));
             this.normalize();
+
+            if (Decimal.fromStringCache.maxSize >= 1) {
+              Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+            }
+
             return this;
           }
         }
@@ -628,6 +849,11 @@ var Decimal = /*#__PURE__*/function () {
         this.sign = 0;
         this.layer = 0;
         this.mag = 0;
+
+        if (Decimal.fromStringCache.maxSize >= 1) {
+          Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+        }
+
         return this;
       }
 
@@ -637,6 +863,11 @@ var Decimal = /*#__PURE__*/function () {
         this.sign = 0;
         this.layer = 0;
         this.mag = 0;
+
+        if (Decimal.fromStringCache.maxSize >= 1) {
+          Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+        }
+
         return this;
       }
 
@@ -673,6 +904,11 @@ var Decimal = /*#__PURE__*/function () {
           this.sign = _result5.sign;
           this.layer = _result5.layer;
           this.mag = _result5.mag;
+
+          if (Decimal.fromStringCache.maxSize >= 1) {
+            Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+          }
+
           return this;
         } else {
           //at eee and above, mantissa is too small to be recognizable!
@@ -681,6 +917,11 @@ var Decimal = /*#__PURE__*/function () {
       }
 
       this.normalize();
+
+      if (Decimal.fromStringCache.maxSize >= 1) {
+        Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+      }
+
       return this;
     }
   }, {
@@ -959,7 +1200,7 @@ var Decimal = /*#__PURE__*/function () {
       }
 
       if (a.layer === 0 && b.layer === 0) {
-        return D(a.sign * a.mag + b.sign * b.mag);
+        return Decimal.fromNumber(a.sign * a.mag + b.sign * b.mag);
       }
 
       var layera = a.layer * Math.sign(a.mag);
@@ -1056,7 +1297,7 @@ var Decimal = /*#__PURE__*/function () {
       }
 
       if (a.layer === 0 && b.layer === 0) {
-        return D(a.sign * b.sign * a.mag * b.mag);
+        return Decimal.fromNumber(a.sign * b.sign * a.mag * b.mag);
       } //Special case: If one of the numbers is layer 3 or higher or one of the numbers is 2+ layers bigger than the other, just take the bigger number.
 
 
@@ -1230,8 +1471,6 @@ var Decimal = /*#__PURE__*/function () {
   }, {
     key: "lt",
     value: function lt(value) {
-      D(value); // FIXME: Remove?
-
       return this.cmp(value) === -1;
     }
   }, {
@@ -1242,8 +1481,6 @@ var Decimal = /*#__PURE__*/function () {
   }, {
     key: "gt",
     value: function gt(value) {
-      D(value); // FIXME: Remove?
-
       return this.cmp(value) === 1;
     }
   }, {
@@ -1579,7 +1816,7 @@ var Decimal = /*#__PURE__*/function () {
         return this.recip();
       } else if (this.layer === 0) {
         if (this.lt(FC_NN(1, 0, 24))) {
-          return D(f_gamma(this.sign * this.mag));
+          return Decimal.fromNumber(f_gamma(this.sign * this.mag));
         }
 
         var t = this.mag - 1;
@@ -1636,7 +1873,7 @@ var Decimal = /*#__PURE__*/function () {
       }
 
       if (this.layer === 0 && this.mag <= 709.7) {
-        return D(Math.exp(this.sign * this.mag));
+        return Decimal.fromNumber(Math.exp(this.sign * this.mag));
       } else if (this.layer === 0) {
         return FC(1, 1, this.sign * Math.log10(Math.E) * this.mag);
       } else if (this.layer === 1) {
@@ -1654,7 +1891,7 @@ var Decimal = /*#__PURE__*/function () {
     key: "sqrt",
     value: function sqrt() {
       if (this.layer === 0) {
-        return D(Math.sqrt(this.sign * this.mag));
+        return Decimal.fromNumber(Math.sqrt(this.sign * this.mag));
       } else if (this.layer === 1) {
         return FC(1, 2, Math.log10(this.mag) - 0.3010299956639812);
       } else {
@@ -1709,7 +1946,7 @@ var Decimal = /*#__PURE__*/function () {
         if (this_num <= 1.44466786100976613366 && this_num >= 0.06598803584531253708) {
           //hotfix for the very edge of the number range not being handled properly
           if (this_num > 1.444667861009099) {
-            return new Decimal(Math.E);
+            return Decimal.fromNumber(Math.E);
           } //Formula for infinite height power tower.
 
 
@@ -1717,7 +1954,8 @@ var Decimal = /*#__PURE__*/function () {
           return negln.lambertw().div(negln);
         } else if (this_num > 1.44466786100976613366) {
           //explodes to infinity
-          return new Decimal(Number.POSITIVE_INFINITY);
+          // TODO: replace this with Decimal.dInf
+          return Decimal.fromNumber(Number.POSITIVE_INFINITY);
         } else {
           //0.06598803584531253708 > this_num >= 0: never converges
           //this_num < 0: quickly becomes a complex number
@@ -1734,7 +1972,7 @@ var Decimal = /*#__PURE__*/function () {
           result = 2 - result;
         }
 
-        return new Decimal(result);
+        return Decimal.fromNumber(result);
       }
 
       if (height < 0) {
@@ -1774,7 +2012,7 @@ var Decimal = /*#__PURE__*/function () {
           if (this.gt(10)) {
             payload = this.pow(fracheight);
           } else {
-            payload = D(Decimal.tetrate_critical(this.toNumber(), fracheight)); //TODO: until the critical section grid can handle numbers below 2, scale them to the base
+            payload = Decimal.fromNumber(Decimal.tetrate_critical(this.toNumber(), fracheight)); //TODO: until the critical section grid can handle numbers below 2, scale them to the base
             //TODO: maybe once the critical section grid has very large bases, this math can be appropriate for them too? I'll think about it
 
             if (this.lt(2)) {
@@ -1831,7 +2069,7 @@ var Decimal = /*#__PURE__*/function () {
       }
 
       base = D(base);
-      var result = D(this);
+      var result = Decimal.fromDecimal(this);
       var fulltimes = times;
       times = Math.trunc(times);
       var fraction = fulltimes - times;
@@ -1906,7 +2144,7 @@ var Decimal = /*#__PURE__*/function () {
       }
 
       var result = 0;
-      var copy = D(this);
+      var copy = Decimal.fromDecimal(this);
 
       if (copy.layer - base.layer > 3) {
         var layerloss = copy.layer - base.layer - 3;
@@ -1919,14 +2157,14 @@ var Decimal = /*#__PURE__*/function () {
           copy = Decimal.pow(base, copy);
           result -= 1;
         } else if (copy.lte(Decimal.dOne)) {
-          return D(result + Decimal.slog_critical(base.toNumber(), copy.toNumber()));
+          return Decimal.fromNumber(result + Decimal.slog_critical(base.toNumber(), copy.toNumber()));
         } else {
           result += 1;
           copy = Decimal.log(copy, base);
         }
       }
 
-      return D(result);
+      return Decimal.fromNumber(result);
     } //background info and tables of values for critical functions taken here: https://github.com/Patashu/break_eternity.js/issues/22
 
   }, {
@@ -1935,7 +2173,7 @@ var Decimal = /*#__PURE__*/function () {
     //Moved this over to use the same critical section as tetrate/slog.
     function layeradd10(diff) {
       diff = Decimal.fromValue_noAlloc(diff).toNumber();
-      var result = D(this);
+      var result = Decimal.fromDecimal(this);
 
       if (diff >= 1) {
         //bug fix: if result is very smol (mag < 0, layer > 0) turn it into 0 first
@@ -2035,9 +2273,9 @@ var Decimal = /*#__PURE__*/function () {
       if (this.lt(-0.3678794411710499)) {
         throw Error("lambertw is unimplemented for results less than -1, sorry!");
       } else if (this.mag < 0) {
-        return D(f_lambertw(this.toNumber()));
+        return Decimal.fromNumber(f_lambertw(this.toNumber()));
       } else if (this.layer === 0) {
-        return D(f_lambertw(this.sign * this.mag));
+        return Decimal.fromNumber(f_lambertw(this.sign * this.mag));
       } else if (this.layer === 1) {
         return d_lambertw(this);
       } else if (this.layer === 2) {
@@ -2239,7 +2477,7 @@ var Decimal = /*#__PURE__*/function () {
       if (fracheight !== 0) {
         if (payload.eq(Decimal.dOne)) {
           ++height;
-          payload = new Decimal(fracheight);
+          payload = Decimal.fromNumber(fracheight);
         } else {
           if (this.eq(10)) {
             payload = payload.layeradd10(fracheight);
@@ -2273,7 +2511,7 @@ var Decimal = /*#__PURE__*/function () {
       }
 
       if (this.layer === 0) {
-        return D(Math.sin(this.sign * this.mag));
+        return Decimal.fromNumber(Math.sin(this.sign * this.mag));
       }
 
       return FC_NN(0, 0, 0);
@@ -2286,7 +2524,7 @@ var Decimal = /*#__PURE__*/function () {
       }
 
       if (this.layer === 0) {
-        return D(Math.cos(this.sign * this.mag));
+        return Decimal.fromNumber(Math.cos(this.sign * this.mag));
       }
 
       return FC_NN(0, 0, 0);
@@ -2299,7 +2537,7 @@ var Decimal = /*#__PURE__*/function () {
       }
 
       if (this.layer === 0) {
-        return D(Math.tan(this.sign * this.mag));
+        return Decimal.fromNumber(Math.tan(this.sign * this.mag));
       }
 
       return FC_NN(0, 0, 0);
@@ -2312,7 +2550,7 @@ var Decimal = /*#__PURE__*/function () {
       }
 
       if (this.layer === 0) {
-        return D(Math.asin(this.sign * this.mag));
+        return Decimal.fromNumber(Math.asin(this.sign * this.mag));
       }
 
       return FC_NN(Number.NaN, Number.NaN, Number.NaN);
@@ -2321,11 +2559,11 @@ var Decimal = /*#__PURE__*/function () {
     key: "acos",
     value: function acos() {
       if (this.mag < 0) {
-        return D(Math.acos(this.toNumber()));
+        return Decimal.fromNumber(Math.acos(this.toNumber()));
       }
 
       if (this.layer === 0) {
-        return D(Math.acos(this.sign * this.mag));
+        return Decimal.fromNumber(Math.acos(this.sign * this.mag));
       }
 
       return FC_NN(Number.NaN, Number.NaN, Number.NaN);
@@ -2338,10 +2576,10 @@ var Decimal = /*#__PURE__*/function () {
       }
 
       if (this.layer === 0) {
-        return D(Math.atan(this.sign * this.mag));
+        return Decimal.fromNumber(Math.atan(this.sign * this.mag));
       }
 
-      return D(Math.atan(this.sign * 1.8e308));
+      return Decimal.fromNumber(Math.atan(this.sign * 1.8e308));
     }
   }, {
     key: "sinh",
@@ -2375,7 +2613,7 @@ var Decimal = /*#__PURE__*/function () {
         return FC_NN(Number.NaN, Number.NaN, Number.NaN);
       }
 
-      return Decimal.ln(this.add(1).div(D(1).sub(this))).div(2);
+      return Decimal.ln(this.add(1).div(Decimal.fromNumber(1).sub(this))).div(2);
     }
     /**
      * Joke function from Realm Grinder
@@ -2459,10 +2697,37 @@ var Decimal = /*#__PURE__*/function () {
     value: function fromValue(value) {
       return new Decimal().fromValue(value);
     }
+    /**
+     * Converts a DecimalSource to a Decimal, without constructing a new Decimal
+     * if the provided value is already a Decimal.
+     *
+     * As the return value could be the provided value itself, this function
+     * returns a read-only Decimal to prevent accidental mutations of the value.
+     * Use `new Decimal(value)` to explicitly create a writeable copy if mutation
+     * is required.
+     */
+
   }, {
     key: "fromValue_noAlloc",
     value: function fromValue_noAlloc(value) {
-      return value instanceof Decimal ? value : new Decimal(value);
+      if (value instanceof Decimal) {
+        return value;
+      } else if (typeof value === "string") {
+        var cached = Decimal.fromStringCache.get(value);
+
+        if (cached !== undefined) {
+          return cached;
+        }
+
+        return Decimal.fromString(value);
+      } else if (typeof value === "number") {
+        return Decimal.fromNumber(value);
+      } else {
+        // This should never happen... but some users like Prestige Tree Rewritten
+        // pass undefined values in as DecimalSources, so we should handle this
+        // case to not break them.
+        return Decimal.dZero;
+      }
     }
   }, {
     key: "abs",
@@ -3061,18 +3326,18 @@ var Decimal = /*#__PURE__*/function () {
       //accuracy could be improved by doing a non-linear interpolation (maybe), by adding more bases and heights (definitely) but this is AFAIK the best you can get without running some pari.gp or mathematica program to calculate exact values
 
       for (var i = 0; i < critical_headers.length; ++i) {
-        if (critical_headers[i] == base) // exact match
-          {
-            lower = grid[i][Math.floor(height)];
-            upper = grid[i][Math.ceil(height)];
-            break;
-          } else if (critical_headers[i] < base && critical_headers[i + 1] > base) // interpolate between this and the next
-          {
-            var basefrac = (base - critical_headers[i]) / (critical_headers[i + 1] - critical_headers[i]);
-            lower = grid[i][Math.floor(height)] * (1 - basefrac) + grid[i + 1][Math.floor(height)] * basefrac;
-            upper = grid[i][Math.ceil(height)] * (1 - basefrac) + grid[i + 1][Math.ceil(height)] * basefrac;
-            break;
-          }
+        if (critical_headers[i] == base) {
+          // exact match
+          lower = grid[i][Math.floor(height)];
+          upper = grid[i][Math.ceil(height)];
+          break;
+        } else if (critical_headers[i] < base && critical_headers[i + 1] > base) {
+          // interpolate between this and the next
+          var basefrac = (base - critical_headers[i]) / (critical_headers[i + 1] - critical_headers[i]);
+          lower = grid[i][Math.floor(height)] * (1 - basefrac) + grid[i + 1][Math.floor(height)] * basefrac;
+          upper = grid[i][Math.ceil(height)] * (1 - basefrac) + grid[i + 1][Math.ceil(height)] * basefrac;
+          break;
+        }
       }
 
       var frac = height - Math.floor(height);
@@ -3092,6 +3357,17 @@ Decimal.dNaN = FC_NN(Number.NaN, Number.NaN, Number.NaN);
 Decimal.dInf = FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
 Decimal.dNegInf = FC_NN(-1, Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY);
 Decimal.dNumberMax = FC(1, 0, Number.MAX_VALUE);
-Decimal.dNumberMin = FC(1, 0, Number.MIN_VALUE); // return Decimal;
+Decimal.dNumberMin = FC(1, 0, Number.MIN_VALUE);
+Decimal.fromStringCache = new LRUCache(DEFAULT_FROM_STRING_CACHE_SIZE); // return Decimal;
+// Optimise Decimal aliases.
+// We can't do this optimisation before Decimal is assigned.
+
+D = Decimal.fromValue_noAlloc;
+FC = Decimal.fromComponents;
+FC_NN = Decimal.fromComponents_noNormalize; // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
+Decimal.fromMantissaExponent; // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
+Decimal.fromMantissaExponent_noNormalize;
 
 export { Decimal as default };

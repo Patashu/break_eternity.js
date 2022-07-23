@@ -14,6 +14,7 @@ export default class Decimal {
     static readonly dNegInf: Decimal;
     static readonly dNumberMax: Decimal;
     static readonly dNumberMin: Decimal;
+    private static fromStringCache;
     sign: number;
     mag: number;
     layer: number;
@@ -36,7 +37,16 @@ export default class Decimal {
     static fromNumber(value: number): Decimal;
     static fromString(value: string): Decimal;
     static fromValue(value: DecimalSource): Decimal;
-    static fromValue_noAlloc(value: DecimalSource): Decimal;
+    /**
+     * Converts a DecimalSource to a Decimal, without constructing a new Decimal
+     * if the provided value is already a Decimal.
+     *
+     * As the return value could be the provided value itself, this function
+     * returns a read-only Decimal to prevent accidental mutations of the value.
+     * Use `new Decimal(value)` to explicitly create a writeable copy if mutation
+     * is required.
+     */
+    static fromValue_noAlloc(value: DecimalSource): Readonly<Decimal>;
     static abs(value: DecimalSource): Decimal;
     static neg(value: DecimalSource): Decimal;
     static negate(value: DecimalSource): Decimal;
