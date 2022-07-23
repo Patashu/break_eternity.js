@@ -70,6 +70,8 @@ Special thanks:
 
 - https://mrob.com/pub/comp/hypercalc/hypercalc-javascript.html HyperCalc, an existing calculator that handles numbers until 10^^(1e10) and is proving very useful for testing. (I also use SpeedCrunch, which goes up to 1e1e9, and break_infinity.js, which goes up to 1e1e308, for testing)
 - https://play.google.com/store/apps/details?id=com.antoine.mathematician.oddlittlegame&hl=en Incremental Unlimited, an incremental game that reaches as high as 10^^4.
+- http://myweb.astate.edu/wpaulsen/tetcalc/tetcalc.html Tetration Calculator, a javascript imeplementation of tetration to continuous heights (with pre-computed bases) with high precision.
+- All the folks over at Tetration Forum working slowly but surely to make calculators for our favourite non-elementary functions: https://math.eretrandre.org/tetrationforum/forumdisplay.php?fid=8
 - nathanisbored, for coming up with a short and sweet formula for 10^a + 10^b == 10^c which has been used in add and mul.
 - Razenpok, slabdrill and Hevipelle/Antimatter Dimensions, for inspiration, assistance and testing with the original break_infinity.js and its C# port.
 
