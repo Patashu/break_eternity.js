@@ -262,8 +262,8 @@ var test_pow_root = function()
 
 var all_tests = function()
 {
-  test tetrate_ground_truth();
-  test slog_ground_truth();
+  test_tetrate_ground_truth();
+  test_slog_ground_truth();
   test_tetrate_slog();
   test_layeradd10_twice();
   test_layeradd10_reverse();
