@@ -152,14 +152,14 @@ var test_layeradd10_reverse_anybase = function()
 
 var test_tetrate_iteratedlog = function()
 {
-  console.log("test_ltetrate_iteratedlog")
+  console.log("test_tetrate_iteratedlog")
   for (var i = 0; i < 1000; ++i)
   {
     var first = Math.round((Math.random()*30))/10;
     var both = Math.round((Math.random()*30))/10;
     var tetrateonly = Decimal.tetrate(10, first);
     var tetrateandlog = Decimal.tetrate(10, first+both).iteratedlog(10, both);
-    assert_eq_tolerance(first + ", " + both, expected, result);
+    assert_eq_tolerance(first + ", " + both, tetrateonly, tetrateandlog);
   }
 }
 
@@ -173,7 +173,7 @@ var test_tetrate_base = function()
     var base = Math.random()*8+2;
     var tetrateonly = Decimal.tetrate(base, first);
     var tetrateandlog = Decimal.tetrate(base, first+both).iteratedlog(base, both);
-    assert_eq_tolerance(first + ", " + both + ", " + base, expected, result);
+    assert_eq_tolerance(first + ", " + both + ", " + base, tetrateonly, tetrateandlog);
   }
 }
 
@@ -187,7 +187,7 @@ var test_tetrate_base_2 = function()
     var base = Math.random()*8+2;
     var tetrateonly = Decimal.tetrate(base, first, base);
     var tetrateandlog = Decimal.tetrate(base, first+both, base).iteratedlog(base, both);
-    assert_eq_tolerance(first + ", " + both + ", " + base, expected, result);
+    assert_eq_tolerance(first + ", " + both + ", " + base, tetrateonly, tetrateandlog);
   }
 }
 
@@ -198,7 +198,7 @@ var test_lambertw = function()
   {
     var xex = new Decimal(-0.3678794411710499+Math.random()*100);
     var x = Decimal.lambertw(xex);
-    assert_eq_tolerance(xex, x.mul(Decimal.exp(x)));
+    assert_eq_tolerance(xex, xex, x.mul(Decimal.exp(x)));
   }
 }
 
@@ -209,7 +209,7 @@ var test_lambertw_2 = function()
   {
     var xex = new Decimal(-0.3678794411710499+Math.exp(Math.random()*100));
     var x = Decimal.lambertw(xex);
-    assert_eq_tolerance(xex, x.mul(Decimal.exp(x)));
+    assert_eq_tolerance(xex, xex, x.mul(Decimal.exp(x)));
   }
 }
 
@@ -223,7 +223,10 @@ var test_add_number = function()
     if (Math.random() > 0.5) { a = a.recip(); }
     if (Math.random() > 0.5) { b = b.recip(); }
     var c = a.add(b).toNumber();
-    assert_eq_tolerance(a + ", " + b, c, a.toNumber()+b.toNumber());
+    if (Number.isFinite(c))
+    {
+      assert_eq_tolerance(a + ", " + b, c, a.toNumber()+b.toNumber());
+    }
   }
 }
 
@@ -237,7 +240,10 @@ var test_mul = function()
     if (Math.random() > 0.5) { a = a.recip(); }
     if (Math.random() > 0.5) { b = b.recip(); }
     var c = a.mul(b).toNumber();
-    assert_eq_tolerance("Test 1: " + a + ", " + b, c, a.toNumber()*b.toNumber())
+    if (Number.isFinite(a.toNumber()) && Number.isFinite(b.toNumber()) && Number.isFinite(c) && a.toNumber() != 0 && b.toNumber() != 0)
+    {
+      assert_eq_tolerance("Test 1: " + a + ", " + b, c, a.toNumber()*b.toNumber())
+    }
     assert_eq_tolerance("Test 2: " + a + ", " + b, Decimal.mul(a.recip(), b.recip()),Decimal.mul(a, b).recip());
   }
 }
