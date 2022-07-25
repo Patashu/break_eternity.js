@@ -19,25 +19,6 @@ var assert_eq_tolerance = function(error, a, b, precision = 1e-7)
   }
 }
 
-//tetrate and slog ground truth for:
-/*10^^2 = 1e10
-10^^1.5 = 299.92012356854604298
-10^^1.1 = 15.276013187671926546
-10^^1 = 10
-10^^0.5 = 2.4770056063449647580
-10^^0 = 1
-10^^-0.5 = 0.39392698954987671956
-10^^-1 = 0
-10^^-1.1 = -0.073413324316674049650
-10^^-1.5 = -0.40458426287953460128
-10^^-1.9 = -1.1345680321718982860
-10^^-1.99 = -2.1357989167988367351
-10^^-1.999 = -3.1358003090926477386 
-10^^-1.9999 = -4.1357992057580525630
-10^^-1.99999 = -5.1357990829699223045
-10^^-2 = -neg infinity
-10^^-2.1 = NaN*/
-
 var test_tetrate_ground_truth = function()
 {
   console.log("test_tetrate_ground_truth")
@@ -72,7 +53,33 @@ var test_tetrate_ground_truth = function()
 
 var test_slog_ground_truth = function()
 {
-  console.log("test_tetrate_ground_truth")
+  console.log("test_slog_ground_truth")
+  assert_eq_tolerance(10.5, new Decimal("(e^9)299.92012356854593").slog(10), 10.5)
+  assert_eq_tolerance(10, new Decimal("(e^8)10000000000").slog(10), 10)
+  assert_eq_tolerance(4, new Decimal("ee10000000000").slog(10), 4)
+  assert_eq_tolerance(3.5, new Decimal("ee299.92012356854593").slog(10), 3.5)
+  assert_eq_tolerance(3, new Decimal("1e10000000000").slog(10), 3)
+  assert_eq_tolerance(2.5, new Decimal(8.320004641007381e299).slog(10), 2.5)
+  assert_eq_tolerance(2, new Decimal(1e10).slog(10), 2)
+  assert_eq_tolerance(1.5, new Decimal(299.92012356854604298).slog(10), 1.5)
+  assert_eq_tolerance(1.1, new Decimal(15.276013187671926546).slog(10), 1.1)
+  assert_eq_tolerance(1.09, new Decimal(14.590820857079513571).slog(10), 1.09, 1e-4)
+  assert_eq_tolerance(1.05, new Decimal(12.243921772755051706).slog(10), 1.05, 1e-3)
+  assert_eq_tolerance(1.01, new Decimal(10.398855358124287905).slog(10), 1.01, 1e-4)
+  assert_eq_tolerance(1, new Decimal(10).slog(10), 1)
+  assert_eq_tolerance(0.99, new Decimal(9.6227033506567471768).slog(10), 0.99, 1e-3)
+  assert_eq_tolerance(0.95, new Decimal(8.3015402222604663760).slog(10), 0.95, 1e-2)
+  assert_eq_tolerance(0.91, new Decimal(7.2270053728541153571).slog(10), 0.91, 1e-3)
+  assert_eq_tolerance(0.5, new Decimal(2.4770056063449647580).slog(10), 0.5)
+  assert_eq_tolerance(-1, new Decimal(0).slog(10), -1)
+  //note: currently very slow
+  assert_eq_tolerance(-1.1, new Decimal(-0.073413324316674049650).slog(10), -1.1)
+  assert_eq_tolerance(-1.5, new Decimal(-0.40458426287953460128).slog(10), -1.5)
+  assert_eq_tolerance(-1.9, new Decimal(-1.1345680321718982860).slog(10), -1.9)
+  assert_eq_tolerance(-1.99, new Decimal(-2.1357989167988367351).slog(10), -1.99, 1e-4)
+  assert_eq_tolerance(-1.999, new Decimal(-3.1358003090926477386).slog(10), -1.999, 1e-5)
+  assert_eq_tolerance(-1.9999, new Decimal(-4.1357992057580525630).slog(10), -1.9999, 1e-6)
+  assert_eq_tolerance(-1.99999, new Decimal(-5.1357990829699223045).slog(10), -1.99999)
 }
 
 var test_tetrate_slog = function()
