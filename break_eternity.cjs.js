@@ -2113,7 +2113,7 @@ var Decimal = /*#__PURE__*/function () {
     key: "slog",
     value: function slog() {
       var base = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 10;
-      var iterations = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 43;
+      var iterations = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 100;
       var step_size = 0.001;
       var has_changed_directions_once = false;
       var previously_rose = false;
@@ -2123,7 +2123,7 @@ var Decimal = /*#__PURE__*/function () {
         var new_decimal = new Decimal(base).tetrate(result);
         var currently_rose = new_decimal.gt(this);
 
-        if (iterations > 1) {
+        if (i > 1) {
           if (previously_rose != currently_rose) {
             has_changed_directions_once = true;
           }
@@ -2133,10 +2133,16 @@ var Decimal = /*#__PURE__*/function () {
 
         if (has_changed_directions_once) {
           step_size /= 2;
+        } else {
+          step_size *= 2;
         }
 
         step_size = Math.abs(step_size) * (currently_rose ? -1 : 1);
         result += step_size;
+
+        if (step_size === 0) {
+          break;
+        }
       }
 
       return Decimal.fromNumber(result);
@@ -2335,168 +2341,7 @@ var Decimal = /*#__PURE__*/function () {
 
       var lnx = this.ln();
       return lnx.div(lnx.lambertw());
-    }
-    /*
-      Unit tests for tetrate/iteratedexp/iteratedlog/layeradd10/layeradd/slog:
-    (note: these won't be exactly precise with the new slog implementation, but that's okay)
-      for (var i = 0; i < 1000; ++i)
-    {
-    var first = Math.random()*100;
-    var both = Math.random()*100;
-    var expected = first+both+1;
-    var result = new Decimal(10).layeradd10(first).layeradd10(both).slog();
-    if (Number.isFinite(result.mag) && !Decimal.eq_tolerance(expected, result))
-    {
-        console.log(first + ", " + both);
-    }
-    }
-      for (var i = 0; i < 1000; ++i)
-    {
-    var first = Math.random()*100;
-    var both = Math.random()*100;
-    first += both;
-    var expected = first-both+1;
-    var result = new Decimal(10).layeradd10(first).layeradd10(-both).slog();
-    if (Number.isFinite(result.mag) && !Decimal.eq_tolerance(expected, result))
-    {
-        console.log(first + ", " + both);
-    }
-    }
-      for (var i = 0; i < 1000; ++i)
-    {
-    var first = Math.random()*100;
-    var both = Math.random()*100;
-    var base = Math.random()*8+2;
-    var expected = first+both+1;
-    var result = new Decimal(base).layeradd(first, base).layeradd(both, base).slog(base);
-    if (Number.isFinite(result.mag) && !Decimal.eq_tolerance(expected, result))
-    {
-        console.log(first + ", " + both);
-    }
-    }
-      for (var i = 0; i < 1000; ++i)
-    {
-    var first = Math.random()*100;
-    var both = Math.random()*100;
-    var base = Math.random()*8+2;
-    first += both;
-    var expected = first-both+1;
-    var result = new Decimal(base).layeradd(first, base).layeradd(-both, base).slog(base);
-    if (Number.isFinite(result.mag) && !Decimal.eq_tolerance(expected, result))
-    {
-        console.log(first + ", " + both);
-    }
-    }
-      for (var i = 0; i < 1000; ++i)
-    {
-    var first = Math.round((Math.random()*30))/10;
-    var both = Math.round((Math.random()*30))/10;
-    var tetrateonly = Decimal.tetrate(10, first);
-    var tetrateandlog = Decimal.tetrate(10, first+both).iteratedlog(10, both);
-    if (!Decimal.eq_tolerance(tetrateonly, tetrateandlog))
-    {
-    console.log(first + ", " + both);
-    }
-    }
-      for (var i = 0; i < 1000; ++i)
-    {
-    var first = Math.round((Math.random()*30))/10;
-    var both = Math.round((Math.random()*30))/10;
-    var base = Math.random()*8+2;
-    var tetrateonly = Decimal.tetrate(base, first);
-    var tetrateandlog = Decimal.tetrate(base, first+both).iteratedlog(base, both);
-    if (!Decimal.eq_tolerance(tetrateonly, tetrateandlog))
-    {
-    console.log(first + ", " + both);
-    }
-    }
-      for (var i = 0; i < 1000; ++i)
-    {
-    var first = Math.round((Math.random()*30))/10;
-    var both = Math.round((Math.random()*30))/10;
-    var base = Math.random()*8+2;
-    var tetrateonly = Decimal.tetrate(base, first, base);
-    var tetrateandlog = Decimal.tetrate(base, first+both, base).iteratedlog(base, both);
-    if (!Decimal.eq_tolerance(tetrateonly, tetrateandlog))
-    {
-    console.log(first + ", " + both);
-    }
-    }
-      for (var i = 0; i < 1000; ++i)
-    {
-    var xex = new Decimal(-0.3678794411710499+Math.random()*100);
-    var x = Decimal.lambertw(xex);
-    if (!Decimal.eq_tolerance(xex, x.mul(Decimal.exp(x))))
-    {
-        console.log(xex);
-    }
-    }
-      for (var i = 0; i < 1000; ++i)
-    {
-    var xex = new Decimal(-0.3678794411710499+Math.exp(Math.random()*100));
-    var x = Decimal.lambertw(xex);
-    if (!Decimal.eq_tolerance(xex, x.mul(Decimal.exp(x))))
-    {
-        console.log(xex);
-    }
-    }
-      for (var i = 0; i < 1000; ++i)
-    {
-    var a = Decimal.randomDecimalForTesting(Math.random() > 0.5 ? 0 : 1);
-    var b = Decimal.randomDecimalForTesting(Math.random() > 0.5 ? 0 : 1);
-    if (Math.random() > 0.5) { a = a.recip(); }
-    if (Math.random() > 0.5) { b = b.recip(); }
-    var c = a.add(b).toNumber();
-    if (Number.isFinite(c) && !Decimal.eq_tolerance(c, a.toNumber()+b.toNumber()))
-    {
-        console.log(a + ", " + b);
-    }
-    }
-      for (var i = 0; i < 100; ++i)
-    {
-    var a = Decimal.randomDecimalForTesting(Math.round(Math.random()*4));
-    var b = Decimal.randomDecimalForTesting(Math.round(Math.random()*4));
-    if (Math.random() > 0.5) { a = a.recip(); }
-    if (Math.random() > 0.5) { b = b.recip(); }
-    var c = a.mul(b).toNumber();
-    if (Number.isFinite(c) && Number.isFinite(a.toNumber()) && Number.isFinite(b.toNumber()) && a.toNumber() != 0 && b.toNumber() != 0 && c != 0 && !Decimal.eq_tolerance(c, a.toNumber()*b.toNumber()))
-    {
-        console.log("Test 1: " + a + ", " + b);
-    }
-    else if (!Decimal.mul(a.recip(), b.recip()).eq_tolerance(Decimal.mul(a, b).recip()))
-    {
-        console.log("Test 3: " + a + ", " + b);
-    }
-    }
-      for (var i = 0; i < 10; ++i)
-    {
-    var a = Decimal.randomDecimalForTesting(Math.round(Math.random()*4));
-    var b = Decimal.randomDecimalForTesting(Math.round(Math.random()*4));
-    if (Math.random() > 0.5 && a.sign !== 0) { a = a.recip(); }
-    if (Math.random() > 0.5 && b.sign !== 0) { b = b.recip(); }
-    var c = a.pow(b);
-    var d = a.root(b.recip());
-    var e = a.pow(b.recip());
-    var f = a.root(b);
-        if (!c.eq_tolerance(d) && a.sign !== 0 && b.sign !== 0)
-    {
-      console.log("Test 1: " + a + ", " + b);
-    }
-    if (!e.eq_tolerance(f) && a.sign !== 0 && b.sign !== 0)
-    {
-      console.log("Test 2: " + a + ", " + b);
-    }
-    }
-      for (var i = 0; i < 10; ++i)
-    {
-    var a = Math.round(Math.random()*18-9);
-    var b = Math.round(Math.random()*100-50);
-    var c = Math.round(Math.random()*18-9);
-    var d = Math.round(Math.random()*100-50);
-    console.log("Decimal.pow(Decimal.fromMantissaExponent(" + a + ", " + b + "), Decimal.fromMantissaExponent(" + c + ", " + d + ")).toString()");
-    }
-      */
-    //Pentation/pentate: The result of tetrating 'height' times in a row. An absurdly strong operator - Decimal.pentate(2, 4.28) and Decimal.pentate(10, 2.37) are already too huge for break_eternity.js!
+    } //Pentation/pentate: The result of tetrating 'height' times in a row. An absurdly strong operator - Decimal.pentate(2, 4.28) and Decimal.pentate(10, 2.37) are already too huge for break_eternity.js!
     // https://en.wikipedia.org/wiki/Pentation
 
   }, {
@@ -3378,8 +3223,9 @@ var Decimal = /*#__PURE__*/function () {
 
       var frac = height - Math.floor(height); //improvement - you get more accuracy (especially around 0.9-1.0) by doing log, then frac, then powing the result
       //(we could pre-log the lookup table, but then fractional bases would get Weird)
+      //also, use old linear for slog (values 0 or less in critical section). maybe something else is better but haven't thought about what yet
 
-      if (lower == 0 || upper == 0) {
+      if (lower <= 0 || upper <= 0) {
         return lower * (1 - frac) + upper * frac;
       } else {
         return Math.pow(base, Math.log(lower) / Math.log(base) * (1 - frac) + Math.log(upper) / Math.log(base) * frac);
