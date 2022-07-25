@@ -2591,8 +2591,14 @@ export default class Decimal {
     const frac = height - Math.floor(height);
     //improvement - you get more accuracy (especially around 0.9-1.0) by doing log, then frac, then powing the result
     //(we could pre-log the lookup table, but then fractional bases would get Weird)
-    const result = Math.pow(base, (Math.log(lower)/Math.log(base)) * (1 - frac) + (Math.log(upper)/Math.log(base)) * frac );
-    return result;
+    if (lower == 0 || upper == 0)
+    {
+      return lower * (1 - frac) + upper * frac;
+    }
+    else
+    {
+      return Math.pow(base, (Math.log(lower)/Math.log(base)) * (1 - frac) + (Math.log(upper)/Math.log(base)) * frac );
+    }
   }
 
   //Function for adding/removing layers from a Decimal, even fractional layers (e.g. its slog10 representation).
