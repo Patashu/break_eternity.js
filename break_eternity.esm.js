@@ -1,3 +1,4 @@
+'use strict';
 function _classCallCheck(instance, Constructor) {
   if (!(instance instanceof Constructor)) {
     throw new TypeError("Cannot call a class as a function");
@@ -3254,5 +3255,4 @@ FC_NN = Decimal.fromComponents_noNormalize; // eslint-disable-next-line @typescr
 Decimal.fromMantissaExponent; // eslint-disable-next-line @typescript-eslint/no-unused-vars
 
 Decimal.fromMantissaExponent_noNormalize;
-
 export { Decimal as default };
