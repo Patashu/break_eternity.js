@@ -1,7 +1,7 @@
-export declare type CompareResult = -1 | 0 | 1;
-export declare type DecimalSource = Decimal | number | string;
+export type CompareResult = -1 | 0 | 1;
+export type DecimalSource = Decimal | number | string;
 /**
- * The Decimal's value is simply mantissa * 10^exponent.
+ * The value of the Decimal is sign * 10^10^10...^mag, with (layer) 10s. If the layer is not 0, then negative mag means it's the reciprocal of the corresponding number with positive mag.
  */
 export default class Decimal {
     static readonly dZero: Decimal;
@@ -70,6 +70,8 @@ export default class Decimal {
     static recip(value: DecimalSource): Decimal;
     static reciprocal(value: DecimalSource): Decimal;
     static reciprocate(value: DecimalSource): Decimal;
+    static mod(value: DecimalSource, other: DecimalSource): Decimal;
+    static modular(value: DecimalSource, other: DecimalSource): Decimal;
     static cmp(value: DecimalSource, other: DecimalSource): CompareResult;
     static cmpabs(value: DecimalSource, other: DecimalSource): CompareResult;
     static compare(value: DecimalSource, other: DecimalSource): CompareResult;
@@ -118,15 +120,16 @@ export default class Decimal {
     static sqrt(value: DecimalSource): Decimal;
     static cube(value: DecimalSource): Decimal;
     static cbrt(value: DecimalSource): Decimal;
-    static tetrate(value: DecimalSource, height?: number, payload?: DecimalSource): Decimal;
-    static iteratedexp(value: DecimalSource, height?: number, payload?: Decimal): Decimal;
-    static iteratedlog(value: DecimalSource, base?: DecimalSource, times?: number): Decimal;
-    static layeradd10(value: DecimalSource, diff: DecimalSource): Decimal;
-    static layeradd(value: DecimalSource, diff: number, base?: number): Decimal;
-    static slog(value: DecimalSource, base?: number): Decimal;
+    static tetrate(value: DecimalSource, height?: number, payload?: DecimalSource, linear?: boolean): Decimal;
+    static iteratedexp(value: DecimalSource, height?: number, payload?: Decimal, linear?: boolean): Decimal;
+    static iteratedlog(value: DecimalSource, base?: DecimalSource, times?: number, linear?: boolean): Decimal;
+    static layeradd10(value: DecimalSource, diff: DecimalSource, linear?: boolean): Decimal;
+    static layeradd(value: DecimalSource, diff: number, base?: number, linear?: boolean): Decimal;
+    static slog(value: DecimalSource, base?: number, linear?: boolean): Decimal;
     static lambertw(value: DecimalSource): Decimal;
     static ssqrt(value: DecimalSource): Decimal;
-    static pentate(value: DecimalSource, height?: number, payload?: DecimalSource): Decimal;
+    static linear_sroot(value: DecimalSource, height: number): Decimal;
+    static pentate(value: DecimalSource, height?: number, payload?: DecimalSource, linear?: boolean): Decimal;
     /**
      * If you're willing to spend 'resourcesAvailable' and want to buy something
      * with exponentially increasing cost each purchase (start at priceStart,
@@ -207,6 +210,8 @@ export default class Decimal {
     recip(): Decimal;
     reciprocal(): Decimal;
     reciprocate(): Decimal;
+    mod(value: DecimalSource): Decimal;
+    modular(value: DecimalSource): Decimal;
     /**
      * -1 for less than value, 0 for equals value, 1 for greater than value
      */
@@ -264,19 +269,20 @@ export default class Decimal {
     sqrt(): Decimal;
     cube(): Decimal;
     cbrt(): Decimal;
-    tetrate(height?: number, payload?: DecimalSource): Decimal;
-    iteratedexp(height?: number, payload?: Decimal): Decimal;
-    iteratedlog(base?: DecimalSource, times?: number): Decimal;
-    slog(base?: DecimalSource, iterations?: number): Decimal;
-    slog_internal(base?: DecimalSource): Decimal;
+    tetrate(height?: number, payload?: DecimalSource, linear?: boolean): Decimal;
+    iteratedexp(height?: number, payload?: Decimal, linear?: boolean): Decimal;
+    iteratedlog(base?: DecimalSource, times?: number, linear?: boolean): Decimal;
+    slog(base?: DecimalSource, iterations?: number, linear?: boolean): Decimal;
+    slog_internal(base?: DecimalSource, linear?: boolean): Decimal;
     static slog_critical(base: number, height: number): number;
     static tetrate_critical(base: number, height: number): number;
-    static critical_section(base: number, height: number, grid: number[][]): number;
-    layeradd10(diff: DecimalSource): Decimal;
-    layeradd(diff: number, base: DecimalSource): Decimal;
+    static critical_section(base: number, height: number, grid: number[][], linear?: boolean): number;
+    layeradd10(diff: DecimalSource, linear?: boolean): Decimal;
+    layeradd(diff: number, base: DecimalSource, linear?: boolean): Decimal;
     lambertw(): Decimal;
     ssqrt(): Decimal;
-    pentate(height?: number, payload?: DecimalSource): Decimal;
+    linear_sroot(degree: number): Decimal;
+    pentate(height?: number, payload?: DecimalSource, linear?: boolean): Decimal;
     sin(): this | Decimal;
     cos(): Decimal;
     tan(): this | Decimal;

@@ -90,7 +90,9 @@ var test_tetrate_slog = function()
     let base = Math.random()*10 + 1.5;
     let tower = Math.random()*10 - 1;
     let round_trip = new Decimal(base).tetrate(tower).slog(base).toNumber();
-    assert_eq_tolerance(base + ", " + tower, round_trip, tower, base < 2 ? 1e-2 : 1e-10);
+    let round_trip_linear = new Decimal(base).tetrate(tower, 1, true).slog(base, 100, true).toNumber();
+    assert_eq_tolerance("Test 1: " + base + ", " + tower, round_trip, tower, base < 2 ? 1e-2 : 1e-10);
+    assert_eq_tolerance("Test 2: " + base + ", " + tower, round_trip_linear, tower, 1e-10);
   }
 }
 
@@ -266,6 +268,81 @@ var test_pow_root = function()
   }
 }
 
+var test_tetrate_linear_truth = function()
+{
+  console.log("test_tetrate_linear_truth")
+  assert_eq_tolerance(10.5, new Decimal(10).tetrate(10.5, 1, true), new Decimal("(e^9)1453.0403018990435"))
+  assert_eq_tolerance(10, new Decimal(10).tetrate(10, 1, true), new Decimal("(e^8)10000000000"))
+  assert_eq_tolerance(4, new Decimal(10).tetrate(4, 1, true), new Decimal("ee10000000000"))
+  assert_eq_tolerance(3.5, new Decimal(10).tetrate(3.5, 1, true), new Decimal("e1.0972406760e1453"))
+  assert_eq_tolerance(3, new Decimal(10).tetrate(3, 1, true), new Decimal("1e10000000000"))
+  assert_eq_tolerance(2.5, new Decimal(10).tetrate(2.5, 1, true), new Decimal("1.0972406760e1453"))
+  assert_eq_tolerance(2, new Decimal(10).tetrate(2, 1, true), 1e10)
+  assert_eq_tolerance(1.5, new Decimal(10).tetrate(1.5, 1, true), 1453.0403018990435)
+  assert_eq_tolerance(1.1, new Decimal(10).tetrate(1.1, 1, true), 18.152038825555795)
+  assert_eq_tolerance(1.09, new Decimal(10).tetrate(1.09, 1, true), 16.992949658256496, 1e-3)
+  assert_eq_tolerance(1.05, new Decimal(10).tetrate(1.05, 1, true), 13.243978111062273, 1e-3)
+  assert_eq_tolerance(1.01, new Decimal(10).tetrate(1.01, 1, true), 10.550984676065603, 1e-3)
+  assert_eq_tolerance(1, new Decimal(10).tetrate(1, 1, true), 10)
+  assert_eq_tolerance(0.99, new Decimal(10).tetrate(0.99, 1, true), 9.772372209558107, 1e-2)
+  assert_eq_tolerance(0.95, new Decimal(10).tetrate(0.95, 1, true), 8.912509381337454, 1e-2)
+  assert_eq_tolerance(0.91, new Decimal(10).tetrate(0.91, 1, true), 8.128305161640993, 1e-2)
+  assert_eq_tolerance(0.5, new Decimal(10).tetrate(0.5, 1, true), 3.1622776601683795)
+  assert_eq_tolerance(-1, new Decimal(10).tetrate(-1, 1, true), 0)
+  assert_eq_tolerance(-1.1, new Decimal(10).tetrate(-1.1, 1, true), -0.045757490560675115)
+  assert_eq_tolerance(-1.5, new Decimal(10).tetrate(-1.5, 1, true), -0.30102999566398114)
+  assert_eq_tolerance(-1.9, new Decimal(10).tetrate(-1.9, 1, true), -1)
+  assert_eq_tolerance(-1.99, new Decimal(10).tetrate(-1.99, 1, true), -2)
+  assert_eq_tolerance(-1.999, new Decimal(10).tetrate(-1.999, 1, true), -3)
+  assert_eq_tolerance(-1.9999, new Decimal(10).tetrate(-1.9999, 1, true), -4)
+  assert_eq_tolerance(-1.99999, new Decimal(10).tetrate(-1.99999, 1, true), -5)
+  assert_eq_tolerance(-2, new Decimal(10).tetrate(-2, 1, true), Number.NaN)
+  assert_eq_tolerance(-2.1, new Decimal(10).tetrate(-2.1, 1, true), Number.NaN)
+}
+
+var test_modulo = function() {
+  console.log("test_modulo");
+  for (var i = 0; i < 1000; ++i)
+  {
+    var a = Decimal.pow(10, Math.random() * 15);
+    var b = Decimal.pow(10, Math.random() * 15);
+    if (Math.random() > 0.5 && a.sign !== 0) { a = a.recip(); }
+    if (Math.random() > 0.5 && b.sign !== 0) { b = b.recip(); }
+    if (a.sign == -1) {
+      a = a.neg();
+      b = b.neg();
+    }
+    var c = a.mod(b);
+    var d = a.div(b).floor().mul(b).add(c);
+    if (b.sign == -1) {
+      d = a.div(b.neg()).floor().mul(b.neg()).add(c.abs());
+    }
+    assert_eq_tolerance(a + ", " + b + " -> " + c + ", " + d, d, a, 1e-5);
+  }
+}
+
+var test_tetrate_linear_sroot = function()
+{
+  console.log("test_tetrate_linear_sroot");
+  for (var i = 0; i < 1000; ++i)
+  {
+    let base = Decimal.dOne;
+    let degree = Decimal.dOne;
+    try {
+      base = Decimal.randomDecimalForTesting(Math.round(Math.random()*4));
+      if (base.lt(0)) base = base.neg();
+      degree = Math.random()*10;
+      if (base.eq(0)) base = Decimal.dOne;
+      let round_trip = new Decimal(base).linear_sroot(degree).tetrate(degree, 1, true);
+      if (!round_trip.isFinite()) continue;
+      assert_eq_tolerance(base + ", " + degree + " -> " + round_trip, round_trip, base);
+    }
+    catch (err) {
+      console.log("Error in " + base + ", " + degree + ": " + err);
+    }
+  }
+}
+
 var all_tests = function()
 {
   test_tetrate_ground_truth();
@@ -283,4 +360,7 @@ var all_tests = function()
   test_add_number();
   test_mul();
   test_pow_root();
+  test_tetrate_linear_truth();
+  test_modulo();
+  test_tetrate_linear_sroot();
 }
