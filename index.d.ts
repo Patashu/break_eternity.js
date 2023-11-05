@@ -71,6 +71,10 @@ export default class Decimal {
     static reciprocal(value: DecimalSource): Decimal;
     static reciprocate(value: DecimalSource): Decimal;
     static mod(value: DecimalSource, other: DecimalSource): Decimal;
+<<<<<<< Updated upstream
+=======
+    static modulo(value: DecimalSource, other: DecimalSource): Decimal;
+>>>>>>> Stashed changes
     static modular(value: DecimalSource, other: DecimalSource): Decimal;
     static cmp(value: DecimalSource, other: DecimalSource): CompareResult;
     static cmpabs(value: DecimalSource, other: DecimalSource): CompareResult;
@@ -211,6 +215,10 @@ export default class Decimal {
     reciprocal(): Decimal;
     reciprocate(): Decimal;
     mod(value: DecimalSource): Decimal;
+<<<<<<< Updated upstream
+=======
+    modulo(value: DecimalSource): Decimal;
+>>>>>>> Stashed changes
     modular(value: DecimalSource): Decimal;
     /**
      * -1 for less than value, 0 for equals value, 1 for greater than value

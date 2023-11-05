@@ -1250,11 +1250,26 @@
         return this.recip();
       }
       //Taken from OmegaNum.js, with a couple touch-ups
+<<<<<<< Updated upstream
     }, {
       key: "mod",
       value: function mod(value) {
         var decimal = D(value);
         if (decimal.eq(Decimal.dZero)) return Decimal.dZero;
+=======
+      //"Truncated division" modulo, like JavaScript's %
+    }, {
+      key: "mod",
+      value: function mod(value) {
+        var decimal = D(value).abs();
+        if (decimal.eq(Decimal.dZero)) return Decimal.dZero;
+        var num_this = this.toNumber();
+        var num_decimal = decimal.toNumber();
+        //Special case: To avoid precision issues, if both numbers are valid JS numbers, just call % on those
+        if (isFinite(num_this) && isFinite(num_decimal) && num_this != 0 && num_decimal != 0) {
+          return new Decimal(num_this % num_decimal);
+        }
+>>>>>>> Stashed changes
         if (this.sub(decimal).eq(this)) {
           //decimal is too small to register to this
           return Decimal.dZero;
@@ -1263,11 +1278,23 @@
           //this is too small to register to decimal
           return this;
         }
+<<<<<<< Updated upstream
         if (this.sign * decimal.sign == -1) return this.abs().mod(decimal.abs()).neg();
         if (this.sign == -1) return this.abs().mod(decimal.abs());
         return this.sub(this.div(decimal).floor().mul(decimal));
       }
     }, {
+=======
+        if (this.sign == -1) return this.abs().mod(decimal).neg();
+        return this.sub(this.div(decimal).floor().mul(decimal));
+      }
+    }, {
+      key: "modulo",
+      value: function modulo(value) {
+        return this.mod(value);
+      }
+    }, {
+>>>>>>> Stashed changes
       key: "modular",
       value: function modular(value) {
         return this.mod(value);
@@ -2786,6 +2813,14 @@
         return D(value).mod(other);
       }
     }, {
+<<<<<<< Updated upstream
+=======
+      key: "modulo",
+      value: function modulo(value, other) {
+        return D(value).modulo(other);
+      }
+    }, {
+>>>>>>> Stashed changes
       key: "modular",
       value: function modular(value, other) {
         return D(value).modular(other);
