@@ -308,22 +308,10 @@ var test_modulo = function() {
     var b = Decimal.pow(10, Math.random() * 15);
     if (Math.random() > 0.5 && a.sign !== 0) { a = a.recip(); }
     if (Math.random() > 0.5 && b.sign !== 0) { b = b.recip(); }
-<<<<<<< Updated upstream
-    if (a.sign == -1) {
-      a = a.neg();
-      b = b.neg();
-    }
-    var c = a.mod(b);
-    var d = a.div(b).floor().mul(b).add(c);
-    if (b.sign == -1) {
-      d = a.div(b.neg()).floor().mul(b.neg()).add(c.abs());
-    }
-=======
     if (Math.random() > 0.5) { a = a.neg(); }
     if (Math.random() > 0.5) { b = b.neg(); }
     var c = a.mod(b);
     var d = a.abs().div(b.abs()).floor().mul(b.abs()).add(c.abs()).mul(a.sgn());
->>>>>>> Stashed changes
     assert_eq_tolerance(a + ", " + b + " -> " + c + ", " + d, d, a, 1e-5);
   }
 }

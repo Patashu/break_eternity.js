@@ -605,13 +605,10 @@ export default class Decimal {
     return D(value).mod(other);
   }
 
-<<<<<<< Updated upstream
-=======
   public static modulo(value: DecimalSource, other: DecimalSource): Decimal {
     return D(value).modulo(other);
   }
 
->>>>>>> Stashed changes
   public static modular(value: DecimalSource, other: DecimalSource): Decimal {
     return D(value).modular(other);
   }
@@ -1888,12 +1885,6 @@ export default class Decimal {
   }
 
   //Taken from OmegaNum.js, with a couple touch-ups
-<<<<<<< Updated upstream
-  public mod(value: DecimalSource): Decimal {
-    const decimal = D(value);
-
-    if (decimal.eq(Decimal.dZero)) return Decimal.dZero;
-=======
   //"Truncated division" modulo, like JavaScript's %
   public mod(value: DecimalSource): Decimal {
     const decimal = D(value).abs();
@@ -1905,7 +1896,6 @@ export default class Decimal {
     if (isFinite(num_this) && isFinite(num_decimal) && num_this != 0 && num_decimal != 0) {
       return new Decimal(num_this % num_decimal);
     }
->>>>>>> Stashed changes
     if (this.sub(decimal).eq(this)) {
       //decimal is too small to register to this
       return Decimal.dZero;
@@ -1914,13 +1904,6 @@ export default class Decimal {
       //this is too small to register to decimal
       return this;
     }
-<<<<<<< Updated upstream
-    if (this.sign * decimal.sign == -1) return this.abs().mod(decimal.abs()).neg();
-    if (this.sign == -1) return this.abs().mod(decimal.abs());
-    return this.sub(this.div(decimal).floor().mul(decimal));
-  }
-
-=======
     if (this.sign == -1) return this.abs().mod(decimal).neg();
     return this.sub(this.div(decimal).floor().mul(decimal));
   }
@@ -1929,7 +1912,6 @@ export default class Decimal {
     return this.mod(value);
   }
 
->>>>>>> Stashed changes
   public modular(value: DecimalSource) : Decimal {
     return this.mod(value);
   }
