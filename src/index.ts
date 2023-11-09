@@ -338,7 +338,7 @@ function d_lambertw(z: Decimal, tol = 1e-10): Decimal {
 export type DecimalSource = Decimal | number | string;
 
 /**
- * The Decimal's value is simply mantissa * 10^exponent.
+ * The value of the Decimal is sign * 10^10^10...^mag, with (layer) 10s. If the layer is not 0, then negative mag means it's the reciprocal of the corresponding number with positive mag.
  */
 export default class Decimal {
   public static readonly dZero = FC_NN(0, 0, 0);
@@ -601,6 +601,18 @@ export default class Decimal {
     return D(value).reciprocate();
   }
 
+  public static mod(value: DecimalSource, other: DecimalSource): Decimal {
+    return D(value).mod(other);
+  }
+
+  public static modulo(value: DecimalSource, other: DecimalSource): Decimal {
+    return D(value).modulo(other);
+  }
+
+  public static modular(value: DecimalSource, other: DecimalSource): Decimal {
+    return D(value).modular(other);
+  }
+
   public static cmp(value: DecimalSource, other: DecimalSource): CompareResult {
     return D(value).cmp(other);
   }
@@ -838,29 +850,30 @@ export default class Decimal {
   public static tetrate(
     value: DecimalSource,
     height = 2,
-    payload: DecimalSource = FC_NN(1, 0, 1)
+    payload: DecimalSource = FC_NN(1, 0, 1),
+    linear = false
   ): Decimal {
-    return D(value).tetrate(height, payload);
+    return D(value).tetrate(height, payload, linear);
   }
 
-  public static iteratedexp(value: DecimalSource, height = 2, payload = FC_NN(1, 0, 1)): Decimal {
-    return D(value).iteratedexp(height, payload);
+  public static iteratedexp(value: DecimalSource, height = 2, payload = FC_NN(1, 0, 1), linear = false): Decimal {
+    return D(value).iteratedexp(height, payload, linear);
   }
 
-  public static iteratedlog(value: DecimalSource, base: DecimalSource = 10, times = 1): Decimal {
-    return D(value).iteratedlog(base, times);
+  public static iteratedlog(value: DecimalSource, base: DecimalSource = 10, times = 1, linear = false): Decimal {
+    return D(value).iteratedlog(base, times, linear);
   }
 
-  public static layeradd10(value: DecimalSource, diff: DecimalSource): Decimal {
-    return D(value).layeradd10(diff);
+  public static layeradd10(value: DecimalSource, diff: DecimalSource, linear = false): Decimal {
+    return D(value).layeradd10(diff, linear);
   }
 
-  public static layeradd(value: DecimalSource, diff: number, base = 10): Decimal {
-    return D(value).layeradd(diff, base);
+  public static layeradd(value: DecimalSource, diff: number, base = 10, linear = false): Decimal {
+    return D(value).layeradd(diff, base, linear);
   }
 
-  public static slog(value: DecimalSource, base = 10): Decimal {
-    return D(value).slog(base);
+  public static slog(value: DecimalSource, base = 10, linear = false): Decimal {
+    return D(value).slog(base, 100, linear);
   }
 
   public static lambertw(value: DecimalSource): Decimal {
@@ -871,12 +884,17 @@ export default class Decimal {
     return D(value).ssqrt();
   }
 
+  public static linear_sroot(value: DecimalSource, height: number): Decimal {
+    return D(value).linear_sroot(height);
+  }
+
   public static pentate(
     value: DecimalSource,
     height = 2,
-    payload: DecimalSource = FC_NN(1, 0, 1)
+    payload: DecimalSource = FC_NN(1, 0, 1),
+    linear = false
   ): Decimal {
-    return D(value).pentate(height, payload);
+    return D(value).pentate(height, payload, linear);
   }
 
   /**
@@ -1287,6 +1305,31 @@ export default class Decimal {
       ptparts[1] = ptparts[1].replace("(", "");
       ptparts[1] = ptparts[1].replace(")", "");
       let payload = parseFloat(ptparts[1]);
+      if (!isFinite(payload)) {
+        payload = 1;
+      }
+      if (isFinite(base) && isFinite(height)) {
+        const result = Decimal.tetrate(base, height, payload);
+        this.sign = result.sign;
+        this.layer = result.layer;
+        this.mag = result.mag;
+        if (Decimal.fromStringCache.maxSize >= 1) {
+          Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
+        }
+        return this;
+      }
+    }
+
+    //handle XFY format
+    ptparts = value.split("f");
+    if (ptparts.length === 2) {
+      base = 10;
+      ptparts[0] = ptparts[0].replace("(", "");
+      ptparts[0] = ptparts[0].replace(")", "");
+      let payload = parseFloat(ptparts[0]);
+      ptparts[1] = ptparts[1].replace("(", "");
+      ptparts[1] = ptparts[1].replace(")", "");
+      height = parseFloat(ptparts[1]);
       if (!isFinite(payload)) {
         payload = 1;
       }
@@ -1841,6 +1884,38 @@ export default class Decimal {
     return this.recip();
   }
 
+  //Taken from OmegaNum.js, with a couple touch-ups
+  //"Truncated division" modulo, like JavaScript's %
+  public mod(value: DecimalSource): Decimal {
+    const decimal = D(value).abs();
+
+    if (decimal.eq(Decimal.dZero)) return Decimal.dZero;
+    const num_this = this.toNumber();
+    const num_decimal = decimal.toNumber();
+    //Special case: To avoid precision issues, if both numbers are valid JS numbers, just call % on those
+    if (isFinite(num_this) && isFinite(num_decimal) && num_this != 0 && num_decimal != 0) {
+      return new Decimal(num_this % num_decimal);
+    }
+    if (this.sub(decimal).eq(this)) {
+      //decimal is too small to register to this
+      return Decimal.dZero;
+    }
+    if (decimal.sub(this).eq(decimal)) {
+      //this is too small to register to decimal
+      return this;
+    }
+    if (this.sign == -1) return this.abs().mod(decimal).neg();
+    return this.sub(this.div(decimal).floor().mul(decimal));
+  }
+
+  public modulo(value: DecimalSource) : Decimal {
+    return this.mod(value);
+  }
+
+  public modular(value: DecimalSource) : Decimal {
+    return this.mod(value);
+  }
+
   /**
    * -1 for less than value, 0 for equals value, 1 for greater than value
    */
@@ -2289,7 +2364,7 @@ export default class Decimal {
   //Tetration/tetrate: The result of exponentiating 'this' to 'this' 'height' times in a row.  https://en.wikipedia.org/wiki/Tetration
   //If payload != 1, then this is 'iterated exponentiation', the result of exping (payload) to base (this) (height) times. https://andydude.github.io/tetration/archives/tetration2/ident.html
   //Works with negative and positive real heights.
-  public tetrate(height = 2, payload: DecimalSource = FC_NN(1, 0, 1)): Decimal {
+  public tetrate(height = 2, payload: DecimalSource = FC_NN(1, 0, 1), linear = false): Decimal {
     //x^^1 == x
     if (height === 1) {
       return Decimal.pow(this, payload);
@@ -2340,7 +2415,7 @@ export default class Decimal {
     }
 
     if (height < 0) {
-      return Decimal.iteratedlog(payload, this, -height);
+      return Decimal.iteratedlog(payload, this, -height, linear);
     }
 
     payload = D(payload);
@@ -2348,7 +2423,7 @@ export default class Decimal {
     height = Math.trunc(height);
     const fracheight = oldheight - height;
 
-    if (this.gt(Decimal.dZero) && this.lte(1.44466786100976613366)) {
+    if (this.gt(Decimal.dZero) && this.lte(1.44466786100976613366) && (oldheight > 10000 || !linear)) {
       //similar to 0^^n, flip-flops between two values, converging slowly (or if it's below 0.06598803584531253708, never. so once again, the fractional part at the end will be a linear approximation (TODO: again pending knowledge of how to approximate better, although tbh I think it should in reality just be NaN)
       height = Math.min(10000, height);
       for (let i = 0; i < height; ++i) {
@@ -2359,9 +2434,14 @@ export default class Decimal {
           return payload;
         }
       }
-      if (fracheight != 0) {
+      if (fracheight != 0 || oldheight > 10000) {
         const next_payload = this.pow(payload);
-        return payload.mul(1 - fracheight).add(next_payload.mul(fracheight));
+        if (oldheight <= 10000 || Math.ceil(oldheight) % 2 == 0) {
+          return payload.mul(1 - fracheight).add(next_payload.mul(fracheight));
+        }
+        else {
+          return payload.mul(fracheight).add(next_payload.mul(1 - fracheight));
+        }
       }
       return payload;
     }
@@ -2369,8 +2449,9 @@ export default class Decimal {
 
     if (fracheight !== 0) {
       if (payload.eq(Decimal.dOne)) {
+        //If (linear), use linear approximation even for bases <= 10
         //TODO: for bases above 10, revert to old linear approximation until I can think of something better
-        if (this.gt(10)) {
+        if (this.gt(10) || linear) {
           payload = this.pow(fracheight);
         } else {
           payload = Decimal.fromNumber(Decimal.tetrate_critical(this.toNumber(), fracheight));
@@ -2382,9 +2463,9 @@ export default class Decimal {
         }
       } else {
         if (this.eq(10)) {
-          payload = payload.layeradd10(fracheight);
+          payload = payload.layeradd10(fracheight, linear);
         } else {
-          payload = payload.layeradd(fracheight, this);
+          payload = payload.layeradd(fracheight, this, linear);
         }
       }
     }
@@ -2408,15 +2489,15 @@ export default class Decimal {
   }
 
   //iteratedexp/iterated exponentiation: - all cases handled in tetrate, so just call it
-  public iteratedexp(height = 2, payload = FC_NN(1, 0, 1)): Decimal {
-    return this.tetrate(height, payload);
+  public iteratedexp(height = 2, payload = FC_NN(1, 0, 1), linear = false): Decimal {
+    return this.tetrate(height, payload, linear);
   }
 
   //iterated log/repeated log: The result of applying log(base) 'times' times in a row. Approximately equal to subtracting (times) from the number's slog representation. Equivalent to tetrating to a negative height.
   //Works with negative and positive real heights.
-  public iteratedlog(base: DecimalSource = 10, times = 1): Decimal {
+  public iteratedlog(base: DecimalSource = 10, times = 1, linear = false): Decimal {
     if (times < 0) {
-      return Decimal.tetrate(base, -times, this);
+      return Decimal.tetrate(base, -times, this, linear);
     }
 
     base = D(base);
@@ -2445,9 +2526,9 @@ export default class Decimal {
     //handle fractional part
     if (fraction > 0 && fraction < 1) {
       if (base.eq(10)) {
-        result = result.layeradd10(-fraction);
+        result = result.layeradd10(-fraction, linear);
       } else {
-        result = result.layeradd(-fraction, base);
+        result = result.layeradd(-fraction, base, linear);
       }
     }
 
@@ -2457,14 +2538,14 @@ export default class Decimal {
   //Super-logarithm, one of tetration's inverses, tells you what size power tower you'd have to tetrate base to to get number. By definition, will never be higher than 1.8e308 in break_eternity.js, since a power tower 1.8e308 numbers tall is the largest representable number.
   // https://en.wikipedia.org/wiki/Super-logarithm
   // NEW: Accept a number of iterations, and use binary search to, after making an initial guess, hone in on the true value, assuming tetration as the ground truth.
-  public slog(base: DecimalSource = 10, iterations = 100): Decimal {
+  public slog(base: DecimalSource = 10, iterations = 100, linear = false): Decimal {
     let step_size = 0.001;
     let has_changed_directions_once = false;
     let previously_rose = false;
-    let result = this.slog_internal(base).toNumber();
+    let result = this.slog_internal(base, linear).toNumber();
     for (var i = 1; i < iterations; ++i)
     {
-      let new_decimal = new Decimal(base).tetrate(result);
+      let new_decimal = new Decimal(base).tetrate(result, Decimal.dOne, linear);
       let currently_rose = new_decimal.gt(this);
       if (i > 1)
       {
@@ -2489,7 +2570,7 @@ export default class Decimal {
     return Decimal.fromNumber(result);
   }
   
-  public slog_internal(base: DecimalSource = 10): Decimal {
+  public slog_internal(base: DecimalSource = 10, linear = false): Decimal {
     base = D(base);
 
     //special cases:
@@ -2532,7 +2613,8 @@ export default class Decimal {
         copy = Decimal.pow(base, copy);
         result -= 1;
       } else if (copy.lte(Decimal.dOne)) {
-        return Decimal.fromNumber(result + Decimal.slog_critical(base.toNumber(), copy.toNumber()));
+        if (linear) return Decimal.fromNumber(result + copy.toNumber() - 1);
+        else return Decimal.fromNumber(result + Decimal.slog_critical(base.toNumber(), copy.toNumber()));
       } else {
         result += 1;
         copy = Decimal.log(copy, base);
@@ -2554,7 +2636,7 @@ export default class Decimal {
     return Decimal.critical_section(base, height, critical_tetr_values);
   }
 
-  public static critical_section(base: number, height: number, grid: number[][]): number {
+  public static critical_section(base: number, height: number, grid: number[][], linear = false): number {
     //this part is simple at least, since it's just 0.1 to 0.9
     height *= 10;
     if (height < 0) {
@@ -2609,7 +2691,7 @@ export default class Decimal {
 
   //Function for adding/removing layers from a Decimal, even fractional layers (e.g. its slog10 representation).
   //Moved this over to use the same critical section as tetrate/slog.
-  public layeradd10(diff: DecimalSource): Decimal {
+  public layeradd10(diff: DecimalSource, linear = false): Decimal {
     diff = Decimal.fromValue_noAlloc(diff).toNumber();
     const result = Decimal.fromDecimal(this);
     if (diff >= 1) {
@@ -2669,24 +2751,24 @@ export default class Decimal {
 
     //layeradd10: like adding 'diff' to the number's slog(base) representation. Very similar to tetrate base 10 and iterated log base 10. Also equivalent to adding a fractional amount to the number's layer in its break_eternity.js representation.
     if (diff !== 0) {
-      return result.layeradd(diff, 10); //safe, only calls positive height 1 payload tetration, slog and log
+      return result.layeradd(diff, 10, linear); //safe, only calls positive height 1 payload tetration, slog and log
     }
 
     return result;
   }
 
   //layeradd: like adding 'diff' to the number's slog(base) representation. Very similar to tetrate base 'base' and iterated log base 'base'.
-  public layeradd(diff: number, base: DecimalSource): Decimal {
+  public layeradd(diff: number, base: DecimalSource, linear = false): Decimal {
     const slogthis = this.slog(base).toNumber();
     const slogdest = slogthis + diff;
     if (slogdest >= 0) {
-      return Decimal.tetrate(base, slogdest);
+      return Decimal.tetrate(base, slogdest, Decimal.dOne, linear);
     } else if (!Number.isFinite(slogdest)) {
       return Decimal.dNaN;
     } else if (slogdest >= -1) {
-      return Decimal.log(Decimal.tetrate(base, slogdest + 1), base);
+      return Decimal.log(Decimal.tetrate(base, slogdest + 1, Decimal.dOne, linear), base);
     } else {
-      return Decimal.log(Decimal.log(Decimal.tetrate(base, slogdest + 2), base), base);
+      return Decimal.log(Decimal.log(Decimal.tetrate(base, slogdest + 2, Decimal.dOne, linear), base), base);
     }
   }
 
@@ -2723,9 +2805,311 @@ export default class Decimal {
     return lnx.div(lnx.lambertw());
   }
 
+  //Super-root, one of tetration's inverses - what number, tetrated to height (height), equals this?
+  //Only works with the linear approximation, because I don't know the structure of non-linear tetrations for inputs < 1
+  //TODO: Optimize this like how slog is optimized
+  public linear_sroot(degree: number) : Decimal {
+    //1st-degree super root just returns its input
+    if (degree == 1) {
+      return this;
+    }
+    if (this.eq(Decimal.dInf)) {
+      return Decimal.dInf;
+    }
+    if (!this.isFinite()) {
+      return Decimal.dNaN;
+    }
+    //ssqrt handles square super-root faster
+    if (degree == 2) {
+      try {
+        //ssqrt uses lambertw which throws an error if the number is too small
+        return this.ssqrt();
+      }
+      catch {
+        return Decimal.dNaN;
+      }
+    }
+    //Using linear approximation, x^^n = x^n if 0 < n < 1
+    if (degree > 0 && degree < 1) {
+      return this.root(degree);
+    }
+    //Using the linear approximation, there actually is a single solution for super roots with -2 < degree <= -1
+    if (degree > -2 && degree < -1) {
+      return Decimal.fromNumber(degree).add(2).pow(this.recip());
+    }
+    //Super roots with -1 <= degree < 0 have either no solution or infinitely many solutions, and tetration with height <= -2 returns NaN, so super roots of degree <= -2 don't work
+    if (degree <= 0) {
+      return Decimal.dNaN;
+    }
+    //Infinite degree super-root is x^(1/x) between 1/e <= x <= e, undefined otherwise
+    if (degree == Number.POSITIVE_INFINITY) {
+      const this_num = this.toNumber();
+      if (this_num < Math.E && this_num > _EXPN1) {
+        return this.pow(this.recip());
+      }
+      else {
+        return Decimal.dNaN;
+      }
+    }
+    //Special case: any super-root of 1 is 1
+    if (this.eq(1)) {
+      return Decimal.dOne;
+    }
+    //TODO: base < 0 (It'll probably be NaN anyway)
+    if (this.lt(0)) {
+      return Decimal.dNaN;
+    }
+    //Treat all numbers of layer <= -2 as zero, because they effectively are
+    if (this.lte("1ee-16")) {
+      if (degree % 2 == 1) return this;
+      else return Decimal.dNaN;
+    }
+    //this > 1
+    if (this.gt(1)) {
+      //Uses guess-and-check to find the super-root.
+      //If this > 10^^(degree), then the answer is under iteratedlog(10, degree - 1): for example, ssqrt(x) < log(x, 10) as long as x > 10^10, and linear_sroot(x, 3) < log(log(x, 10), 10) as long as x > 10^10^10
+      //On the other hand, if this < 10^^(degree), then clearly the answer is less than 10
+      //Since the answer could be a higher-layered number itself (whereas slog's maximum is 1.8e308), the guess-and-check is scaled to the layer of the upper bound, so the guess is set to the average of some higher-layer exponents of the bounds rather than the bounds itself (as taking plain averages on tetrational-scale numbers would go nowhere)
+      let upperBound = Decimal.dTen;
+      if (this.gte(Decimal.tetrate(10, degree, 1, true))) {
+        upperBound = this.iteratedlog(10, degree - 1, true);
+      }
+      if (degree <= 1) {
+        upperBound = this.root(degree);
+      }
+      let lower = Decimal.dZero; //This is zero rather than one because we might be on a higher layer, so the lower bound might actually some 10^10^10...^0
+      let layer = upperBound.layer;
+      let upper = upperBound.iteratedlog(10, layer, true);
+      let previous = upper;
+      let guess = upper.div(2);
+      let loopGoing = true;
+      while (loopGoing) {
+        guess = lower.add(upper).div(2);
+        if (Decimal.iteratedexp(10, layer, guess, true).tetrate(degree, 1, true).gt(this)) upper = guess;
+        else lower = guess;
+        if (guess.eq(previous)) loopGoing = false;
+        else previous = guess;
+      }
+      return Decimal.iteratedexp(10, layer, guess, true);
+    }
+    //0 < this < 1
+    else {
+      //A tetration of decimal degree can potentially have three different portions, as shown at https://www.desmos.com/calculator/ayvqks6mxa, which is a graph of x^^2.05:
+      //The portion where the function is increasing, extending from a minimum (which may be at x = 0 or at some x between 0 and 1) up to infinity (I'll call this the "increasing" range)
+      //The portion where the function is decreasing (I'll call this the "decreasing" range)
+      //A small, steep increasing portion very close to x = 0 (I'll call this the "zero" range)
+      //If ceiling(degree) is even, then the tetration will either be strictly increasing, or it will have the increasing and decreasing ranges, but not the zero range (because if ceiling(degree) is even, 0^^degree == 1).
+      //If ceiling(degree) is odd, then the tetration will either be strictly increasing, or it will have all three ranges (because if ceiling(degree) is odd, 0^^degree == 0).
+      //The existence of these ranges means that a super-root could potentially have two or three valid answers.
+      //Out of these, we'd prefer the increasing range value if it exists, otherwise we'll take the zero range value (it can't have a decreasing range value if it doesn't have an increasing range value) if the zero range exists.
+      //It's possible to identify which range that "this" is in:
+      //If the tetration is decreasing at that point, the point is in the decreasing range.
+      //If the tetration is increasing at that point and ceiling(degree) is even, the point is in the increasing range since there is no zero range.
+      //If the tetration is increasing at that point and ceiling(degree) is odd, look at the second derivative at that point. If the second derivative is positive, the point is in the increasing range. If the second derivative is negative, the point is the zero range.
+      //We need to find the local minimum (separates decreasing and increasing ranges) and the local maximum (separates zero and decreasing ranges).
+      //(stage) is which stage of the loop we're in: stage 1 is finding the minimum, stage 2 means we're between the stages, and stage 3 is finding the maximum.
+      //The boundary between the decreasing range and the zero range can be very small, so we want to use layer -1 numbers. Therefore, all numbers involved are log10(recip()) of their actual values.
+      let stage = 1;
+      let minimum = FC(1, 10, 1);
+      let maximum = FC(1, 10, 1);
+      let lower = FC(1, 10, 1); //eeeeeeeee-10, which is effectively 0; I would use Decimal.dInf but its reciprocal is NaN
+      let upper = FC(1, 1, -16); //~ 1 - 1e-16
+      let prevspan = Decimal.dZero;
+      let difference = FC(1, 10, 1);
+      let upperBound = upper.pow10().recip();
+      let distance = Decimal.dZero;
+      let prevPoint = upperBound;
+      let nextPoint = upperBound;
+      let evenDegree = (Math.ceil(degree) % 2 == 0);
+      let range = 0;
+      let lastValid = FC(1, 10, 1);
+      let infLoopDetector = false;
+      let previousUpper = Decimal.dZero;
+      let decreasingFound = false;
+      while (stage < 4) {
+        if (stage == 2) {
+          //The minimum has been found. If ceiling(degree) is even, there's no zero range and thus no local maximum, so end the loop here. Otherwise, begin finding the maximum.
+          if (evenDegree) break;
+          else {
+            lower = FC(1, 10, 1);
+            upper = minimum;
+            stage = 3;
+            difference = FC(1, 10, 1);
+            lastValid = FC(1, 10, 1);
+          }
+        }
+        infLoopDetector = false;
+        while (upper.neq(lower)) {
+          previousUpper = upper;
+          if (upper.pow10().recip().tetrate(degree, 1, true).eq(1) && upper.pow10().recip().lt(0.4)) {
+            upperBound = upper.pow10().recip();
+            prevPoint = upper.pow10().recip();
+            nextPoint = upper.pow10().recip();
+            distance = Decimal.dZero;
+            range = -1; //This would cause problems with degree < 1 in the linear approximation... but those are already covered as a special case
+            if (stage == 3) lastValid = upper;
+          }
+          else if (upper.pow10().recip().tetrate(degree, 1, true).eq(upper.pow10().recip()) && !evenDegree && upper.pow10().recip().lt(0.4)) {
+            upperBound = upper.pow10().recip();
+            prevPoint = upper.pow10().recip();
+            nextPoint = upper.pow10().recip();
+            distance = Decimal.dZero;
+            range = 0;
+          }
+          else if (upper.pow10().recip().tetrate(degree, 1, true).eq(upper.pow10().recip().mul(2).tetrate(degree, 1, true))) {
+            //If the upper bound is closer to zero than the next point with a discernable tetration, so surely it's in whichever range is closest to zero?
+            //This won't happen in a strictly increasing tetration, as there x^^degree ~= x as x approaches zero
+            upperBound = upper.pow10().recip();
+            prevPoint = Decimal.dZero;
+            nextPoint = upperBound.mul(2);
+            distance = upperBound;
+            if (evenDegree) range = -1;
+            else range = 0;
+          }
+          else {
+            //We want to use prevspan to find the "previous point" right before the upper bound and the "next point" right after the upper bound, as that will let us approximate derivatives
+            prevspan = upper.mul(1.2e-16);
+            upperBound = upper.pow10().recip();
+            prevPoint = upper.add(prevspan).pow10().recip();
+            distance = upperBound.sub(prevPoint);
+            nextPoint = upperBound.add(distance);
+            //...but it's of no use to us while its tetration is equal to upper's tetration, so widen the difference until it's not
+            //We add prevspan and subtract nextspan because, since upper is log10(recip(upper bound)), the upper bound gets smaller as upper gets larger and vice versa
+            while (prevPoint.tetrate(degree, 1, true).eq(upperBound.tetrate(degree, 1, true)) || nextPoint.tetrate(degree, 1, true).eq(upperBound.tetrate(degree, 1, true)) || prevPoint.gte(upperBound) || nextPoint.lte(upperBound)) {
+              prevspan = prevspan.mul(2);
+              prevPoint = upper.add(prevspan).pow10().recip();
+              distance = upperBound.sub(prevPoint);
+              nextPoint = upperBound.add(distance);
+            }
+            if (
+              stage == 1 && (nextPoint.tetrate(degree, 1, true).gt(upperBound.tetrate(degree, 1, true)) && prevPoint.tetrate(degree, 1, true).gt(upperBound.tetrate(degree, 1, true)))
+              ||
+              stage == 3 && (nextPoint.tetrate(degree, 1, true).lt(upperBound.tetrate(degree, 1, true)) && prevPoint.tetrate(degree, 1, true).lt(upperBound.tetrate(degree, 1, true)))
+              ) {
+                lastValid = upper;
+              }
+            if (nextPoint.tetrate(degree, 1, true).lt(upperBound.tetrate(degree, 1, true))) {
+              //Derivative is negative, so we're in decreasing range
+              range = -1;
+            }
+            else if (evenDegree) {
+              //No zero range, so we're in increasing range
+              range = 1;
+            }
+            else if (stage == 3 && upper.gt_tolerance(minimum, 1e-8)) {
+              //We're already below the minimum, so we can't be in range 1
+              range = 0;
+            }
+            else {
+              //Number imprecision has left the second derivative somewhat untrustworthy, so we need to expand the bounds to ensure it's correct
+              while (prevPoint.tetrate(degree, 1, true).eq_tolerance(upperBound.tetrate(degree, 1, true), 1e-8) || nextPoint.tetrate(degree, 1, true).eq_tolerance(upperBound.tetrate(degree, 1, true), 1e-8) || prevPoint.gte(upperBound) || nextPoint.lte(upperBound)) {
+                prevspan = prevspan.mul(2);
+                prevPoint = upper.add(prevspan).pow10().recip();
+                distance = upperBound.sub(prevPoint);
+                nextPoint = upperBound.add(distance);
+              }
+              if (nextPoint.tetrate(degree, 1, true).sub(upperBound.tetrate(degree, 1, true)).lt(upperBound.tetrate(degree, 1, true).sub(prevPoint.tetrate(degree, 1, true)))) {
+                //Second derivative is negative, so we're in zero range
+                range = 0;
+              }
+              else {
+                //By process of elimination, we're in increasing range
+                range = 1;
+              }
+            }
+          }
+          if (range == -1) decreasingFound = true;
+          if ((stage == 1 && range == 1) || (stage == 3 && range != 0)) {
+            //The upper bound is too high
+            if (lower.eq(FC(1, 10, 1))) {
+              upper = upper.mul(2);
+            }
+            else {
+              let cutOff = false;
+              if (infLoopDetector && ((range == 1 && stage == 1) || (range == -1 && stage == 3))) cutOff = true; //Avoids infinite loops from floating point imprecision
+              upper = upper.add(lower).div(2);
+              if (cutOff) break;
+            }
+          }
+          else {
+            if (lower.eq(FC(1, 10, 1))) {
+              //We've now found an actual lower bound
+              lower = upper;
+              upper = upper.div(2);
+            }
+            else {
+              //The upper bound is too low, meaning last time we decreased the upper bound, we should have gone to the other half of the new range instead
+              let cutOff = false;
+              if (infLoopDetector && ((range == 1 && stage == 1) || (range == -1 && stage == 3))) cutOff = true; //Avoids infinite loops from floating point imprecision
+              lower = lower.sub(difference);
+              upper = upper.sub(difference);
+              if (cutOff) break;
+            }
+          }
+          if (lower.sub(upper).div(2).abs().gt(difference.mul(1.5))) infLoopDetector = true;
+          difference = lower.sub(upper).div(2).abs();
+          if (upper.gt("1e18")) break;
+          if (upper.eq(previousUpper)) break; //Another infinite loop catcher
+        }
+        if (upper.gt("1e18")) break;
+        if (!decreasingFound) break; //If there's no decreasing range, then even if an error caused lastValid to gain a value, the minimum can't exist
+        if (lastValid == FC(1, 10, 1)) {
+          //Whatever we're searching for, it doesn't exist. If there's no minimum, then there's no maximum either, so either way we can end the loop here.
+          break;
+        }
+        if (stage == 1) minimum = lastValid;
+        else if (stage == 3) maximum = lastValid;
+        stage++;
+      }
+      //Now we have the minimum and maximum, so it's time to calculate the actual super-root.
+      //First, check if the root is in the increasing range.
+      lower = minimum;
+      upper = FC(1, 1, -18);
+      let previous = upper;
+      let guess = Decimal.dZero;
+      let loopGoing = true;
+      while (loopGoing) {
+        if (lower.eq(FC(1, 10, 1))) guess = upper.mul(2);
+        else guess = lower.add(upper).div(2);
+        if (Decimal.pow(10, guess).recip().tetrate(degree, 1, true).gt(this)) upper = guess;
+        else lower = guess;
+        if (guess.eq(previous)) loopGoing = false;
+        else previous = guess;
+        if (upper.gt("1e18")) return Decimal.dNaN;
+      }
+      //using guess.neq(minimum) led to imprecision errors, so here's a fixed version of that
+      if (!(guess.eq_tolerance(minimum, 1e-15))) {
+        return guess.pow10().recip();
+      }
+      else {
+        //If guess == minimum, we haven't actually found the super-root, the algorithm just kept going down trying to find a super-root that's not in the increasing range.
+        //Check if the root is in the zero range.
+        if (maximum.eq(FC(1, 10, 1))) {
+          //There is no zero range, so the super root doesn't exist
+          return Decimal.dNaN;
+        }
+        lower = FC(1, 10, 1);
+        upper = maximum;
+        previous = upper;
+        guess = Decimal.dZero;
+        loopGoing = true;
+        while (loopGoing) {
+          if (lower.eq(FC(1, 10, 1))) guess = upper.mul(2);
+          else guess = lower.add(upper).div(2);
+          if (Decimal.pow(10, guess).recip().tetrate(degree, 1, true).gt(this)) upper = guess;
+          else lower = guess;
+          if (guess.eq(previous)) loopGoing = false;
+          else previous = guess;
+          if (upper.gt("1e18")) return Decimal.dNaN;
+        }
+        return guess.pow10().recip();
+      }
+    }
+  }
+
   //Pentation/pentate: The result of tetrating 'height' times in a row. An absurdly strong operator - Decimal.pentate(2, 4.28) and Decimal.pentate(10, 2.37) are already too huge for break_eternity.js!
   // https://en.wikipedia.org/wiki/Pentation
-  public pentate(height = 2, payload: DecimalSource = FC_NN(1, 0, 1)): Decimal {
+  public pentate(height = 2, payload: DecimalSource = FC_NN(1, 0, 1), linear = false): Decimal {
     payload = D(payload);
     const oldheight = height;
     height = Math.trunc(height);
@@ -2738,15 +3122,15 @@ export default class Decimal {
         payload = Decimal.fromNumber(fracheight);
       } else {
         if (this.eq(10)) {
-          payload = payload.layeradd10(fracheight);
+          payload = payload.layeradd10(fracheight, linear);
         } else {
-          payload = payload.layeradd(fracheight, this);
+          payload = payload.layeradd(fracheight, this, linear);
         }
       }
     }
 
     for (let i = 0; i < height; ++i) {
-      payload = this.tetrate(payload.toNumber());
+      payload = this.tetrate(payload.toNumber(), Decimal.dOne, linear);
       //bail if we're NaN
       if (!isFinite(payload.layer) || !isFinite(payload.mag)) {
         return payload.normalize();

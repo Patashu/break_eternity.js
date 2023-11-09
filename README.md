@@ -2,7 +2,7 @@
 
 A Javascript numerical library to represent numbers as large as 10^^1e308 and as 'small' as 10^-(10^^1e308). This is a sequel to break_infinity.js, my other library which maxes out at 1e1e308 ( https://github.com/Patashu/break_infinity.js ) and its C# port ( https://github.com/Razenpok/BreakInfinity.cs ). Despite handling a wider range of numbers, execution time is comparable (within 2x/0.5x as fast as break_infinity.js in testing) and it has the same interface, so it can be used as a drop-in replacement for break_infinity.js and decimal.js.
 
-Now with arbitrary real height and base handling in your favourite hyper 4 operators (tetrate, iterated exponentiation, iterated logarithm, super logarithm, super square root) and even in pentate (if you want to do that for some reason)! Using the linear approximation. (Analytical approximation is too hard for me atm.)
+Now with arbitrary real height and base handling in your favourite hyper 4 operators (tetrate, iterated exponentiation, iterated logarithm, super logarithm, super root) and even in pentate (if you want to do that for some reason)! Using the linear approximation. (Analytical approximation is too hard for me atm.)
 
 The internal representation is as follows: `Decimal.fromComponents(sign, layer, mag)` === `sign*10^10^10^ ... (layer times) mag`. So a layer 0 number is just `sign*mag`, a layer 1 number is `sign*10^mag`, a layer 2 number is `sign*10^10^mag`, and so on. If `layer > 0` and `mag < 0`, then the number's exponent is negative, e.g. `sign*10^-10^10^10^ ... mag`.
 
@@ -14,7 +14,7 @@ Create a Decimal with `new Decimal(String or Number or Decimal)` or with `Decima
 
 IMPORTANT NOTE TO PEOPLE CONVERTING FROM break_infinity.js: log/log2/log10/ln now return Decimal not Number! You'll also need to reconsider your string parsing/displaying functions and consider moving e/exponent calls to absLog10. Support for very small numbers has finally been added, so things like tickspeed multiplier being 1e-400 will be fine now!
 
-Functions you can call include `abs, neg, round, floor, ceil, trunc, add, sub, mul, div, recip, cmp, cmpabs, max, min, maxabs, minabs, log, log10, ln, pow, root, factorial, gamma, exp, sqrt, tetrate, iteratedexp, iteratedlog, layeradd10, layeradd, slog, ssqrt, lambertw, pentate` and more! Javascript operators like `+` and `*` do not work - you need to call the equivalent functions instead.
+Functions you can call include `abs, neg, round, floor, ceil, trunc, add, sub, mul, div, recip, mod, cmp, cmpabs, max, min, maxabs, minabs, log, log10, ln, pow, root, factorial, gamma, exp, sqrt, tetrate, iteratedexp, iteratedlog, layeradd10, layeradd, slog, ssqrt, lambertw, linear_sroot, pentate` and more! Javascript operators like `+` and `*` do not work - you need to call the equivalent functions instead.
 
 Accepted input formats to new Decimal or Decimal.fromString:
 
@@ -33,6 +33,7 @@ eeee... (N es) X === 10^10^10^ ... (N 10^s) X
 N PT X === 10^10^10^ ... (N 10^s) X
 N PT (X) === 10^10^10^ ... (N 10^s) X
 NpX === 10^10^10^ ... (N 10^s) X
+XFN === 10^10^10^ ... (N 10^s) X
 X^Y === X^Y
 X^^N === X^X^X^ ... (N X^s) 1
 X^^N;Y === X^X^X^ ... (N X^s) Y
