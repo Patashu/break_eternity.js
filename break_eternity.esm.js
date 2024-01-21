@@ -466,9 +466,18 @@ var Decimal = /*#__PURE__*/function () {
     set: function set(value) {
       this.e = value;
     }
+    /**
+     * Turns the given components into a valid Decimal.
+     */
   }, {
     key: "normalize",
-    value: function normalize() {
+    value:
+    /**
+     * Turns the Decimal into a valid Decimal. This function is meant for internal purposes - users of this library should not need to use normalize.
+     *
+     * Note: this function mutates the Decimal it is called on.
+     */
+    function normalize() {
       /*
       PSEUDOCODE:
       Whenever we are partially 0 (sign is 0 or mag and layer is 0), make it fully 0.
@@ -477,21 +486,29 @@ var Decimal = /*#__PURE__*/function () {
       While abs(mag) > EXP_LIMIT (9e15), layer += 1, mag = maglog10(mag).
       While abs(mag) < LAYER_DOWN (15.954) and layer > 0, layer -= 1, mag = pow(10, mag).
             When we're done, all of the following should be true OR one of the numbers is not IsFinite OR layer is not IsInteger (error state):
-      Any 0 is totally zero (0, 0, 0).
+      Any 0 is totally zero (0, 0, 0) and any NaN is totally NaN (NaN, NaN, NaN).
       Anything layer 0 has mag 0 OR mag > 1/9e15 and < 9e15.
       Anything layer 1 or higher has abs(mag) >= 15.954 and < 9e15.
+      Any positive infinity is (1, Infinity, Infinity) and any negative infinity is (-1, Infinity, Infinity).
       We will assume in calculations that all Decimals are either erroneous or satisfy these criteria. (Otherwise: Garbage in, garbage out.)
       */
-      if (this.sign === 0 || this.mag === 0 && this.layer === 0) {
+      //Any 0 is totally 0
+      if (this.sign === 0 || this.mag === 0 && this.layer === 0 || this.mag === Number.NEGATIVE_INFINITY && this.layer > 0) {
         this.sign = 0;
         this.mag = 0;
         this.layer = 0;
         return this;
       }
+      //extract sign from negative mag at layer 0
       if (this.layer === 0 && this.mag < 0) {
-        //extract sign from negative mag at layer 0
         this.mag = -this.mag;
         this.sign = -this.sign;
+      }
+      //Handle infinities
+      if (this.mag === Number.POSITIVE_INFINITY || this.layer === Number.POSITIVE_INFINITY) {
+        this.mag = Number.POSITIVE_INFINITY;
+        this.layer = Number.POSITIVE_INFINITY;
+        return this;
       }
       //Handle shifting from layer 0 to negative layers.
       if (this.layer === 0 && this.mag < FIRST_NEG_LAYER) {
@@ -527,8 +544,18 @@ var Decimal = /*#__PURE__*/function () {
           }
         }
       }
+      if (Number.isNaN(this.sign) || Number.isNaN(this.layer) || Number.isNaN(this.mag)) {
+        this.sign = Number.NaN;
+        this.layer = Number.NaN;
+        this.mag = Number.NaN;
+      }
       return this;
     }
+    /**
+     * Turns the given components into a valid Decimal.
+     *
+     * Note: this function mutates the Decimal it is called on.
+     */
   }, {
     key: "fromComponents",
     value: function fromComponents(sign, layer, mag) {
@@ -538,6 +565,11 @@ var Decimal = /*#__PURE__*/function () {
       this.normalize();
       return this;
     }
+    /**
+     * Turns the given components into a Decimal, but not necessarily a valid one (it's only valid if the components would already create a valid Decimal without normalization). Users of this library should not use this function.
+     *
+     * Note: this function mutates the Decimal it is called on.
+     */
   }, {
     key: "fromComponents_noNormalize",
     value: function fromComponents_noNormalize(sign, layer, mag) {
@@ -546,6 +578,11 @@ var Decimal = /*#__PURE__*/function () {
       this.mag = mag;
       return this;
     }
+    /**
+     * Turns the mantissa and exponent into a valid Decimal with value mantissa * 10^exponent.
+     *
+     * Note: this function mutates the Decimal it is called on.
+     */
   }, {
     key: "fromMantissaExponent",
     value: function fromMantissaExponent(mantissa, exponent) {
@@ -556,6 +593,11 @@ var Decimal = /*#__PURE__*/function () {
       this.normalize();
       return this;
     }
+    /**
+     * Turns the mantissa and exponent into a Decimal, but not necessarily a valid one. Users of this library should not use this function.
+     *
+     * Note: this function mutates the Decimal it is called on.
+     */
   }, {
     key: "fromMantissaExponent_noNormalize",
     value: function fromMantissaExponent_noNormalize(mantissa, exponent) {
@@ -563,6 +605,11 @@ var Decimal = /*#__PURE__*/function () {
       this.fromMantissaExponent(mantissa, exponent);
       return this;
     }
+    /**
+     * Turns the Decimal that this function is called on into a deep copy of the provided value.
+     *
+     * Note: this function mutates the Decimal it is called on.
+     */
   }, {
     key: "fromDecimal",
     value: function fromDecimal(value) {
@@ -571,6 +618,11 @@ var Decimal = /*#__PURE__*/function () {
       this.mag = value.mag;
       return this;
     }
+    /**
+     * Converts a floating-point number into a Decimal.
+     *
+     * Note: this function mutates the Decimal it is called on.
+     */
   }, {
     key: "fromNumber",
     value: function fromNumber(value) {
@@ -580,9 +632,17 @@ var Decimal = /*#__PURE__*/function () {
       this.normalize();
       return this;
     }
+    /**
+     * Converts a string into a Decimal.
+     *
+     * If linearhyper4 is true, then strings like "10^^8.5" will use the linear approximation of tetration even for bases <= 10.
+     *
+     * Note: this function mutates the Decimal it is called on.
+     */
   }, {
     key: "fromString",
     value: function fromString(value) {
+      var linearhyper4 = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
       var originalValue = value;
       var cached = Decimal.fromStringCache.get(originalValue);
       if (cached !== undefined) {
@@ -591,7 +651,7 @@ var Decimal = /*#__PURE__*/function () {
       {
         value = value.replace(",", "");
       }
-      //Handle x^^^y format.
+      //Handle x^^^y format. Note that no linearhyper5 parameter is needed, as pentation has no analytic approximation.
       var pentationparts = value.split("^^^");
       if (pentationparts.length === 2) {
         var _base = parseFloat(pentationparts[0]);
@@ -605,7 +665,7 @@ var Decimal = /*#__PURE__*/function () {
           }
         }
         if (isFinite(_base) && isFinite(_height)) {
-          var result = Decimal.pentate(_base, _height, payload);
+          var result = Decimal.pentate(_base, _height, payload, linearhyper4);
           this.sign = result.sign;
           this.layer = result.layer;
           this.mag = result.mag;
@@ -629,7 +689,7 @@ var Decimal = /*#__PURE__*/function () {
           }
         }
         if (isFinite(_base2) && isFinite(_height2)) {
-          var _result = Decimal.tetrate(_base2, _height2, _payload);
+          var _result = Decimal.tetrate(_base2, _height2, _payload, linearhyper4);
           this.sign = _result.sign;
           this.layer = _result.layer;
           this.mag = _result.mag;
@@ -671,7 +731,7 @@ var Decimal = /*#__PURE__*/function () {
           _payload2 = 1;
         }
         if (isFinite(base) && isFinite(height)) {
-          var _result3 = Decimal.tetrate(base, height, _payload2);
+          var _result3 = Decimal.tetrate(base, height, _payload2, linearhyper4);
           this.sign = _result3.sign;
           this.layer = _result3.layer;
           this.mag = _result3.mag;
@@ -693,7 +753,7 @@ var Decimal = /*#__PURE__*/function () {
           _payload3 = 1;
         }
         if (isFinite(base) && isFinite(height)) {
-          var _result4 = Decimal.tetrate(base, height, _payload3);
+          var _result4 = Decimal.tetrate(base, height, _payload3, linearhyper4);
           this.sign = _result4.sign;
           this.layer = _result4.layer;
           this.mag = _result4.mag;
@@ -717,7 +777,7 @@ var Decimal = /*#__PURE__*/function () {
           _payload4 = 1;
         }
         if (isFinite(base) && isFinite(height)) {
-          var _result5 = Decimal.tetrate(base, height, _payload4);
+          var _result5 = Decimal.tetrate(base, height, _payload4, linearhyper4);
           this.sign = _result5.sign;
           this.layer = _result5.layer;
           this.mag = _result5.mag;
@@ -840,6 +900,11 @@ var Decimal = /*#__PURE__*/function () {
       }
       return this;
     }
+    /**
+     * The function used by new Decimal() to create a new Decimal. Accepts a DecimalSource: uses fromNumber if given a number, uses fromString if given a string, and uses fromDecimal if given a Decimal.
+     *
+     * Note: this function mutates the Decimal it is called on.
+     */
   }, {
     key: "fromValue",
     value: function fromValue(value) {
@@ -857,9 +922,15 @@ var Decimal = /*#__PURE__*/function () {
       this.mag = 0;
       return this;
     }
+    /**
+     * Returns the numeric value of the Decimal it's called on. Will return Infinity (or -Infinity for negatives) for Decimals that are larger than Number.MAX_VALUE.
+     */
   }, {
     key: "toNumber",
     value: function toNumber() {
+      if (this.mag === Number.POSITIVE_INFINITY && this.layer === Number.POSITIVE_INFINITY) {
+        return this.sign > 0 ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
+      }
       if (!Number.isFinite(this.layer)) {
         return Number.NaN;
       }
@@ -896,6 +967,11 @@ var Decimal = /*#__PURE__*/function () {
       }
       return decimalPlaces(this.mag, places);
     }
+    /**
+     * Returns a string representation of the Decimal it's called on.
+     * This string is written as a plain number for most layer 0 numbers, in scientific notation for layer 1 numbers (and layer 0 numbers below 1e-6),
+     * in "ee...X" form for numbers from layers 2 to 5, and in (e^N)X form for layer > 5.
+     */
   }, {
     key: "toString",
     value: function toString() {
@@ -977,21 +1053,33 @@ var Decimal = /*#__PURE__*/function () {
         }
       }
     }
+    /**
+     * Absolute value function: returns 'this' if 'this' >= 0, returns the negative of 'this' if this < 0.
+     */
   }, {
     key: "abs",
     value: function abs() {
       return FC_NN(this.sign === 0 ? 0 : 1, this.layer, this.mag);
     }
+    /**
+     * Negates the Decimal it's called on: in other words, when given X, returns -X.
+     */
   }, {
     key: "neg",
     value: function neg() {
       return FC_NN(-this.sign, this.layer, this.mag);
     }
+    /**
+     * Negates the Decimal it's called on: in other words, when given X, returns -X.
+     */
   }, {
     key: "negate",
     value: function negate() {
       return this.neg();
     }
+    /**
+     * Negates the Decimal it's called on: in other words, when given X, returns -X.
+     */
   }, {
     key: "negated",
     value: function negated() {
@@ -1000,11 +1088,17 @@ var Decimal = /*#__PURE__*/function () {
     // public sign () {
     //     return this.sign;
     //   }
+    /**
+     * Returns the sign of the Decimal it's called on. (Though, since sign is a public data member of Decimal, you might as well just call .sign instead of .sgn())
+     */
   }, {
     key: "sgn",
     value: function sgn() {
       return this.sign;
     }
+    /**
+     * Rounds the Decimal it's called on to the nearest integer.
+     */
   }, {
     key: "round",
     value: function round() {
@@ -1016,28 +1110,38 @@ var Decimal = /*#__PURE__*/function () {
       }
       return this;
     }
+    /**
+     * "Rounds" the Decimal it's called on to the nearest integer that's less than or equal to it.
+     */
   }, {
     key: "floor",
     value: function floor() {
       if (this.mag < 0) {
-        return Decimal.dZero;
+        if (this.sign === -1) return Decimal.dNegOne;else return Decimal.dZero;
       }
       if (this.layer === 0) {
         return FC(this.sign, 0, Math.floor(this.mag));
       }
       return this;
     }
+    /**
+     * "Rounds" the Decimal it's called on to the nearest integer that's greater than or equal to it.
+     */
   }, {
     key: "ceil",
     value: function ceil() {
       if (this.mag < 0) {
-        return Decimal.dZero;
+        if (this.sign === 1) return Decimal.dOne; //The ceiling function called on something tiny like 10^10^-100 should return 1, since 10^10^-100 is still greater than 0
+        else return Decimal.dZero;
       }
       if (this.layer === 0) {
         return FC(this.sign, 0, Math.ceil(this.mag));
       }
       return this;
     }
+    /**
+     * Extracts the integer part of the Decimal and returns it. Behaves like floor on positive numbers, but behaves like ceiling on negative numbers.
+     */
   }, {
     key: "trunc",
     value: function trunc() {
@@ -1049,6 +1153,9 @@ var Decimal = /*#__PURE__*/function () {
       }
       return this;
     }
+    /**
+     * Addition: returns the sum of 'this' and 'value'.
+     */
   }, {
     key: "add",
     value: function add(value) {
@@ -1119,26 +1226,41 @@ var Decimal = /*#__PURE__*/function () {
         return FC(Math.sign(_mantissa2), 1, b.mag + Math.log10(Math.abs(_mantissa2)));
       }
     }
+    /**
+     * Addition: returns the sum of 'this' and 'value'.
+     */
   }, {
     key: "plus",
     value: function plus(value) {
       return this.add(value);
     }
+    /**
+     * Subtraction: returns the difference between 'this' and 'value'.
+     */
   }, {
     key: "sub",
     value: function sub(value) {
       return this.add(D(value).neg());
     }
+    /**
+     * Subtraction: returns the difference between 'this' and 'value'.
+     */
   }, {
     key: "subtract",
     value: function subtract(value) {
       return this.sub(value);
     }
+    /**
+     * Subtraction: returns the difference between 'this' and 'value'.
+     */
   }, {
     key: "minus",
     value: function minus(value) {
       return this.sub(value);
     }
+    /**
+     * Multiplication: returns the product of 'this' and 'value'.
+     */
   }, {
     key: "mul",
     value: function mul(value) {
@@ -1191,37 +1313,58 @@ var Decimal = /*#__PURE__*/function () {
       }
       throw Error("Bad arguments to mul: " + this + ", " + value);
     }
+    /**
+     * Multiplication: returns the product of 'this' and 'value'.
+     */
   }, {
     key: "multiply",
     value: function multiply(value) {
       return this.mul(value);
     }
+    /**
+     * Multiplication: returns the product of 'this' and 'value'.
+     */
   }, {
     key: "times",
     value: function times(value) {
       return this.mul(value);
     }
+    /**
+     * Division: returns the quotient of 'this' and 'value'.
+     */
   }, {
     key: "div",
     value: function div(value) {
       var decimal = D(value);
       return this.mul(decimal.recip());
     }
+    /**
+     * Division: returns the quotient of 'this' and 'value'.
+     */
   }, {
     key: "divide",
     value: function divide(value) {
       return this.div(value);
     }
+    /**
+     * Division: returns the quotient of 'this' and 'value'.
+     */
   }, {
     key: "divideBy",
     value: function divideBy(value) {
       return this.div(value);
     }
+    /**
+     * Division: returns the quotient of 'this' and 'value'.
+     */
   }, {
     key: "dividedBy",
     value: function dividedBy(value) {
       return this.div(value);
     }
+    /**
+     * Returns the reciprocal (1 / X) of the Decimal it's called on.
+     */
   }, {
     key: "recip",
     value: function recip() {
@@ -1233,18 +1376,27 @@ var Decimal = /*#__PURE__*/function () {
         return FC(this.sign, this.layer, -this.mag);
       }
     }
+    /**
+     * Returns the reciprocal (1 / X) of the Decimal it's called on.
+     */
   }, {
     key: "reciprocal",
     value: function reciprocal() {
       return this.recip();
     }
+    /**
+     * Returns the reciprocal (1 / X) of the Decimal it's called on.
+     */
   }, {
     key: "reciprocate",
     value: function reciprocate() {
       return this.recip();
     }
+    /**
+     * Returns the remainder of 'this' divided by 'value': for example, 5 mod 2 = 1, because the remainder of 5 / 2 is 1.
+     * Uses the "truncated division" modulo, which is the same as JavaScript's native modulo operator (%).
+     */
     //Taken from OmegaNum.js, with a couple touch-ups
-    //"Truncated division" modulo, like JavaScript's %
   }, {
     key: "mod",
     value: function mod(value) {
@@ -1267,18 +1419,26 @@ var Decimal = /*#__PURE__*/function () {
       if (this.sign == -1) return this.abs().mod(decimal).neg();
       return this.sub(this.div(decimal).floor().mul(decimal));
     }
+    /**
+     * Returns the remainder of 'this' divided by 'value': for example, 5 mod 2 = 1, because the remainder of 5 / 2 is 1.
+     * Uses the "truncated division" modulo, which is the same as JavaScript's native modulo operator (%).
+     */
   }, {
     key: "modulo",
     value: function modulo(value) {
       return this.mod(value);
     }
+    /**
+     * Returns the remainder of this / value: for example, 5 mod 2 = 1, because the remainder of 5 / 2 is 1.
+     * Uses the "truncated division" modulo, which is the same as JavaScript's native modulo operator (%).
+     */
   }, {
     key: "modular",
     value: function modular(value) {
       return this.mod(value);
     }
     /**
-     * -1 for less than value, 0 for equals value, 1 for greater than value
+     * Returns 1 if 'this' > 'value', returns -1 if 'this' < 'value', returns 0 if 'this' == 'value'.
      */
   }, {
     key: "cmp",
@@ -1292,6 +1452,10 @@ var Decimal = /*#__PURE__*/function () {
       }
       return this.sign * this.cmpabs(value);
     }
+    /**
+     * Compares the absolute values of this and value.
+     * Returns 1 if |'this'| > |'value'|, returns -1 if |'this'| < |'value'|, returns 0 if |'this'| == |'value'|.
+     */
   }, {
     key: "cmpabs",
     value: function cmpabs(value) {
@@ -1312,16 +1476,25 @@ var Decimal = /*#__PURE__*/function () {
       }
       return 0;
     }
+    /**
+     * Returns 1 if 'this' > 'value', returns -1 if 'this' < 'value', returns 0 if 'this' == 'value'.
+     */
   }, {
     key: "compare",
     value: function compare(value) {
       return this.cmp(value);
     }
+    /**
+     * Returns true if the Decimal is an NaN value.
+     */
   }, {
     key: "isNan",
     value: function isNan() {
       return isNaN(this.sign) || isNaN(this.layer) || isNaN(this.mag);
     }
+    /**
+     * Returns true if the Decimal is finite (by Decimal standards, not by floating point standards - a humongous Decimal like 10^^10^100 is still finite!)
+     */
   }, {
     key: "isFinite",
     value: function (_isFinite2) {
@@ -1334,99 +1507,160 @@ var Decimal = /*#__PURE__*/function () {
       return isFinite;
     }(function () {
       return isFinite(this.sign) && isFinite(this.layer) && isFinite(this.mag);
-    })
+    }
+    /**
+     * The Decimal equivalent of ==. Returns true if 'this' and 'value' have equal values.
+     */)
   }, {
     key: "eq",
     value: function eq(value) {
       var decimal = D(value);
       return this.sign === decimal.sign && this.layer === decimal.layer && this.mag === decimal.mag;
     }
+    /**
+     * Returns true if 'this' and 'value' have equal values.
+     */
   }, {
     key: "equals",
     value: function equals(value) {
       return this.eq(value);
     }
+    /**
+     * The Decimal equivalent of !=. Returns true if 'this' and 'value' do not have equal values.
+     */
   }, {
     key: "neq",
     value: function neq(value) {
       return !this.eq(value);
     }
+    /**
+     * Returns true if 'this' and 'value' do not have equal values.
+     */
   }, {
     key: "notEquals",
     value: function notEquals(value) {
       return this.neq(value);
     }
+    /**
+     * The Decimal equivalent of <. Returns true if 'this' is less than 'value'.
+     */
   }, {
     key: "lt",
     value: function lt(value) {
       return this.cmp(value) === -1;
     }
+    /**
+     * The Decimal equivalent of <=. Returns true if 'this' is less than or equal to 'value'.
+     */
   }, {
     key: "lte",
     value: function lte(value) {
       return !this.gt(value);
     }
+    /**
+     * The Decimal equivalent of >. Returns true if 'this' is greater than 'value'.
+     */
   }, {
     key: "gt",
     value: function gt(value) {
       return this.cmp(value) === 1;
     }
+    /**
+     * The Decimal equivalent of >=. Returns true if 'this' is greater than or equal to 'value'.
+     */
   }, {
     key: "gte",
     value: function gte(value) {
       return !this.lt(value);
     }
+    /**
+     * Returns whichever of 'this' and 'value' is higher.
+     */
   }, {
     key: "max",
     value: function max(value) {
       var decimal = D(value);
       return this.lt(decimal) ? decimal : this;
     }
+    /**
+     * Returns whichever of 'this' and 'value' is lower.
+     */
   }, {
     key: "min",
     value: function min(value) {
       var decimal = D(value);
       return this.gt(decimal) ? decimal : this;
     }
+    /**
+     * Returns whichever of 'this' and 'value' has a larger absolute value.
+     */
   }, {
     key: "maxabs",
     value: function maxabs(value) {
       var decimal = D(value);
       return this.cmpabs(decimal) < 0 ? decimal : this;
     }
+    /**
+     * Returns whichever of 'this' and 'value' has a smaller absolute value.
+     */
   }, {
     key: "minabs",
     value: function minabs(value) {
       var decimal = D(value);
       return this.cmpabs(decimal) > 0 ? decimal : this;
     }
+    /**
+     * A combination of minimum and maximum: the value returned by clamp is normally 'this', but it won't go below 'min' and it won't go above 'max'.
+     * Therefore, if 'this' < 'min', then 'min' is returned, and if 'this' > 'max', then 'max' is returned.
+     */
   }, {
     key: "clamp",
     value: function clamp(min, max) {
       return this.max(min).min(max);
     }
+    /**
+     * Returns 'this', unless 'this' is less than 'min', in which case 'min' is returned.
+     */
   }, {
     key: "clampMin",
     value: function clampMin(min) {
       return this.max(min);
     }
+    /**
+     * Returns 'this', unless 'this' is greater than 'max', in which case 'max' is returned.
+     */
   }, {
     key: "clampMax",
     value: function clampMax(max) {
       return this.min(max);
     }
+    /**
+     * Returns 1 if 'this' is greater than 'value', returns -1 if 'this' is less than 'value', returns 0 if 'this' is equal to 'value'.
+     * However, the two Decimals are considered equal if they're approximately equal up to a certain tolerance.
+     * Tolerance is a relative tolerance, multiplied by the greater of the magnitudes of the two arguments.
+     * For example, if you put in 1e-9, then any number closer to the
+     * larger number than (larger number)*1e-9 will be considered equal.
+     */
   }, {
     key: "cmp_tolerance",
     value: function cmp_tolerance(value, tolerance) {
       var decimal = D(value);
       return this.eq_tolerance(decimal, tolerance) ? 0 : this.cmp(decimal);
     }
+    /**
+     * Returns 1 if 'this' is greater than 'value', returns -1 if 'this' is less than 'value', returns 0 if 'this' is equal to 'value'.
+     * However, the two Decimals are considered equal if they're approximately equal up to a certain tolerance.
+     * Tolerance is a relative tolerance, multiplied by the greater of the magnitudes of the two arguments.
+     * For example, if you put in 1e-9, then any number closer to the
+     * larger number than (larger number)*1e-9 will be considered equal.
+     */
   }, {
     key: "compare_tolerance",
     value: function compare_tolerance(value, tolerance) {
       return this.cmp_tolerance(value, tolerance);
     }
     /**
+     * Tests whether two Decimals are approximately equal, up to a certain tolerance.
      * Tolerance is a relative tolerance, multiplied by the greater of the magnitudes of the two arguments.
      * For example, if you put in 1e-9, then any number closer to the
      * larger number than (larger number)*1e-9 will be considered equal.
@@ -1456,45 +1690,94 @@ var Decimal = /*#__PURE__*/function () {
       }
       return Math.abs(magA - magB) <= tolerance * Math.max(Math.abs(magA), Math.abs(magB));
     }
+    /**
+     * Tests whether two Decimals are approximately equal, up to a certain tolerance.
+     * Tolerance is a relative tolerance, multiplied by the greater of the magnitudes of the two arguments.
+     * For example, if you put in 1e-9, then any number closer to the
+     * larger number than (larger number)*1e-9 will be considered equal.
+     */
   }, {
     key: "equals_tolerance",
     value: function equals_tolerance(value, tolerance) {
       return this.eq_tolerance(value, tolerance);
     }
+    /**
+     * Tests whether two Decimals are not approximately equal, up to a certain tolerance.
+     * Tolerance is a relative tolerance, multiplied by the greater of the magnitudes of the two arguments.
+     * For example, if you put in 1e-9, then any number closer to the
+     * larger number than (larger number)*1e-9 will be considered equal.
+     */
   }, {
     key: "neq_tolerance",
     value: function neq_tolerance(value, tolerance) {
       return !this.eq_tolerance(value, tolerance);
     }
+    /**
+     * Tests whether two Decimals are not approximately equal, up to a certain tolerance.
+     * Tolerance is a relative tolerance, multiplied by the greater of the magnitudes of the two arguments.
+     * For example, if you put in 1e-9, then any number closer to the
+     * larger number than (larger number)*1e-9 will be considered equal.
+     */
   }, {
     key: "notEquals_tolerance",
     value: function notEquals_tolerance(value, tolerance) {
       return this.neq_tolerance(value, tolerance);
     }
+    /**
+     * Returns true if 'this' is less than 'value'.
+     * However, the two Decimals are considered equal if they're approximately equal up to a certain tolerance.
+     * Tolerance is a relative tolerance, multiplied by the greater of the magnitudes of the two arguments.
+     * For example, if you put in 1e-9, then any number closer to the
+     * larger number than (larger number)*1e-9 will be considered equal.
+     */
   }, {
     key: "lt_tolerance",
     value: function lt_tolerance(value, tolerance) {
       var decimal = D(value);
       return !this.eq_tolerance(decimal, tolerance) && this.lt(decimal);
     }
+    /**
+     * Returns true if 'this' is less than or equal to 'value'.
+     * However, the two Decimals are considered equal if they're approximately equal up to a certain tolerance.
+     * Tolerance is a relative tolerance, multiplied by the greater of the magnitudes of the two arguments.
+     * For example, if you put in 1e-9, then any number closer to the
+     * larger number than (larger number)*1e-9 will be considered equal.
+     */
   }, {
     key: "lte_tolerance",
     value: function lte_tolerance(value, tolerance) {
       var decimal = D(value);
       return this.eq_tolerance(decimal, tolerance) || this.lt(decimal);
     }
+    /**
+     * Returns true if 'this' is greater than 'value'.
+     * However, the two Decimals are considered equal if they're approximately equal up to a certain tolerance.
+     * Tolerance is a relative tolerance, multiplied by the greater of the magnitudes of the two arguments.
+     * For example, if you put in 1e-9, then any number closer to the
+     * larger number than (larger number)*1e-9 will be considered equal.
+     */
   }, {
     key: "gt_tolerance",
     value: function gt_tolerance(value, tolerance) {
       var decimal = D(value);
       return !this.eq_tolerance(decimal, tolerance) && this.gt(decimal);
     }
+    /**
+     * Returns true if 'this' is greater than or equal to 'value'.
+     * However, the two Decimals are considered equal if they're approximately equal up to a certain tolerance.
+     * Tolerance is a relative tolerance, multiplied by the greater of the magnitudes of the two arguments.
+     * For example, if you put in 1e-9, then any number closer to the
+     * larger number than (larger number)*1e-9 will be considered equal.
+     */
   }, {
     key: "gte_tolerance",
     value: function gte_tolerance(value, tolerance) {
       var decimal = D(value);
       return this.eq_tolerance(decimal, tolerance) || this.gt(decimal);
     }
+    /**
+     * "Positive log10": Returns the base-10 logarithm of nonnegative Decimals, but returns 0 for negative Decimals.
+     */
   }, {
     key: "pLog10",
     value: function pLog10() {
@@ -1503,6 +1786,9 @@ var Decimal = /*#__PURE__*/function () {
       }
       return this.log10();
     }
+    /**
+     * Returns the base-10 logarithm of abs('this').
+     */
   }, {
     key: "absLog10",
     value: function absLog10() {
@@ -1514,6 +1800,10 @@ var Decimal = /*#__PURE__*/function () {
         return FC(1, 0, Math.log10(this.mag));
       }
     }
+    /**
+     * Base-10 logarithm: returns the Decimal X such that 10^X = 'this'.
+     * For numbers above layer 0, this is equivalent to subtracting 1 from layer and normalizing.
+     */
   }, {
     key: "log10",
     value: function log10() {
@@ -1525,6 +1815,9 @@ var Decimal = /*#__PURE__*/function () {
         return FC(this.sign, 0, Math.log10(this.mag));
       }
     }
+    /**
+     * Logarithms are one of the inverses of exponentiation: this function finds the Decimal X such that base^X = 'this'.
+     */
   }, {
     key: "log",
     value: function log(base) {
@@ -1542,6 +1835,9 @@ var Decimal = /*#__PURE__*/function () {
       }
       return Decimal.div(this.log10(), base.log10());
     }
+    /**
+     * Base-2 logarithm: returns the Decimal X such that 2^X = 'this'.
+     */
   }, {
     key: "log2",
     value: function log2() {
@@ -1557,6 +1853,9 @@ var Decimal = /*#__PURE__*/function () {
         return FC(Math.sign(this.mag), this.layer - 1, Math.abs(this.mag));
       }
     }
+    /**
+     * Base-e logarithm, also known as the "natural" logarithm: returns the Decimal X such that e^X = 'this'.
+     */
   }, {
     key: "ln",
     value: function ln() {
@@ -1572,11 +1871,17 @@ var Decimal = /*#__PURE__*/function () {
         return FC(Math.sign(this.mag), this.layer - 1, Math.abs(this.mag));
       }
     }
+    /**
+     * Logarithms are one of the inverses of exponentiation: this function finds the Decimal X such that base^X = 'this'.
+     */
   }, {
     key: "logarithm",
     value: function logarithm(base) {
       return this.log(base);
     }
+    /**
+     * Exponentiation: Returns the result of 'this' ^ 'value' (often written as 'this' ** 'value' in programming languages).
+     */
   }, {
     key: "pow",
     value: function pow(value) {
@@ -1610,6 +1915,9 @@ var Decimal = /*#__PURE__*/function () {
       }
       return result;
     }
+    /**
+     * Raises 10 to the power of 'this', i.e. (10^'this'). For positive numbers above 1, this is equivalent to adding 1 to layer and normalizing.
+     */
   }, {
     key: "pow10",
     value: function pow10() {
@@ -1647,17 +1955,28 @@ var Decimal = /*#__PURE__*/function () {
       //both the negative mag cases are identical: one +/- rounding error
       return Decimal.dOne;
     }
+    /**
+     * Exponentiation: Returns the result of 'value' ^ 'this' (often written as 'value' ** 'this' in programming languages).
+     */
   }, {
     key: "pow_base",
     value: function pow_base(value) {
       return D(value).pow(this);
     }
+    /**
+     * Roots are one of the inverses of exponentiation: this function finds the Decimal X such that X ^ 'value' = 'this'.
+     * Equivalent to 'this' ^ (1 / 'value'), which is written here as this.pow(value.recip()).
+     */
   }, {
     key: "root",
     value: function root(value) {
       var decimal = D(value);
       return this.pow(decimal.recip());
     }
+    /**
+     * For positive integers, X factorial (written as X!) equals X * (X - 1) * (X - 2) *... * 3 * 2 * 1. 0! equals 1.
+     * This can be extended to real numbers (except for negative integers) via the gamma function, which is what this function does.
+     */
   }, {
     key: "factorial",
     value: function factorial() {
@@ -1671,6 +1990,11 @@ var Decimal = /*#__PURE__*/function () {
         return Decimal.exp(this);
       }
     }
+    /**
+     * The gamma function extends the idea of factorials to non-whole numbers using some calculus.
+     * Gamma(x) is defined as the integral of t^(x-1) * e^-t dt from t = 0 to t = infinity,
+     * and gamma(x) = (x - 1)! for nonnegative integer x, so the factorial for non-whole numbers is defined using the gamma function.
+     */
     //from HyperCalc source code
   }, {
     key: "gamma",
@@ -1717,11 +2041,17 @@ var Decimal = /*#__PURE__*/function () {
         return Decimal.exp(this);
       }
     }
+    /**
+     * Returns the natural logarithm of Gamma('this').
+     */
   }, {
     key: "lngamma",
     value: function lngamma() {
       return this.gamma().ln();
     }
+    /**
+     * Base-e exponentiation: returns e^'this'.
+     */
   }, {
     key: "exp",
     value: function exp() {
@@ -1738,11 +2068,17 @@ var Decimal = /*#__PURE__*/function () {
         return FC(1, this.layer + 1, this.sign * this.mag);
       }
     }
+    /**
+     * Squaring a number means multiplying it by itself, a.k.a. raising it to the second power.
+     */
   }, {
     key: "sqr",
     value: function sqr() {
       return this.pow(2);
     }
+    /**
+     * Square root: finds the Decimal X such that X * X, a.k.a X^2, equals 'this'. Equivalent to X^(1/2).
+     */
   }, {
     key: "sqrt",
     value: function sqrt() {
@@ -1757,19 +2093,33 @@ var Decimal = /*#__PURE__*/function () {
         return result;
       }
     }
+    /**
+     * Cubing a number means raising it to the third power.
+     */
   }, {
     key: "cube",
     value: function cube() {
       return this.pow(3);
     }
+    /**
+     * Cube root: finds the Decimal X such that X^3 equals 'this'. Equivalent to X^(1/3).
+     */
   }, {
     key: "cbrt",
     value: function cbrt() {
       return this.pow(1 / 3);
     }
-    //Tetration/tetrate: The result of exponentiating 'this' to 'this' 'height' times in a row.  https://en.wikipedia.org/wiki/Tetration
-    //If payload != 1, then this is 'iterated exponentiation', the result of exping (payload) to base (this) (height) times. https://andydude.github.io/tetration/archives/tetration2/ident.html
-    //Works with negative and positive real heights.
+    /**
+     *
+     * Tetration: The result of exponentiating 'this' to 'this' 'height' times in a row.  https://en.wikipedia.org/wiki/Tetration
+     *
+     * If payload != 1, then this is 'iterated exponentiation', the result of exping 'payload' to base 'this' 'height' times. https://andydude.github.io/tetration/archives/tetration2/ident.html
+     *
+     * Works with negative and positive real heights. Tetration for non-integer heights does not have a single agreed-upon definition,
+     * so this library uses an analytic approximation for bases <= 10, but it reverts to the linear approximation for bases > 10.
+     * If you want to use the linear approximation even for bases <= 10, set the linear parameter to true.
+     * Analytic approximation is not currently supported for bases > 10.
+     */
   }, {
     key: "tetrate",
     value: function tetrate() {
@@ -1890,7 +2240,16 @@ var Decimal = /*#__PURE__*/function () {
       }
       return payload;
     }
-    //iteratedexp/iterated exponentiation: - all cases handled in tetrate, so just call it
+    /**
+     * Iterated exponentiation, the result of exping 'payload' to base 'this' 'height' times. https://andydude.github.io/tetration/archives/tetration2/ident.html
+     *
+     * Works with negative and positive real heights. Tetration for non-integer heights does not have a single agreed-upon definition,
+     * so this library uses an analytic approximation for bases <= 10, but it reverts to the linear approximation for bases > 10.
+     * If you want to use the linear approximation even for bases <= 10, set the linear parameter to true.
+     * Analytic approximation is not currently supported for bases > 10.
+     *
+     * Identical to tetrate.
+     */
   }, {
     key: "iteratedexp",
     value: function iteratedexp() {
@@ -1899,8 +2258,14 @@ var Decimal = /*#__PURE__*/function () {
       var linear = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
       return this.tetrate(height, payload, linear);
     }
-    //iterated log/repeated log: The result of applying log(base) 'times' times in a row. Approximately equal to subtracting (times) from the number's slog representation. Equivalent to tetrating to a negative height.
-    //Works with negative and positive real heights.
+    /**
+     * iterated log/repeated log: The result of applying log(base) 'times' times in a row. Approximately equal to subtracting 'times' from the number's slog representation. Equivalent to tetrating to a negative height.
+     *
+     * Works with negative and positive real heights. Tetration for non-integer heights does not have a single agreed-upon definition,
+     * so this library uses an analytic approximation for bases <= 10, but it reverts to the linear approximation for bases > 10.
+     * If you want to use the linear approximation even for bases <= 10, set the linear parameter to true.
+     * Analytic approximation is not currently supported for bases > 10.
+     */
   }, {
     key: "iteratedlog",
     value: function iteratedlog() {
@@ -1941,9 +2306,18 @@ var Decimal = /*#__PURE__*/function () {
       }
       return result;
     }
-    //Super-logarithm, one of tetration's inverses, tells you what size power tower you'd have to tetrate base to to get number. By definition, will never be higher than 1.8e308 in break_eternity.js, since a power tower 1.8e308 numbers tall is the largest representable number.
-    // https://en.wikipedia.org/wiki/Super-logarithm
-    // NEW: Accept a number of iterations, and use binary search to, after making an initial guess, hone in on the true value, assuming tetration as the ground truth.
+    /**
+     * Super-logarithm, one of tetration's inverses, tells you what size power tower you'd have to tetrate 'base' to to get 'this'. https://en.wikipedia.org/wiki/Super-logarithm
+     *
+     * By definition, will never be higher than 1.8e308 in break_eternity.js, since a power tower 1.8e308 numbers tall is the largest representable number.
+     *
+     * Accepts a number of iterations (default is 100), and use binary search to, after making an initial guess, hone in on the true value, assuming tetration as the ground truth.
+     *
+     * Tetration for non-integer heights does not have a single agreed-upon definition,
+     * so this library uses an analytic approximation for bases <= 10, but it reverts to the linear approximation for bases > 10.
+     * If you want to use the linear approximation even for bases <= 10, set the linear parameter to true.
+     * Analytic approximation is not currently supported for bases > 10.
+     */
   }, {
     key: "slog",
     value: function slog() {
@@ -2032,7 +2406,14 @@ var Decimal = /*#__PURE__*/function () {
   }, {
     key: "layeradd10",
     value:
-    //Function for adding/removing layers from a Decimal, even fractional layers (e.g. its slog10 representation).
+    /**
+     * Adds/removes layers from a Decimal, even fractional layers (e.g. its slog10 representation). Very similar to tetrate base 10 and iterated log base 10.
+     *
+     * Tetration for non-integer heights does not have a single agreed-upon definition,
+     * so this library uses an analytic approximation for bases <= 10, but it reverts to the linear approximation for bases > 10.
+     * If you want to use the linear approximation even for bases <= 10, set the linear parameter to true.
+     * Analytic approximation is not currently supported for bases > 10.
+     */
     //Moved this over to use the same critical section as tetrate/slog.
     function layeradd10(diff) {
       var linear = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
@@ -2098,7 +2479,14 @@ var Decimal = /*#__PURE__*/function () {
 
       return result;
     }
-    //layeradd: like adding 'diff' to the number's slog(base) representation. Very similar to tetrate base 'base' and iterated log base 'base'.
+    /**
+     * layeradd: like adding 'diff' to the number's slog(base) representation. Very similar to tetrate base 'base' and iterated log base 'base'.
+     *
+     * Tetration for non-integer heights does not have a single agreed-upon definition,
+     * so this library uses an analytic approximation for bases <= 10, but it reverts to the linear approximation for bases > 10.
+     * If you want to use the linear approximation even for bases <= 10, set the linear parameter to true.
+     * Analytic approximation is not currently supported for bases > 10.
+     */
   }, {
     key: "layeradd",
     value: function layeradd(diff, base) {
@@ -2115,8 +2503,10 @@ var Decimal = /*#__PURE__*/function () {
         return Decimal.log(Decimal.log(Decimal.tetrate(base, slogdest + 2, Decimal.dOne, linear), base), base);
       }
     }
-    //The Lambert W function, also called the omega function or product logarithm, is the solution W(x) === x*e^x.
-    // https://en.wikipedia.org/wiki/Lambert_W_function
+    /**
+     * The Lambert W function, also called the omega function or product logarithm, is the solution W(x) === x*e^x.
+     * https://en.wikipedia.org/wiki/Lambert_W_function
+     */
     //Some special values, for testing: https://en.wikipedia.org/wiki/Lambert_W_function#Special_values
   }, {
     key: "lambertw",
@@ -2137,21 +2527,22 @@ var Decimal = /*#__PURE__*/function () {
       }
       throw "Unhandled behavior in lambertw()";
     }
-    //The super square-root function - what number, tetrated to height 2, equals this?
-    //Other sroots are possible to calculate probably through guess and check methods, this one is easy though.
-    // https://en.wikipedia.org/wiki/Tetration#Super-root
+    /**
+     * The super square-root function - what number, tetrated to height 2, equals 'this'? https://en.wikipedia.org/wiki/Tetration#Super-root
+     */
   }, {
     key: "ssqrt",
     value: function ssqrt() {
-      if (this.sign == 1 && this.layer >= 3) {
-        return FC_NN(this.sign, this.layer - 1, this.mag);
-      }
-      var lnx = this.ln();
-      return lnx.div(lnx.lambertw());
+      return this.linear_sroot(2);
     }
-    //Super-root, one of tetration's inverses - what number, tetrated to height (height), equals this?
-    //Only works with the linear approximation, because I don't know the structure of non-linear tetrations for inputs < 1
-    //TODO: Optimize this like how slog is optimized
+    /**
+     * Super-root, one of tetration's inverses - what number, tetrated to height 'degree', equals 'this'? https://en.wikipedia.org/wiki/Tetration#Super-root
+     *
+     * Only works with the linear approximation of tetration, as starting with analytic and then switching to linear would result in inconsistent behavior for super-roots.
+     * This only matters for non-integer degrees.
+     */
+    //Another reason this doesn't support analytic approximation because I don't know the structure of non-linear tetrations for inputs < 1
+    //TODO: Optimize this like how slog is optimized (if it isn't already)
   }, {
     key: "linear_sroot",
     value: function linear_sroot(degree) {
@@ -2164,15 +2555,6 @@ var Decimal = /*#__PURE__*/function () {
       }
       if (!this.isFinite()) {
         return Decimal.dNaN;
-      }
-      //ssqrt handles square super-root faster
-      if (degree == 2) {
-        try {
-          //ssqrt uses lambertw which throws an error if the number is too small
-          return this.ssqrt();
-        } catch (_a) {
-          return Decimal.dNaN;
-        }
       }
       //Using linear approximation, x^^n = x^n if 0 < n < 1
       if (degree > 0 && degree < 1) {
@@ -2424,8 +2806,17 @@ var Decimal = /*#__PURE__*/function () {
         }
       }
     }
-    //Pentation/pentate: The result of tetrating 'height' times in a row. An absurdly strong operator - Decimal.pentate(2, 4.28) and Decimal.pentate(10, 2.37) are already too huge for break_eternity.js!
-    // https://en.wikipedia.org/wiki/Pentation
+    /**
+     * Pentation/pentate: The result of tetrating 'height' times in a row. An absurdly strong operator - Decimal.pentate(2, 4.28) and Decimal.pentate(10, 2.37) are already too huge for break_eternity.js!
+     * https://en.wikipedia.org/wiki/Pentation
+     *
+     * Tetration for non-integer heights does not have a single agreed-upon definition,
+     * so this library uses an analytic approximation for bases <= 10, but it reverts to the linear approximation for bases > 10.
+     * If you want to use the linear approximation even for bases <= 10, set the linear parameter to true.
+     * Analytic approximation is not currently supported for bases > 10.
+     *
+     * For non-whole pentation heights, the linear approximation of pentation is always used, as there is no defined analytic approximation of pentation.
+     */
   }, {
     key: "pentate",
     value: function pentate() {
@@ -2463,6 +2854,9 @@ var Decimal = /*#__PURE__*/function () {
       return payload;
     }
     // trig functions!
+    /**
+     * The sine function, one of the main two trigonometric functions. Behaves periodically with period 2*pi.
+     */
   }, {
     key: "sin",
     value: function sin() {
@@ -2474,6 +2868,9 @@ var Decimal = /*#__PURE__*/function () {
       }
       return FC_NN(0, 0, 0);
     }
+    /**
+     * The cosine function, one of the main two trigonometric functions. Behaves periodically with period 2*pi.
+     */
   }, {
     key: "cos",
     value: function cos() {
@@ -2485,6 +2882,9 @@ var Decimal = /*#__PURE__*/function () {
       }
       return FC_NN(0, 0, 0);
     }
+    /**
+     * The tangent function, equal to sine divided by cosine. Behaves periodically with period pi.
+     */
   }, {
     key: "tan",
     value: function tan() {
@@ -2496,6 +2896,9 @@ var Decimal = /*#__PURE__*/function () {
       }
       return FC_NN(0, 0, 0);
     }
+    /**
+     * The arcsine function, the inverse of the sine function.
+     */
   }, {
     key: "asin",
     value: function asin() {
@@ -2507,6 +2910,9 @@ var Decimal = /*#__PURE__*/function () {
       }
       return FC_NN(Number.NaN, Number.NaN, Number.NaN);
     }
+    /**
+     * The arccosine function, the inverse of the cosine function.
+     */
   }, {
     key: "acos",
     value: function acos() {
@@ -2518,6 +2924,9 @@ var Decimal = /*#__PURE__*/function () {
       }
       return FC_NN(Number.NaN, Number.NaN, Number.NaN);
     }
+    /**
+     * The arctangent function, the inverse of the tangent function.
+     */
   }, {
     key: "atan",
     value: function atan() {
@@ -2529,31 +2938,49 @@ var Decimal = /*#__PURE__*/function () {
       }
       return Decimal.fromNumber(Math.atan(this.sign * 1.8e308));
     }
+    /**
+     * Hyperbolic sine: sinh(X) = (e^x - e^-x)/2.
+     */
   }, {
     key: "sinh",
     value: function sinh() {
       return this.exp().sub(this.negate().exp()).div(2);
     }
+    /**
+     * Hyperbolic cosine: cosh(x) = (e^x + e^-x)/2.
+     */
   }, {
     key: "cosh",
     value: function cosh() {
       return this.exp().add(this.negate().exp()).div(2);
     }
+    /**
+     * Hyperbolic tangent: tanh(x) = sinh(x)/cosh(x).
+     */
   }, {
     key: "tanh",
     value: function tanh() {
       return this.sinh().div(this.cosh());
     }
+    /**
+     * Hyperbolic arcsine, the inverse of hyperbolic sine.
+     */
   }, {
     key: "asinh",
     value: function asinh() {
       return Decimal.ln(this.add(this.sqr().add(1).sqrt()));
     }
+    /**
+     * Hyperbolic arccosine, the inverse of hyperbolic cosine.
+     */
   }, {
     key: "acosh",
     value: function acosh() {
       return Decimal.ln(this.add(this.sqr().sub(1).sqrt()));
     }
+    /**
+     * Hyperbolic arcctangent, the inverse of hyperbolic tangent.
+     */
   }, {
     key: "atanh",
     value: function atanh() {
@@ -2606,36 +3033,60 @@ var Decimal = /*#__PURE__*/function () {
     value: function fromComponents(sign, layer, mag) {
       return new Decimal().fromComponents(sign, layer, mag);
     }
+    /**
+     * Turns the given components into a Decimal, but not necessarily a valid one (it's only valid if the components would already create a valid Decimal without normalization). Users of this library should not use this function.
+     */
   }, {
     key: "fromComponents_noNormalize",
     value: function fromComponents_noNormalize(sign, layer, mag) {
       return new Decimal().fromComponents_noNormalize(sign, layer, mag);
     }
+    /**
+     * Turns the mantissa and exponent into a valid Decimal with value mantissa * 10^exponent.
+     */
   }, {
     key: "fromMantissaExponent",
     value: function fromMantissaExponent(mantissa, exponent) {
       return new Decimal().fromMantissaExponent(mantissa, exponent);
     }
+    /**
+     * Turns the mantissa and exponent into a Decimal, but not necessarily a valid one. Users of this library should not use this function.
+     */
   }, {
     key: "fromMantissaExponent_noNormalize",
     value: function fromMantissaExponent_noNormalize(mantissa, exponent) {
       return new Decimal().fromMantissaExponent_noNormalize(mantissa, exponent);
     }
+    /**
+     * Creates a deep copy of the provided value.
+     */
   }, {
     key: "fromDecimal",
     value: function fromDecimal(value) {
       return new Decimal().fromDecimal(value);
     }
+    /**
+     * Converts a floating-point number into a Decimal.
+     */
   }, {
     key: "fromNumber",
     value: function fromNumber(value) {
       return new Decimal().fromNumber(value);
     }
+    /**
+     * Converts a string into a Decimal.
+     *
+     * If linearhyper4 is true, then strings like "10^^8.5" will use the linear approximation of tetration even for bases <= 10.
+     */
   }, {
     key: "fromString",
     value: function fromString(value) {
-      return new Decimal().fromString(value);
+      var linearhyper4 = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+      return new Decimal().fromString(value, linearhyper4);
     }
+    /**
+     * The function used by new Decimal() to create a new Decimal. Accepts a DecimalSource: uses fromNumber if given a number, uses fromString if given a string, and uses fromDecimal if given a Decimal.
+     */
   }, {
     key: "fromValue",
     value: function fromValue(value) {
@@ -2670,151 +3121,245 @@ var Decimal = /*#__PURE__*/function () {
         return Decimal.dZero;
       }
     }
+    /**
+     * Absolute value function: returns 'value' if 'value' >= 0, returns the negative of 'value' if 'value' < 0.
+     */
   }, {
     key: "abs",
     value: function abs(value) {
       return D(value).abs();
     }
+    /**
+     * Returns the negative of the given value.
+     */
   }, {
     key: "neg",
     value: function neg(value) {
       return D(value).neg();
     }
+    /**
+     * Returns the negative of the given value.
+     */
   }, {
     key: "negate",
     value: function negate(value) {
       return D(value).neg();
     }
+    /**
+     * Returns the negative of the given value.
+     */
   }, {
     key: "negated",
     value: function negated(value) {
       return D(value).neg();
     }
+    /**
+     * Returns the sign of the given value.
+     */
   }, {
     key: "sign",
     value: function sign(value) {
       return D(value).sign;
     }
+    /**
+     * Returns the sign of the given value.
+     */
   }, {
     key: "sgn",
     value: function sgn(value) {
       return D(value).sign;
     }
+    /**
+     * Rounds the value to the nearest integer.
+     */
   }, {
     key: "round",
     value: function round(value) {
       return D(value).round();
     }
+    /**
+     * "Rounds" the value to the nearest integer that's less than or equal to it.
+     */
   }, {
     key: "floor",
     value: function floor(value) {
       return D(value).floor();
     }
+    /**
+     * "Rounds" the value to the nearest integer that's greater than or equal to it.
+     */
   }, {
     key: "ceil",
     value: function ceil(value) {
       return D(value).ceil();
     }
+    /**
+     * Extracts the integer part of the Decimal and returns it. Behaves like floor on positive numbers, but behaves like ceiling on negative numbers.
+     */
   }, {
     key: "trunc",
     value: function trunc(value) {
       return D(value).trunc();
     }
+    /**
+     * Addition: returns the sum of the two Decimals.
+     */
   }, {
     key: "add",
     value: function add(value, other) {
       return D(value).add(other);
     }
+    /**
+     * Addition: returns the sum of the two Decimals.
+     */
   }, {
     key: "plus",
     value: function plus(value, other) {
       return D(value).add(other);
     }
+    /**
+     * Subtraction: returns the difference between 'value' and 'other'.
+     */
   }, {
     key: "sub",
     value: function sub(value, other) {
       return D(value).sub(other);
     }
+    /**
+     * Subtraction: returns the difference between 'value' and 'other'.
+     */
   }, {
     key: "subtract",
     value: function subtract(value, other) {
       return D(value).sub(other);
     }
+    /**
+     * Subtraction: returns the difference between 'value' and 'other'.
+     */
   }, {
     key: "minus",
     value: function minus(value, other) {
       return D(value).sub(other);
     }
+    /**
+     * Multiplication: returns the product of the two Decimals.
+     */
   }, {
     key: "mul",
     value: function mul(value, other) {
       return D(value).mul(other);
     }
+    /**
+     * Multiplication: returns the product of the two Decimals.
+     */
   }, {
     key: "multiply",
     value: function multiply(value, other) {
       return D(value).mul(other);
     }
+    /**
+     * Multiplication: returns the product of the two Decimals.
+     */
   }, {
     key: "times",
     value: function times(value, other) {
       return D(value).mul(other);
     }
+    /**
+     * Division: returns the quotient of 'value' and 'other'.
+     */
   }, {
     key: "div",
     value: function div(value, other) {
       return D(value).div(other);
     }
+    /**
+     * Division: returns the quotient of 'value' and 'other'.
+     */
   }, {
     key: "divide",
     value: function divide(value, other) {
       return D(value).div(other);
     }
+    /**
+     * Returns the reciprocal (1 / X) of the given value.
+     */
   }, {
     key: "recip",
     value: function recip(value) {
       return D(value).recip();
     }
+    /**
+     * Returns the reciprocal (1 / X) of the given value.
+     */
   }, {
     key: "reciprocal",
     value: function reciprocal(value) {
       return D(value).recip();
     }
+    /**
+     * Returns the reciprocal (1 / X) of the given value.
+     */
   }, {
     key: "reciprocate",
     value: function reciprocate(value) {
       return D(value).reciprocate();
     }
+    /**
+     * Returns the remainder of 'value' divided by 'other': for example, 5 mod 2 = 1, because the remainder of 5 / 2 is 1.
+     * Uses the "truncated division" modulo, which is the same as JavaScript's native modulo operator (%).
+     */
   }, {
     key: "mod",
     value: function mod(value, other) {
       return D(value).mod(other);
     }
+    /**
+     * Returns the remainder of 'value' divided by 'other': for example, 5 mod 2 = 1, because the remainder of 5 / 2 is 1.
+     * Uses the "truncated division" modulo, which is the same as JavaScript's native modulo operator (%).
+     */
   }, {
     key: "modulo",
     value: function modulo(value, other) {
       return D(value).modulo(other);
     }
+    /**
+     * Returns the remainder of 'value' divided by 'other': for example, 5 mod 2 = 1, because the remainder of 5 / 2 is 1.
+     * Uses the "truncated division" modulo, which is the same as JavaScript's native modulo operator (%).
+     */
   }, {
     key: "modular",
     value: function modular(value, other) {
       return D(value).modular(other);
     }
+    /**
+     * Returns 1 if 'value' > 'other', returns -1 if 'value' < 'other', returns 0 if 'value' == 'other'.
+     */
   }, {
     key: "cmp",
     value: function cmp(value, other) {
       return D(value).cmp(other);
     }
+    /**
+     * Compares the absolute values of this and value.
+     * Returns 1 if |'value'| > |'other'|, returns -1 if |'value'| < |'other'|, returns 0 if |'value'| == |'other'|.
+     */
   }, {
     key: "cmpabs",
     value: function cmpabs(value, other) {
       return D(value).cmpabs(other);
     }
+    /**
+     * Returns 1 if 'value' > 'other', returns -1 if 'value' < 'other', returns 0 if 'value' == 'other'.
+     */
   }, {
     key: "compare",
     value: function compare(value, other) {
       return D(value).cmp(other);
     }
+    /**
+     * Returns true if the given value is an NaN value.
+     */
   }, {
     key: "isNaN",
     value: function (_isNaN) {
@@ -2828,7 +3373,10 @@ var Decimal = /*#__PURE__*/function () {
     }(function (value) {
       value = D(value);
       return isNaN(value.sign) || isNaN(value.layer) || isNaN(value.mag);
-    })
+    }
+    /**
+     * Returns true if the given value is finite (by Decimal standards, not by floating point standards - a humongous Decimal like 10^^10^100 is still finite!)
+     */)
   }, {
     key: "isFinite",
     value: function (_isFinite) {
@@ -2842,222 +3390,404 @@ var Decimal = /*#__PURE__*/function () {
     }(function (value) {
       value = D(value);
       return isFinite(value.sign) && isFinite(value.layer) && isFinite(value.mag);
-    })
+    }
+    /**
+     * The Decimal equivalent of ==. Returns true if 'value' and 'other' have equal values.
+     */)
   }, {
     key: "eq",
     value: function eq(value, other) {
       return D(value).eq(other);
     }
+    /**
+     * Returns true if 'value' and 'other' have equal values.
+     */
   }, {
     key: "equals",
     value: function equals(value, other) {
       return D(value).eq(other);
     }
+    /**
+     * The Decimal equivalent of !=. Returns true if 'value' and 'other' do not have equal values.
+     */
   }, {
     key: "neq",
     value: function neq(value, other) {
       return D(value).neq(other);
     }
+    /**
+     * Returns true if 'value' and 'other' do not have equal values.
+     */
   }, {
     key: "notEquals",
     value: function notEquals(value, other) {
       return D(value).notEquals(other);
     }
+    /**
+     * The Decimal equivalent of <. Returns true if 'value' is less than 'other'.
+     */
   }, {
     key: "lt",
     value: function lt(value, other) {
       return D(value).lt(other);
     }
+    /**
+     * The Decimal equivalent of <=. Returns true if 'value' is less than or equal to 'other'.
+     */
   }, {
     key: "lte",
     value: function lte(value, other) {
       return D(value).lte(other);
     }
+    /**
+     * The Decimal equivalent of >. Returns true if 'value' is greater than 'other'.
+     */
   }, {
     key: "gt",
     value: function gt(value, other) {
       return D(value).gt(other);
     }
+    /**
+     * The Decimal equivalent of >=. Returns true if 'value' is greater than or equal to 'other'.
+     */
   }, {
     key: "gte",
     value: function gte(value, other) {
       return D(value).gte(other);
     }
+    /**
+     * Returns whichever of 'value' and 'other' is higher.
+     */
   }, {
     key: "max",
     value: function max(value, other) {
       return D(value).max(other);
     }
+    /**
+     * Returns whichever of 'value' and 'other' is lower.
+     */
   }, {
     key: "min",
     value: function min(value, other) {
       return D(value).min(other);
     }
+    /**
+     * Returns whichever of 'value' and 'other' has a larger absolute value.
+     */
   }, {
     key: "minabs",
     value: function minabs(value, other) {
       return D(value).minabs(other);
     }
+    /**
+     * Returns whichever of 'value' and 'other' has a smaller absolute value.
+     */
   }, {
     key: "maxabs",
     value: function maxabs(value, other) {
       return D(value).maxabs(other);
     }
+    /**
+     * A combination of minimum and maximum: the value returned by clamp is normally 'value', but it won't go below 'min' and it won't go above 'max'.
+     * Therefore, if 'value' < 'min', then 'min' is returned, and if 'value' > 'max', then 'max' is returned.
+     */
   }, {
     key: "clamp",
     value: function clamp(value, min, max) {
       return D(value).clamp(min, max);
     }
+    /**
+     * Returns 'value', unless 'value' is less than 'min', in which case 'min' is returned.
+     */
   }, {
     key: "clampMin",
     value: function clampMin(value, min) {
       return D(value).clampMin(min);
     }
+    /**
+     * Returns 'value', unless 'value' is greater than 'max', in which case 'max' is returned.
+     */
   }, {
     key: "clampMax",
     value: function clampMax(value, max) {
       return D(value).clampMax(max);
     }
+    /**
+     * Returns 1 if 'value' is greater than 'other', returns -1 if 'value' is less than 'other', returns 0 if 'value' is equal to 'other'.
+     * However, the two Decimals are considered equal if they're approximately equal up to a certain tolerance.
+     * Tolerance is a relative tolerance, multiplied by the greater of the magnitudes of the two arguments.
+     * For example, if you put in 1e-9, then any number closer to the
+     * larger number than (larger number)*1e-9 will be considered equal.
+     */
   }, {
     key: "cmp_tolerance",
     value: function cmp_tolerance(value, other, tolerance) {
       return D(value).cmp_tolerance(other, tolerance);
     }
+    /**
+     * Returns 1 if 'value' is greater than 'other', returns -1 if 'value' is less than 'other', returns 0 if 'value' is equal to 'other'.
+     * However, the two Decimals are considered equal if they're approximately equal up to a certain tolerance.
+     * Tolerance is a relative tolerance, multiplied by the greater of the magnitudes of the two arguments.
+     * For example, if you put in 1e-9, then any number closer to the
+     * larger number than (larger number)*1e-9 will be considered equal.
+     */
   }, {
     key: "compare_tolerance",
     value: function compare_tolerance(value, other, tolerance) {
       return D(value).cmp_tolerance(other, tolerance);
     }
+    /**
+     * Tests whether two Decimals are approximately equal, up to a certain tolerance.
+     * Tolerance is a relative tolerance, multiplied by the greater of the magnitudes of the two arguments.
+     * For example, if you put in 1e-9, then any number closer to the
+     * larger number than (larger number)*1e-9 will be considered equal.
+     */
   }, {
     key: "eq_tolerance",
     value: function eq_tolerance(value, other, tolerance) {
       return D(value).eq_tolerance(other, tolerance);
     }
+    /**
+     * Tests whether two Decimals are approximately equal, up to a certain tolerance.
+     * Tolerance is a relative tolerance, multiplied by the greater of the magnitudes of the two arguments.
+     * For example, if you put in 1e-9, then any number closer to the
+     * larger number than (larger number)*1e-9 will be considered equal.
+     */
   }, {
     key: "equals_tolerance",
     value: function equals_tolerance(value, other, tolerance) {
       return D(value).eq_tolerance(other, tolerance);
     }
+    /**
+     * Tests whether two Decimals are not approximately equal, up to a certain tolerance.
+     * Tolerance is a relative tolerance, multiplied by the greater of the magnitudes of the two arguments.
+     * For example, if you put in 1e-9, then any number closer to the
+     * larger number than (larger number)*1e-9 will be considered equal.
+     */
   }, {
     key: "neq_tolerance",
     value: function neq_tolerance(value, other, tolerance) {
       return D(value).neq_tolerance(other, tolerance);
     }
+    /**
+     * Tests whether two Decimals are not approximately equal, up to a certain tolerance.
+     * Tolerance is a relative tolerance, multiplied by the greater of the magnitudes of the two arguments.
+     * For example, if you put in 1e-9, then any number closer to the
+     * larger number than (larger number)*1e-9 will be considered equal.
+     */
   }, {
     key: "notEquals_tolerance",
     value: function notEquals_tolerance(value, other, tolerance) {
       return D(value).notEquals_tolerance(other, tolerance);
     }
+    /**
+     * Returns true if 'value' is less than 'other'.
+     * However, the two Decimals are considered equal if they're approximately equal up to a certain tolerance.
+     * Tolerance is a relative tolerance, multiplied by the greater of the magnitudes of the two arguments.
+     * For example, if you put in 1e-9, then any number closer to the
+     * larger number than (larger number)*1e-9 will be considered equal.
+     */
   }, {
     key: "lt_tolerance",
     value: function lt_tolerance(value, other, tolerance) {
       return D(value).lt_tolerance(other, tolerance);
     }
+    /**
+     * Returns true if 'value' is less than or equal to 'other'.
+     * However, the two Decimals are considered equal if they're approximately equal up to a certain tolerance.
+     * Tolerance is a relative tolerance, multiplied by the greater of the magnitudes of the two arguments.
+     * For example, if you put in 1e-9, then any number closer to the
+     * larger number than (larger number)*1e-9 will be considered equal.
+     */
   }, {
     key: "lte_tolerance",
     value: function lte_tolerance(value, other, tolerance) {
       return D(value).lte_tolerance(other, tolerance);
     }
+    /**
+     * Returns true if 'value' is greater than 'other'.
+     * However, the two Decimals are considered equal if they're approximately equal up to a certain tolerance.
+     * Tolerance is a relative tolerance, multiplied by the greater of the magnitudes of the two arguments.
+     * For example, if you put in 1e-9, then any number closer to the
+     * larger number than (larger number)*1e-9 will be considered equal.
+     */
   }, {
     key: "gt_tolerance",
     value: function gt_tolerance(value, other, tolerance) {
       return D(value).gt_tolerance(other, tolerance);
     }
+    /**
+     * Returns true if 'value' is greater than or equal to 'other'.
+     * However, the two Decimals are considered equal if they're approximately equal up to a certain tolerance.
+     * Tolerance is a relative tolerance, multiplied by the greater of the magnitudes of the two arguments.
+     * For example, if you put in 1e-9, then any number closer to the
+     * larger number than (larger number)*1e-9 will be considered equal.
+     */
   }, {
     key: "gte_tolerance",
     value: function gte_tolerance(value, other, tolerance) {
       return D(value).gte_tolerance(other, tolerance);
     }
+    /**
+     * "Positive log10": Returns the base-10 logarithm of nonnegative Decimals, but returns 0 for negative Decimals.
+     */
   }, {
     key: "pLog10",
     value: function pLog10(value) {
       return D(value).pLog10();
     }
+    /**
+     * Returns the base-10 logarithm of abs('value').
+     */
   }, {
     key: "absLog10",
     value: function absLog10(value) {
       return D(value).absLog10();
     }
+    /**
+     * Base-10 logarithm: returns the Decimal X such that 10^X = 'value'.
+     * For numbers above layer 0, this is equivalent to subtracting 1 from layer and normalizing.
+     */
   }, {
     key: "log10",
     value: function log10(value) {
       return D(value).log10();
     }
+    /**
+     * Logarithms are one of the inverses of exponentiation: this function finds the Decimal X such that base^X = 'value'.
+     */
   }, {
     key: "log",
     value: function log(value, base) {
       return D(value).log(base);
     }
+    /**
+     * Base-2 logarithm: returns the Decimal X such that 2^X = 'value'.
+     */
   }, {
     key: "log2",
     value: function log2(value) {
       return D(value).log2();
     }
+    /**
+     * Base-e logarithm, also known as the "natural" logarithm: returns the Decimal X such that e^X = 'value'.
+     */
   }, {
     key: "ln",
     value: function ln(value) {
       return D(value).ln();
     }
+    /**
+     * Logarithms are one of the inverses of exponentiation: this function finds the Decimal X such that base^X = 'value'.
+     */
   }, {
     key: "logarithm",
     value: function logarithm(value, base) {
       return D(value).logarithm(base);
     }
+    /**
+     * Exponentiation: Returns the result of 'value' ^ 'other' (often written as 'value' ** 'other' in programming languages).
+     */
   }, {
     key: "pow",
     value: function pow(value, other) {
       return D(value).pow(other);
     }
+    /**
+     * Raises 10 to the power of 'value', i.e. (10^'value'). For positive numbers above 1, this is equivalent to adding 1 to the value's layer and normalizing.
+     */
   }, {
     key: "pow10",
     value: function pow10(value) {
       return D(value).pow10();
     }
+    /**
+     * Roots are one of the inverses of exponentiation: this function finds the Decimal X such that X ^ 'other' = 'value'.
+     * Equivalent to 'value' ^ (1 / 'other'), which is written here as value.pow(other.recip()).
+     */
   }, {
     key: "root",
     value: function root(value, other) {
       return D(value).root(other);
     }
+    /**
+     * For positive integers, X factorial (written as X!) equals X * (X - 1) * (X - 2) *... * 3 * 2 * 1. 0! equals 1.
+     * This can be extended to real numbers (except for negative integers) via the gamma function, which is what this function does.
+     */
   }, {
     key: "factorial",
     value: function factorial(value, _other) {
       return D(value).factorial();
     }
+    /**
+     * The gamma function extends the idea of factorials to non-whole numbers using some calculus.
+     * Gamma(x) is defined as the integral of t^(x-1) * e^-t dt from t = 0 to t = infinity,
+     * and gamma(x) = (x - 1)! for nonnegative integer x, so the factorial for non-whole numbers is defined using the gamma function.
+     */
   }, {
     key: "gamma",
     value: function gamma(value, _other) {
       return D(value).gamma();
     }
+    /**
+     * Returns the natural (base-e) logarithm of Gamma('value').
+     */
   }, {
     key: "lngamma",
     value: function lngamma(value, _other) {
       return D(value).lngamma();
     }
+    /**
+     * Base-e exponentiation: returns e^'value'.
+     */
   }, {
     key: "exp",
     value: function exp(value) {
       return D(value).exp();
     }
+    /**
+     * Squaring a number means multiplying it by itself, a.k.a. raising it to the second power.
+     */
   }, {
     key: "sqr",
     value: function sqr(value) {
       return D(value).sqr();
     }
+    /**
+     * Square root: finds the Decimal X such that X * X, a.k.a X^2, equals 'value'. Equivalent to X^(1/2).
+     */
   }, {
     key: "sqrt",
     value: function sqrt(value) {
       return D(value).sqrt();
     }
+    /**
+     * Cubing a number means raising it to the third power.
+     */
   }, {
     key: "cube",
     value: function cube(value) {
       return D(value).cube();
     }
+    /**
+     * Cube root: finds the Decimal X such that X^3 equals 'value'. Equivalent to X^(1/3).
+     */
   }, {
     key: "cbrt",
     value: function cbrt(value) {
       return D(value).cbrt();
     }
+    /**
+     *
+     * Tetration: The result of exponentiating 'value' to 'value' 'height' times in a row.  https://en.wikipedia.org/wiki/Tetration
+     *
+     * If payload != 1, then this is 'iterated exponentiation', the result of exping 'payload' to base 'value' 'height' times. https://andydude.github.io/tetration/archives/tetration2/ident.html
+     *
+     * Works with negative and positive real heights. Tetration for non-integer heights does not have a single agreed-upon definition,
+     * so this library uses an analytic approximation for bases <= 10, but it reverts to the linear approximation for bases > 10.
+     * If you want to use the linear approximation even for bases <= 10, set the linear parameter to true.
+     * Analytic approximation is not currently supported for bases > 10.
+     */
   }, {
     key: "tetrate",
     value: function tetrate(value) {
@@ -3066,6 +3796,16 @@ var Decimal = /*#__PURE__*/function () {
       var linear = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
       return D(value).tetrate(height, payload, linear);
     }
+    /**
+     * Iterated exponentiation, the result of exping 'payload' to base 'value' 'height' times. https://andydude.github.io/tetration/archives/tetration2/ident.html
+     *
+     * Works with negative and positive real heights. Tetration for non-integer heights does not have a single agreed-upon definition,
+     * so this library uses an analytic approximation for bases <= 10, but it reverts to the linear approximation for bases > 10.
+     * If you want to use the linear approximation even for bases <= 10, set the linear parameter to true.
+     * Analytic approximation is not currently supported for bases > 10.
+     *
+     * Identical to tetrate.
+     */
   }, {
     key: "iteratedexp",
     value: function iteratedexp(value) {
@@ -3074,6 +3814,14 @@ var Decimal = /*#__PURE__*/function () {
       var linear = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
       return D(value).iteratedexp(height, payload, linear);
     }
+    /**
+     * iterated log/repeated log: The result of applying log(base) 'times' times in a row. Approximately equal to subtracting 'times' from the number's slog representation. Equivalent to tetrating to a negative height.
+     *
+     * Works with negative and positive real heights. Tetration for non-integer heights does not have a single agreed-upon definition,
+     * so this library uses an analytic approximation for bases <= 10, but it reverts to the linear approximation for bases > 10.
+     * If you want to use the linear approximation even for bases <= 10, set the linear parameter to true.
+     * Analytic approximation is not currently supported for bases > 10.
+     */
   }, {
     key: "iteratedlog",
     value: function iteratedlog(value) {
@@ -3082,12 +3830,28 @@ var Decimal = /*#__PURE__*/function () {
       var linear = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
       return D(value).iteratedlog(base, times, linear);
     }
+    /**
+     * Adds/removes layers from a Decimal, even fractional layers (e.g. its slog10 representation). Very similar to tetrate base 10 and iterated log base 10.
+     *
+     * Tetration for non-integer heights does not have a single agreed-upon definition,
+     * so this library uses an analytic approximation for bases <= 10, but it reverts to the linear approximation for bases > 10.
+     * If you want to use the linear approximation even for bases <= 10, set the linear parameter to true.
+     * Analytic approximation is not currently supported for bases > 10.
+     */
   }, {
     key: "layeradd10",
     value: function layeradd10(value, diff) {
       var linear = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
       return D(value).layeradd10(diff, linear);
     }
+    /**
+     * layeradd: like adding 'diff' to the number's slog(base) representation. Very similar to tetrate base 'base' and iterated log base 'base'.
+     *
+     * Tetration for non-integer heights does not have a single agreed-upon definition,
+     * so this library uses an analytic approximation for bases <= 10, but it reverts to the linear approximation for bases > 10.
+     * If you want to use the linear approximation even for bases <= 10, set the linear parameter to true.
+     * Analytic approximation is not currently supported for bases > 10.
+     */
   }, {
     key: "layeradd",
     value: function layeradd(value, diff) {
@@ -3095,6 +3859,18 @@ var Decimal = /*#__PURE__*/function () {
       var linear = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
       return D(value).layeradd(diff, base, linear);
     }
+    /**
+     * Super-logarithm, one of tetration's inverses, tells you what size power tower you'd have to tetrate 'base' to to get 'value'. https://en.wikipedia.org/wiki/Super-logarithm
+     *
+     * By definition, will never be higher than 1.8e308 in break_eternity.js, since a power tower 1.8e308 numbers tall is the largest representable number.
+     *
+     * Accepts a number of iterations (default is 100), and use binary search to, after making an initial guess, hone in on the true value, assuming tetration as the ground truth.
+     *
+     * Tetration for non-integer heights does not have a single agreed-upon definition,
+     * so this library uses an analytic approximation for bases <= 10, but it reverts to the linear approximation for bases > 10.
+     * If you want to use the linear approximation even for bases <= 10, set the linear parameter to true.
+     * Analytic approximation is not currently supported for bases > 10.
+     */
   }, {
     key: "slog",
     value: function slog(value) {
@@ -3102,21 +3878,45 @@ var Decimal = /*#__PURE__*/function () {
       var linear = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
       return D(value).slog(base, 100, linear);
     }
+    /**
+     * The Lambert W function, also called the omega function or product logarithm, is the solution W(x) === x*e^x.
+     * https://en.wikipedia.org/wiki/Lambert_W_function
+     */
   }, {
     key: "lambertw",
     value: function lambertw(value) {
       return D(value).lambertw();
     }
+    /**
+     * The super square-root function - what number, tetrated to height 2, equals 'value'? https://en.wikipedia.org/wiki/Tetration#Super-root
+     */
   }, {
     key: "ssqrt",
     value: function ssqrt(value) {
       return D(value).ssqrt();
     }
+    /**
+     * Super-root, one of tetration's inverses - what number, tetrated to height 'degree', equals 'value'? https://en.wikipedia.org/wiki/Tetration#Super-root
+     *
+     * Only works with the linear approximation of tetration, as starting with analytic and then switching to linear would result in inconsistent behavior for super-roots.
+     * This only matters for non-integer degrees.
+     */
   }, {
     key: "linear_sroot",
-    value: function linear_sroot(value, height) {
-      return D(value).linear_sroot(height);
+    value: function linear_sroot(value, degree) {
+      return D(value).linear_sroot(degree);
     }
+    /**
+     * Pentation/pentate: The result of tetrating 'height' times in a row. An absurdly strong operator - Decimal.pentate(2, 4.28) and Decimal.pentate(10, 2.37) are already too huge for break_eternity.js!
+     * https://en.wikipedia.org/wiki/Pentation
+     *
+     * Tetration for non-integer heights does not have a single agreed-upon definition,
+     * so this library uses an analytic approximation for bases <= 10, but it reverts to the linear approximation for bases > 10.
+     * If you want to use the linear approximation even for bases <= 10, set the linear parameter to true.
+     * Analytic approximation is not currently supported for bases > 10.
+     *
+     * For non-whole pentation heights, the linear approximation of pentation is always used, as there is no defined analytic approximation of pentation.
+     */
   }, {
     key: "pentate",
     value: function pentate(value) {
@@ -3124,6 +3924,102 @@ var Decimal = /*#__PURE__*/function () {
       var payload = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : FC_NN(1, 0, 1);
       var linear = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
       return D(value).pentate(height, payload, linear);
+    }
+    /**
+     * The sine function, one of the main two trigonometric functions. Behaves periodically with period 2*pi.
+     */
+  }, {
+    key: "sin",
+    value: function sin(value) {
+      return D(value).sin();
+    }
+    /**
+     * The cosine function, one of the main two trigonometric functions. Behaves periodically with period 2*pi.
+     */
+  }, {
+    key: "cos",
+    value: function cos(value) {
+      return D(value).cos();
+    }
+    /**
+     * The tangent function, equal to sine divided by cosine. Behaves periodically with period pi.
+     */
+  }, {
+    key: "tan",
+    value: function tan(value) {
+      return D(value).tan();
+    }
+    /**
+     * The arcsine function, the inverse of the sine function.
+     */
+  }, {
+    key: "asin",
+    value: function asin(value) {
+      return D(value).asin();
+    }
+    /**
+     * The arccosine function, the inverse of the cosine function.
+     */
+  }, {
+    key: "acos",
+    value: function acos(value) {
+      return D(value).acos();
+    }
+    /**
+     * The arctangent function, the inverse of the tangent function.
+     */
+  }, {
+    key: "atan",
+    value: function atan(value) {
+      return D(value).atan();
+    }
+    /**
+     * Hyperbolic sine: sinh(X) = (e^x - e^-x)/2.
+     */
+  }, {
+    key: "sinh",
+    value: function sinh(value) {
+      return D(value).sinh();
+    }
+    /**
+     * Hyperbolic cosine: cosh(x) = (e^x + e^-x)/2.
+     */
+  }, {
+    key: "cosh",
+    value: function cosh(value) {
+      return D(value).cosh();
+    }
+    /**
+     * Hyperbolic tangent: tanh(x) = sinh(x)/cosh(x).
+     */
+  }, {
+    key: "tanh",
+    value: function tanh(value) {
+      return D(value).tanh();
+    }
+    /**
+     * Hyperbolic arcsine, the inverse of hyperbolic sine.
+     */
+  }, {
+    key: "asinh",
+    value: function asinh(value) {
+      return D(value).asinh();
+    }
+    /**
+     * Hyperbolic arccosine, the inverse of hyperbolic cosine.
+     */
+  }, {
+    key: "acosh",
+    value: function acosh(value) {
+      return D(value).acosh();
+    }
+    /**
+     * Hyperbolic arcctangent, the inverse of hyperbolic tangent.
+     */
+  }, {
+    key: "atanh",
+    value: function atanh(value) {
+      return D(value).atanh();
     }
     /**
      * If you're willing to spend 'resourcesAvailable' and want to buy something
