@@ -2203,6 +2203,7 @@ export default class Decimal {
       if (this.sign === -1) return Decimal.dNegOne;
       else return Decimal.dZero;
     }
+    if (this.sign === -1) return this.neg().ceil().neg();
     if (this.layer === 0) {
       return FC(this.sign, 0, Math.floor(this.mag));
     }
@@ -2217,6 +2218,7 @@ export default class Decimal {
       if (this.sign === 1) return Decimal.dOne; //The ceiling function called on something tiny like 10^10^-100 should return 1, since 10^10^-100 is still greater than 0
       else return Decimal.dZero;
     }
+    if (this.sign === -1) return this.neg().floor().neg();
     if (this.layer === 0) {
       return FC(this.sign, 0, Math.ceil(this.mag));
     }
