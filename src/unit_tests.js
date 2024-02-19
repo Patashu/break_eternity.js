@@ -338,6 +338,33 @@ var test_tetrate_linear_sroot = function()
   }
 }
 
+var test_ssqrt = function()
+{
+  console.log("test_ssqrt");
+  for (var i = 0; i < 1000; ++i)
+  {
+    let base = Decimal.dOne;
+    try {
+      base = Decimal.randomDecimalForTesting(Math.round(Math.random()*4));
+      if (base.lt(0)) base = base.neg();
+      if (base.eq(0)) base = Decimal.dOne;
+      let sroot_result = base.ssqrt();
+      let w_result = Decimal.dZero;
+      try {
+        w_result = base.ln().div(base.ln().lambertw());
+      }
+      catch {
+        continue;
+      }
+      if (!w_result.isFinite()) continue;
+      assert_eq_tolerance(base + " -> " + sroot_result + " , " + w_result, sroot_result, w_result);
+    }
+    catch (err) {
+      console.log("Error in " + base + ": " + err);
+    }
+  }
+}
+
 var all_tests = function()
 {
   test_tetrate_ground_truth();
@@ -358,4 +385,5 @@ var all_tests = function()
   test_tetrate_linear_truth();
   test_modulo();
   test_tetrate_linear_sroot();
+  test_ssqrt();
 }
