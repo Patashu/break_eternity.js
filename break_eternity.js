@@ -495,11 +495,11 @@
         Any 0 is totally zero (0, 0, 0) and any NaN is totally NaN (NaN, NaN, NaN).
         Anything layer 0 has mag 0 OR mag > 1/9e15 and < 9e15.
         Anything layer 1 or higher has abs(mag) >= 15.954 and < 9e15.
-        Any positive infinity is (1, Infinity, Infinity) and any negative infinity is (-1, Infinity, Infinity).
+        Any positive infinity is (1, Infinity, Infinity) and any negative infinity is (-1, -Infinity, -Infinity).
         We will assume in calculations that all Decimals are either erroneous or satisfy these criteria. (Otherwise: Garbage in, garbage out.)
         */
         //Any 0 is totally 0
-        if (this.sign === 0 || this.mag === 0 && this.layer === 0 || this.mag === Number.NEGATIVE_INFINITY && this.layer > 0) {
+        if (this.sign === 0 || this.mag === 0 && this.layer === 0 || this.mag === Number.NEGATIVE_INFINITY && this.layer > 0 && Number.isFinite(this.layer)) {
           this.sign = 0;
           this.mag = 0;
           this.layer = 0;
@@ -511,9 +511,14 @@
           this.sign = -this.sign;
         }
         //Handle infinities
-        if (this.mag === Number.POSITIVE_INFINITY || this.layer === Number.POSITIVE_INFINITY) {
-          this.mag = Number.POSITIVE_INFINITY;
-          this.layer = Number.POSITIVE_INFINITY;
+        if (this.mag === Number.POSITIVE_INFINITY || this.layer === Number.POSITIVE_INFINITY || this.mag === Number.NEGATIVE_INFINITY || this.layer === Number.NEGATIVE_INFINITY) {
+          if (this.sign == 1) {
+            this.mag = Number.POSITIVE_INFINITY;
+            this.layer = Number.POSITIVE_INFINITY;
+          } else if (this.sign == -1) {
+            this.mag = Number.NEGATIVE_INFINITY;
+            this.layer = Number.NEGATIVE_INFINITY;
+          }
           return this;
         }
         //Handle shifting from layer 0 to negative layers.
@@ -934,8 +939,11 @@
     }, {
       key: "toNumber",
       value: function toNumber() {
-        if (this.mag === Number.POSITIVE_INFINITY && this.layer === Number.POSITIVE_INFINITY) {
-          return this.sign > 0 ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
+        if (this.mag === Number.POSITIVE_INFINITY && this.layer === Number.POSITIVE_INFINITY && this.sign === 1) {
+          return Number.POSITIVE_INFINITY;
+        }
+        if (this.mag === Number.NEGATIVE_INFINITY && this.layer === Number.NEGATIVE_INFINITY && this.sign === -1) {
+          return Number.NEGATIVE_INFINITY;
         }
         if (!Number.isFinite(this.layer)) {
           return Number.NaN;
@@ -984,7 +992,7 @@
         if (isNaN(this.layer) || isNaN(this.sign) || isNaN(this.mag)) {
           return "NaN";
         }
-        if (this.mag === Number.POSITIVE_INFINITY || this.layer === Number.POSITIVE_INFINITY) {
+        if (this.mag === Number.POSITIVE_INFINITY || this.layer === Number.POSITIVE_INFINITY || this.mag === Number.NEGATIVE_INFINITY || this.layer === Number.NEGATIVE_INFINITY) {
           return this.sign === 1 ? "Infinity" : "-Infinity";
         }
         if (this.layer === 0) {
