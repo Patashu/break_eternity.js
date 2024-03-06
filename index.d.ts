@@ -481,8 +481,12 @@ export default class Decimal {
     /**
      * The Lambert W function, also called the omega function or product logarithm, is the solution W(x) === x*e^x.
      * https://en.wikipedia.org/wiki/Lambert_W_function
+     *
+     * This is a multi-valued function in the complex plane, but only two branches matter for real numbers: the "principal branch" W0, and the "non-principal branch" W_-1.
+     * W_0 works for any number >= -1/e, but W_-1 only works for negative numbers >= -1/e.
+     * The "principal" parameter, which is true by default, decides which branch we're looking for: W_0 is used if principal is true, W_-1 is used if principal is false.
      */
-    static lambertw(value: DecimalSource): Decimal;
+    static lambertw(value: DecimalSource, principal: boolean): Decimal;
     /**
      * The super square-root function - what number, tetrated to height 2, equals 'value'? https://en.wikipedia.org/wiki/Tetration#Super-root
      */
@@ -688,19 +692,19 @@ export default class Decimal {
     /**
      * Rounds the Decimal it's called on to the nearest integer.
      */
-    round(): this | Decimal;
+    round(): Decimal;
     /**
      * "Rounds" the Decimal it's called on to the nearest integer that's less than or equal to it.
      */
-    floor(): this | Decimal;
+    floor(): Decimal;
     /**
      * "Rounds" the Decimal it's called on to the nearest integer that's greater than or equal to it.
      */
-    ceil(): this | Decimal;
+    ceil(): Decimal;
     /**
      * Extracts the integer part of the Decimal and returns it. Behaves like floor on positive numbers, but behaves like ceiling on negative numbers.
      */
-    trunc(): this | Decimal;
+    trunc(): Decimal;
     /**
      * Addition: returns the sum of 'this' and 'value'.
      */
@@ -1083,10 +1087,25 @@ export default class Decimal {
      */
     layeradd(diff: number, base: DecimalSource, linear?: boolean): Decimal;
     /**
+     * A strange version of slog for bases between 1 and e^1/e which can handle values above base^^Infinity.
+     * Returns a pair of a Decimal and a number, with the number always being 0, 1, or 2. The number indicates what range we're in:
+     * 0 means we're below the lower solution of b^x = x, and so the normal slog is used.
+     * 1 means we're between the two solutions of b^x = x, with the geometric mean of the two solutions arbitrarily chosen to be the value with a slog of 0.
+     * 2 means we're above the upper solution of b^x = x, with (upper solution * 2) arbitrarily chosen to be the value with a slog of 0.
+     *
+     * The values returned by this function don't really have much mathematical meaning, but the difference between two values does.
+     * Therefore, this function is kept private, but it's used for layeradd on these small bases.
+     */
+    private static excess_slog;
+    /**
      * The Lambert W function, also called the omega function or product logarithm, is the solution W(x) === x*e^x.
      * https://en.wikipedia.org/wiki/Lambert_W_function
+     *
+     * This is a multi-valued function in the complex plane, but only two branches matter for real numbers: the "principal branch" W0, and the "non-principal branch" W_-1.
+     * W_0 works for any number >= -1/e, but W_-1 only works for nonpositive numbers >= -1/e.
+     * The "principal" parameter, which is true by default, decides which branch we're looking for: W_0 is used if principal is true, W_-1 is used if principal is false.
      */
-    lambertw(): Decimal;
+    lambertw(principal?: boolean): Decimal;
     /**
      * The super square-root function - what number, tetrated to height 2, equals 'this'? https://en.wikipedia.org/wiki/Tetration#Super-root
      */
