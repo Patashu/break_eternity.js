@@ -283,19 +283,19 @@ var f_gamma = function f_gamma(n) {
   var np = n;
   l = l + 1 / (12 * np);
   np = np * n2;
-  l = l + 1 / (360 * np);
+  l = l - 1 / (360 * np);
   np = np * n2;
   l = l + 1 / (1260 * np);
   np = np * n2;
-  l = l + 1 / (1680 * np);
+  l = l - 1 / (1680 * np);
   np = np * n2;
   l = l + 1 / (1188 * np);
   np = np * n2;
-  l = l + 691 / (360360 * np);
+  l = l - 691 / (360360 * np);
   np = np * n2;
   l = l + 7 / (1092 * np);
   np = np * n2;
-  l = l + 3617 / (122400 * np);
+  l = l - 3617 / (122400 * np);
   return Math.exp(l) / scal1;
 };
 var _EXPN1 = 0.36787944117144232159553; // exp(-1)
