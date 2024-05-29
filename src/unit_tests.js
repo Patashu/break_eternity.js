@@ -91,8 +91,8 @@ var test_tetrate_slog = function()
     let tower = Math.random()*10 - 1;
     let round_trip = new Decimal(base).tetrate(tower).slog(base).toNumber();
     let round_trip_linear = new Decimal(base).tetrate(tower, 1, true).slog(base, 100, true).toNumber();
-    assert_eq_tolerance("Test 1: " + base + ", " + tower, round_trip, tower, base < 2 ? 1e-2 : 1e-10);
-    assert_eq_tolerance("Test 2: " + base + ", " + tower, round_trip_linear, tower, 1e-10);
+    assert_eq_tolerance("Test 1: " + base + ", " + tower + ", analytic", round_trip, tower, base < 2 ? 1e-2 : 1e-10);
+    assert_eq_tolerance("Test 2: " + base + ", " + tower + ", linear", round_trip_linear, tower, 1e-10);
   }
 }
 
@@ -105,7 +105,9 @@ var test_layeradd10_twice = function()
     var both = Math.random()*100;
     var expected = first+both+1;
     var result = new Decimal(10).layeradd10(first).layeradd10(both).slog();
-    assert_eq_tolerance(first + ", " + both, expected, result);
+    var result_linear = new Decimal(10).layeradd10(first, true).layeradd10(both, true).slog(10, 100, true);
+    assert_eq_tolerance(first + ", " + both + ", analytic", expected, result);
+    assert_eq_tolerance(first + ", " + both + ", linear", expected, result_linear);
   }
 }
 
@@ -119,7 +121,9 @@ var test_layeradd10_reverse = function()
     first += both;
     var expected = first-both+1;
     var result = new Decimal(10).layeradd10(first).layeradd10(-both).slog();
-    assert_eq_tolerance(first + ", " + both, expected, result);
+    var result_linear = new Decimal(10).layeradd10(first, true).layeradd10(-both, true).slog(10, 100, true);
+    assert_eq_tolerance(first + ", " + both + ", analytic", expected, result);
+    assert_eq_tolerance(first + ", " + both + ", linear", expected, result_linear);
   }
 }
 
@@ -133,7 +137,9 @@ var test_layeradd10_twice_anybase = function()
     var base = Math.random()*8+2;
     var expected = first+both+1;
     var result = new Decimal(base).layeradd(first, base).layeradd(both, base).slog(base);
-    assert_eq_tolerance(first + ", " + both + ", " + base, expected, result);
+    var result_linear = new Decimal(base).layeradd(first, base, true).layeradd(both, base, true).slog(base, 100, true);
+    assert_eq_tolerance(first + ", " + both + ", " + base + ", analytic", expected, result);
+    assert_eq_tolerance(first + ", " + both + ", " + base + ", linear", expected, result_linear);
   }
 }
 
@@ -148,7 +154,9 @@ var test_layeradd10_reverse_anybase = function()
     first += both;
     var expected = first-both+1;
     var result = new Decimal(base).layeradd(first, base).layeradd(-both, base).slog(base);
-    assert_eq_tolerance(first + ", " + both + ", " + base, expected, result);
+    var result_linear = new Decimal(base).layeradd(first, base, true).layeradd(-both, base, true).slog(base, 100, true);
+    assert_eq_tolerance(first + ", " + both + ", " + base + ", analytic", expected, result);
+    assert_eq_tolerance(first + ", " + both + ", " + base + ", linear", expected, result_linear);
   }
 }
 
@@ -161,7 +169,10 @@ var test_tetrate_iteratedlog = function()
     var both = Math.round((Math.random()*30))/10;
     var tetrateonly = Decimal.tetrate(10, first);
     var tetrateandlog = Decimal.tetrate(10, first+both).iteratedlog(10, both);
-    assert_eq_tolerance(first + ", " + both, tetrateonly, tetrateandlog);
+    var tetrateonly_linear = Decimal.tetrate(10, first, 1, true);
+    var tetrateandlog_linear = Decimal.tetrate(10, first+both, 1, true).iteratedlog(10, both, true);
+    assert_eq_tolerance(first + ", " + both + ", analytic", tetrateonly, tetrateandlog);
+    assert_eq_tolerance(first + ", " + both + ", linear", tetrateonly_linear, tetrateandlog_linear);
   }
 }
 
@@ -172,10 +183,14 @@ var test_tetrate_base = function()
   {
     var first = Math.round((Math.random()*30))/10;
     var both = Math.round((Math.random()*30))/10;
-    var base = Math.random()*8+2;
+    var base = Math.random()*9+1;
+    if (base == 1) base = 2;
     var tetrateonly = Decimal.tetrate(base, first);
     var tetrateandlog = Decimal.tetrate(base, first+both).iteratedlog(base, both);
-    assert_eq_tolerance(first + ", " + both + ", " + base, tetrateonly, tetrateandlog);
+    var tetrateonly_linear = Decimal.tetrate(base, first, 1, true);
+    var tetrateandlog_linear = Decimal.tetrate(base, first+both, 1, true).iteratedlog(base, both, true);
+    assert_eq_tolerance(first + ", " + both + ", " + base + ", analytic: " + tetrateonly + ", " + tetrateandlog, tetrateonly, tetrateandlog);
+    assert_eq_tolerance(first + ", " + both + ", " + base + ", linear: "  + tetrateonly_linear + ", " + tetrateandlog_linear, tetrateonly_linear, tetrateandlog_linear);
   }
 }
 
@@ -186,10 +201,14 @@ var test_tetrate_base_2 = function()
   {
     var first = Math.round((Math.random()*30))/10;
     var both = Math.round((Math.random()*30))/10;
-    var base = Math.random()*8+2;
+    var base = Math.random()*9+1;
+    if (base == 1) base = 2;
     var tetrateonly = Decimal.tetrate(base, first, base);
     var tetrateandlog = Decimal.tetrate(base, first+both, base).iteratedlog(base, both);
-    assert_eq_tolerance(first + ", " + both + ", " + base, tetrateonly, tetrateandlog);
+    var tetrateonly_linear = Decimal.tetrate(base, first, base, true);
+    var tetrateandlog_linear = Decimal.tetrate(base, first+both, base, true).iteratedlog(base, both, true);
+    assert_eq_tolerance(first + ", " + both + ", " + base + ", analytic", tetrateonly, tetrateandlog);
+    assert_eq_tolerance(first + ", " + both + ", " + base + ", linear", tetrateonly_linear, tetrateandlog_linear);
   }
 }
 
@@ -210,6 +229,17 @@ var test_lambertw_2 = function()
   for (var i = 0; i < 1000; ++i)
   {
     var xex = new Decimal(-0.3678794411710499+Math.exp(Math.random()*100));
+    var x = Decimal.lambertw(xex);
+    assert_eq_tolerance(xex, xex, x.mul(Decimal.exp(x)));
+  }
+}
+
+var test_lambertw_3 = function()
+{
+  console.log("test_lambertw_3")
+  for (var i = 0; i < 1000; ++i)
+  {
+    var xex = Decimal.iteratedexp(10, 3, new Decimal(Math.random() * 16));
     var x = Decimal.lambertw(xex);
     assert_eq_tolerance(xex, xex, x.mul(Decimal.exp(x)));
   }
@@ -257,6 +287,7 @@ var test_pow_root = function()
   {
     var a = Decimal.randomDecimalForTesting(Math.round(Math.random()*4));
     var b = Decimal.randomDecimalForTesting(Math.round(Math.random()*4));
+    if (b.eq(0)) continue;
     if (Math.random() > 0.5 && a.sign !== 0) { a = a.recip(); }
     if (Math.random() > 0.5 && b.sign !== 0) { b = b.recip(); }
     var c = a.pow(b);
@@ -319,13 +350,36 @@ var test_modulo = function() {
 var test_tetrate_linear_sroot = function()
 {
   console.log("test_tetrate_linear_sroot");
+  let base = Decimal.dOne;
+  let degree = Decimal.dOne;
   for (var i = 0; i < 1000; ++i)
   {
-    let base = Decimal.dOne;
-    let degree = Decimal.dOne;
     try {
       base = Decimal.randomDecimalForTesting(Math.round(Math.random()*4));
       if (base.lt(0)) base = base.neg();
+      if (base.lt(1)) base = base.recip();
+      degree = Math.random()*10;
+      if (base.eq(0)) base = Decimal.dOne;
+      let round_trip = new Decimal(base).linear_sroot(degree).tetrate(degree, 1, true);
+      assert_eq_tolerance(base + ", " + degree + " -> " + round_trip, round_trip, base);
+    }
+    catch (err) {
+      console.log("Error in " + base + ", " + degree + ": " + err);
+    }
+  }
+}
+
+var test_tetrate_linear_sroot_lt1 = function()
+{
+  console.log("test_tetrate_linear_sroot_lt1");
+  let base = Decimal.dOne;
+  let degree = Decimal.dOne;
+  for (var i = 0; i < 100; ++i)
+  {
+    try {
+      base = Decimal.randomDecimalForTesting(2);
+      if (base.lt(0)) base = base.neg();
+      if (base.gt(1)) base = base.recip();
       degree = Math.random()*10;
       if (base.eq(0)) base = Decimal.dOne;
       let round_trip = new Decimal(base).linear_sroot(degree).tetrate(degree, 1, true);
@@ -365,6 +419,114 @@ var test_ssqrt = function()
   }
 }
 
+var test_lambertw_nonPrincipal = function()
+{
+  console.log("test_lambertw_nonPrincipal")
+  for (var i = 0; i < 1000; ++i)
+  {
+    var xex = new Decimal(Math.random()*-0.3678794411710499);
+    var x = Decimal.lambertw(xex, false);
+    assert_eq_tolerance(xex, xex, x.mul(Decimal.exp(x)));
+  }
+}
+
+var test_lambertw_nonPrincipal_2 = function()
+{
+  console.log("test_lambertw_nonPrincipal_2")
+  for (var i = 0; i < 1000; ++i)
+  {
+    var xex = new Decimal(Math.exp(Math.random()*-100 - 1)).neg();
+    var x = Decimal.lambertw(xex, false);
+    assert_eq_tolerance(xex, xex, x.mul(Decimal.exp(x)));
+  }
+}
+
+var test_lambertw_nonPrincipal_3 = function()
+{
+  console.log("test_lambertw_nonPrincipal_3")
+  for (var i = 0; i < 1000; ++i)
+  {
+    var xex = Decimal.iteratedexp(10, 3, new Decimal(Math.random() * 16)).neg().recip();
+    var x = Decimal.lambertw(xex, false);
+    assert_eq_tolerance(xex, xex, x.mul(Decimal.exp(x)));
+  }
+}
+
+var test_tetrate_small_bases = function()
+{
+  console.log("test_tetrate_small_bases")
+  for (var i = 0; i < 1000; ++i)
+  {
+    var base = 1.44466786100976613366 - Math.random();
+    var negln = Decimal.ln(base).neg();
+    var lower = negln.lambertw().div(negln);
+    var upper = Decimal.dInf;
+    var payload = Decimal.pow10(Math.random() * 6 - 3);
+    if (base > 1) upper = negln.lambertw(false).div(negln);
+    var finite = Decimal.tetrate(base, 20000 + Math.random(), payload);
+    var infinite = Decimal.tetrate(base, Infinity, payload);
+    var finite_linear = Decimal.tetrate(base, 20000 + Math.random(), payload, true);
+    if (payload.gt(upper)) {
+      if (finite.lt("F10000") || infinite.lt("F10000") || finite_linear.lt("F10000")) console.log(base + " " + payload);
+    }
+    else if (payload.eq(upper)) {
+      assert_eq_tolerance(base + ", " + payload + ", finite", finite, upper);
+      assert_eq_tolerance(base + ", " + payload + ", infinite", infinite, upper);
+      assert_eq_tolerance(base + ", " + payload + ", finite linear", finite_linear, upper);
+    }
+    else {
+      assert_eq_tolerance(base + ", " + payload + ", finite", finite, lower);
+      assert_eq_tolerance(base + ", " + payload + ", infinite", infinite, lower);
+      assert_eq_tolerance(base + ", " + payload + ", finite linear", finite_linear, lower);
+    }
+  }
+}
+
+var test_layeradd_recursive_property = function() {
+  console.log("test_layeradd_recursive_property")
+  for (var i = 0; i < 1000; ++i)
+  {
+    var base = 1 + Math.random() * 20;
+    var payload = new Decimal(Math.random() * 100);
+    assert_eq_tolerance(base + ", " + payload + ", analytic", payload.layeradd(1, base), Decimal.pow(base, payload));
+    assert_eq_tolerance(base + ", " + payload + ", linear", payload.layeradd(1, base, true), Decimal.pow(base, payload));
+  }
+}
+
+var test_tetrate_increasing = function() {
+  console.log("test_tetrate_increasing")
+  OuterLoop : for (var i = 0; i < 100; ++i)
+  {
+    var base = 1 + Math.random() * 5;
+    var payload = new Decimal(Math.random() * 100);
+    var height = Math.random() * 4 - 1;
+    var nextheight = height + Math.random();
+    var linear = (Math.random() > 0.5);
+    var lowertetrate = Decimal.tetrate(base, height, payload, linear);
+    var highertetrate = Decimal.tetrate(base, nextheight, payload, linear);
+    var lower = Decimal.dInf;
+    var upper = Decimal.dInf;
+    if (base < 1.44466786100976613366) {
+      var negln = Decimal.ln(base).neg();
+      lower = negln.lambertw().div(negln);
+      if (base > 1) upper = negln.lambertw(false).div(negln);
+    }
+    if (payload.eq(lower) || payload.eq(upper)) continue;
+    var decreasing = payload.gt(lower) && payload.lt(upper);
+    for (var j = 0; j < 5; j++) {
+      if ((!decreasing && highertetrate.lt(lowertetrate)) || (decreasing && highertetrate.gt(lowertetrate))) {
+        console.log(base + ", " + payload + ((linear) ? "linear" : "analytic"));
+        continue OuterLoop;
+      }
+      height = nextheight;
+      nextheight = height + Math.random();
+      linear = (Math.random() > 0.5)
+      lowertetrate = Decimal.tetrate(base, height, payload, linear);
+      highertetrate = Decimal.tetrate(base, nextheight, payload, linear);
+    }
+  }
+}
+
 var all_tests = function()
 {
   test_tetrate_ground_truth();
@@ -379,11 +541,19 @@ var all_tests = function()
   test_tetrate_base_2();
   test_lambertw();
   test_lambertw_2();
+  test_lambertw_3();
   test_add_number();
   test_mul();
   test_pow_root();
   test_tetrate_linear_truth();
   test_modulo();
   test_tetrate_linear_sroot();
+  test_tetrate_linear_sroot_lt1();
   test_ssqrt();
+  test_lambertw_nonPrincipal();
+  test_lambertw_nonPrincipal_2();
+  test_lambertw_nonPrincipal_3();
+  test_tetrate_small_bases();
+  test_layeradd_recursive_property();
+  test_tetrate_increasing();
 }
