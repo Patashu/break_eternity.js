@@ -516,7 +516,7 @@
         Any 0 is totally zero (0, 0, 0) and any NaN is totally NaN (NaN, NaN, NaN).
         Anything layer 0 has mag 0 OR mag > 1/9e15 and < 9e15.
         Anything layer 1 or higher has abs(mag) >= 15.954 and < 9e15.
-        Any positive infinity is (1, Infinity, Infinity) and any negative infinity is (-1, -Infinity, -Infinity).
+        Any positive infinity is (1, Infinity, Infinity) and any negative infinity is (-1, Infinity, Infinity).
         We will assume in calculations that all Decimals are either erroneous or satisfy these criteria. (Otherwise: Garbage in, garbage out.)
         */
         //Any 0 is totally 0
@@ -533,13 +533,8 @@
         }
         //Handle infinities
         if (this.mag === Number.POSITIVE_INFINITY || this.layer === Number.POSITIVE_INFINITY || this.mag === Number.NEGATIVE_INFINITY || this.layer === Number.NEGATIVE_INFINITY) {
-          if (this.sign == 1) {
-            this.mag = Number.POSITIVE_INFINITY;
-            this.layer = Number.POSITIVE_INFINITY;
-          } else if (this.sign == -1) {
-            this.mag = Number.NEGATIVE_INFINITY;
-            this.layer = Number.NEGATIVE_INFINITY;
-          }
+          this.mag = Number.POSITIVE_INFINITY;
+          this.layer = Number.POSITIVE_INFINITY;
           return this;
         }
         //Handle shifting from layer 0 to negative layers.
@@ -755,6 +750,11 @@
         var ptparts = value.split("pt");
         if (ptparts.length === 2) {
           base = 10;
+          var negative = false;
+          if (ptparts[0][0] == "-") {
+            negative = true;
+            ptparts[0] = ptparts[0].slice(1);
+          }
           height = parseFloat(ptparts[0]);
           ptparts[1] = ptparts[1].replace("(", "");
           ptparts[1] = ptparts[1].replace(")", "");
@@ -770,6 +770,7 @@
             if (Decimal.fromStringCache.maxSize >= 1) {
               Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
             }
+            if (negative) this.sign *= -1;
             return this;
           }
         }
@@ -777,6 +778,11 @@
         ptparts = value.split("p");
         if (ptparts.length === 2) {
           base = 10;
+          var _negative = false;
+          if (ptparts[0][0] == "-") {
+            _negative = true;
+            ptparts[0] = ptparts[0].slice(1);
+          }
           height = parseFloat(ptparts[0]);
           ptparts[1] = ptparts[1].replace("(", "");
           ptparts[1] = ptparts[1].replace(")", "");
@@ -792,6 +798,7 @@
             if (Decimal.fromStringCache.maxSize >= 1) {
               Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
             }
+            if (_negative) this.sign *= -1;
             return this;
           }
         }
@@ -799,6 +806,11 @@
         ptparts = value.split("f");
         if (ptparts.length === 2) {
           base = 10;
+          var _negative2 = false;
+          if (ptparts[0][0] == "-") {
+            _negative2 = true;
+            ptparts[0] = ptparts[0].slice(1);
+          }
           ptparts[0] = ptparts[0].replace("(", "");
           ptparts[0] = ptparts[0].replace(")", "");
           var _payload4 = parseFloat(ptparts[0]);
@@ -816,6 +828,7 @@
             if (Decimal.fromStringCache.maxSize >= 1) {
               Decimal.fromStringCache.set(originalValue, Decimal.fromDecimal(this));
             }
+            if (_negative2) this.sign *= -1;
             return this;
           }
         }
@@ -963,7 +976,7 @@
         if (this.mag === Number.POSITIVE_INFINITY && this.layer === Number.POSITIVE_INFINITY && this.sign === 1) {
           return Number.POSITIVE_INFINITY;
         }
-        if (this.mag === Number.NEGATIVE_INFINITY && this.layer === Number.NEGATIVE_INFINITY && this.sign === -1) {
+        if (this.mag === Number.POSITIVE_INFINITY && this.layer === Number.POSITIVE_INFINITY && this.sign === -1) {
           return Number.NEGATIVE_INFINITY;
         }
         if (!Number.isFinite(this.layer)) {
@@ -1013,7 +1026,7 @@
         if (isNaN(this.layer) || isNaN(this.sign) || isNaN(this.mag)) {
           return "NaN";
         }
-        if (this.mag === Number.POSITIVE_INFINITY || this.layer === Number.POSITIVE_INFINITY || this.mag === Number.NEGATIVE_INFINITY || this.layer === Number.NEGATIVE_INFINITY) {
+        if (this.mag === Number.POSITIVE_INFINITY || this.layer === Number.POSITIVE_INFINITY) {
           return this.sign === 1 ? "Infinity" : "-Infinity";
         }
         if (this.layer === 0) {
@@ -1197,6 +1210,10 @@
       key: "add",
       value: function add(value) {
         var decimal = D(value);
+        //Infinity + -Infinity = NaN
+        if (this.eq(Decimal.dInf) && decimal.eq(Decimal.dNegInf) || this.eq(Decimal.dNegInf) && decimal.eq(Decimal.dInf)) {
+          return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        }
         //inf/nan check
         if (!Number.isFinite(this.layer)) {
           return new Decimal(this);
@@ -1302,6 +1319,14 @@
       key: "mul",
       value: function mul(value) {
         var decimal = D(value);
+        // Infinity * -Infinity = -Infinity
+        if (this.eq(Decimal.dInf) && decimal.eq(Decimal.dNegInf) || this.eq(Decimal.dNegInf) && decimal.eq(Decimal.dInf)) {
+          return FC_NN(-1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+        }
+        //Infinity * 0 = NaN
+        if (this.mag == Number.POSITIVE_INFINITY && decimal.eq(Decimal.dZero) || this.eq(Decimal.dZero) && this.mag == Number.POSITIVE_INFINITY) {
+          return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        }
         //inf/nan check
         if (!Number.isFinite(this.layer)) {
           return new Decimal(this);
@@ -1407,6 +1432,8 @@
       value: function recip() {
         if (this.mag === 0) {
           return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        } else if (this.mag === Number.POSITIVE_INFINITY) {
+          return FC_NN(0, 0, 0);
         } else if (this.layer === 0) {
           return FC(this.sign, 0, 1 / this.mag);
         } else {
@@ -1965,6 +1992,12 @@
         3) positive sign, negative mag (e-15, ee-15): layer 0 case would have been handled in the Math.pow check, so just return 1
         4) negative sign, negative mag (-e-15, -ee-15): layer 0 case would have been handled in the Math.pow check, so just return 1
         */
+        if (this.eq(Decimal.dInf)) {
+          return FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+        }
+        if (this.eq(Decimal.dNegInf)) {
+          return FC_NN(0, 0, 0);
+        }
         if (!Number.isFinite(this.layer) || !Number.isFinite(this.mag)) {
           return FC_NN(Number.NaN, Number.NaN, Number.NaN);
         }
@@ -4403,7 +4436,7 @@
   Decimal.dTen = FC_NN(1, 0, 10);
   Decimal.dNaN = FC_NN(Number.NaN, Number.NaN, Number.NaN);
   Decimal.dInf = FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
-  Decimal.dNegInf = FC_NN(-1, Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY);
+  Decimal.dNegInf = FC_NN(-1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
   Decimal.dNumberMax = FC(1, 0, Number.MAX_VALUE);
   Decimal.dNumberMin = FC(1, 0, Number.MIN_VALUE);
   Decimal.fromStringCache = new LRUCache(DEFAULT_FROM_STRING_CACHE_SIZE);
