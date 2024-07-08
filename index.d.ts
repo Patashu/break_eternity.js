@@ -4,16 +4,64 @@ export type DecimalSource = Decimal | number | string;
  * The value of the Decimal is sign * 10^10^10...^mag, with (layer) 10s. If the layer is not 0, then negative mag means it's the reciprocal of the corresponding number with positive mag.
  */
 export default class Decimal {
+    /**
+     * Represents the number 0.
+     */
     static readonly dZero: Decimal;
+    /**
+     * Represents the number 1.
+     */
     static readonly dOne: Decimal;
+    /**
+     * Represents the number -1.
+     */
     static readonly dNegOne: Decimal;
+    /**
+     * Represents the number 2.
+     */
     static readonly dTwo: Decimal;
+    /**
+     * Represents the number 10.
+     */
     static readonly dTen: Decimal;
+    /**
+     * Represents a NaN (Not A Number) value.
+     */
     static readonly dNaN: Decimal;
+    /**
+     * Represents positive infinity.
+     */
     static readonly dInf: Decimal;
+    /**
+     * Represents negative infinity.
+     */
     static readonly dNegInf: Decimal;
+    /**
+     * Represents the largest value a JavaScript number can have, which is approximately 1.79 * 10^308.
+     */
     static readonly dNumberMax: Decimal;
+    /**
+     * Represents the smallest value a JavaScript number can have, which is approximately 5 * 10^-324.
+     */
     static readonly dNumberMin: Decimal;
+    /**
+     * Represents the largest Decimal where adding 1 to the layer is a safe operation
+     * (Decimals larger than this are too big for pow/exp/log to affect, but tetrate/iteratedlog/slog can still affect them).
+     * Approximately 10^^(9.007 * 10^15).
+     */
+    static readonly dLayerSafeMax: Decimal;
+    /**
+     * Represents the smallest Decimal where adding 1 to the layer is a safe operation. Approximately 1 / (10^^(9.007 * 10^15)).
+     */
+    static readonly dLayerSafeMin: Decimal;
+    /**
+     * Represents the largest finite value a Decimal can represent. Approximately 10^^(1.79 * 10^308).
+     */
+    static readonly dLayerMax: Decimal;
+    /**
+     * Represents the smallest non-zero value a Decimal can represent. Approximately 1 / (10^^(1.79 * 10^308)).
+     */
+    static readonly dLayerMin: Decimal;
     private static fromStringCache;
     sign: number;
     mag: number;
@@ -166,20 +214,26 @@ export default class Decimal {
      */
     static reciprocate(value: DecimalSource): Decimal;
     /**
-     * Returns the remainder of 'value' divided by 'other': for example, 5 mod 2 = 1, because the remainder of 5 / 2 is 1.
-     * Uses the "truncated division" modulo, which is the same as JavaScript's native modulo operator (%).
+     * Returns the remainder of 'this' divided by 'value': for example, 5 mod 2 = 1, because the remainder of 5 / 2 is 1.
+     * Uses the "truncated division" modulo, which is the same as JavaScript's native modulo operator (%)...
+     * unless 'floored' is true, in which case it uses the "floored" modulo, which is closer to how modulo works in number theory.
+     * These two forms of modulo are the same when only positive numbers are involved, but differ in how they work with negative numbers.
      */
-    static mod(value: DecimalSource, other: DecimalSource): Decimal;
+    static mod(value: DecimalSource, other: DecimalSource, floored?: boolean): Decimal;
     /**
-     * Returns the remainder of 'value' divided by 'other': for example, 5 mod 2 = 1, because the remainder of 5 / 2 is 1.
-     * Uses the "truncated division" modulo, which is the same as JavaScript's native modulo operator (%).
+     * Returns the remainder of 'this' divided by 'value': for example, 5 mod 2 = 1, because the remainder of 5 / 2 is 1.
+     * Uses the "truncated division" modulo, which is the same as JavaScript's native modulo operator (%)...
+     * unless 'floored' is true, in which case it uses the "floored" modulo, which is closer to how modulo works in number theory.
+     * These two forms of modulo are the same when only positive numbers are involved, but differ in how they work with negative numbers.
      */
-    static modulo(value: DecimalSource, other: DecimalSource): Decimal;
+    static modulo(value: DecimalSource, other: DecimalSource, floored?: boolean): Decimal;
     /**
-     * Returns the remainder of 'value' divided by 'other': for example, 5 mod 2 = 1, because the remainder of 5 / 2 is 1.
-     * Uses the "truncated division" modulo, which is the same as JavaScript's native modulo operator (%).
+     * Returns the remainder of 'this' divided by 'value': for example, 5 mod 2 = 1, because the remainder of 5 / 2 is 1.
+     * Uses the "truncated division" modulo, which is the same as JavaScript's native modulo operator (%)...
+     * unless 'floored' is true, in which case it uses the "floored" modulo, which is closer to how modulo works in number theory.
+     * These two forms of modulo are the same when only positive numbers are involved, but differ in how they work with negative numbers.
      */
-    static modular(value: DecimalSource, other: DecimalSource): Decimal;
+    static modular(value: DecimalSource, other: DecimalSource, floored?: boolean): Decimal;
     /**
      * Returns 1 if 'value' > 'other', returns -1 if 'value' < 'other', returns 0 if 'value' == 'other'.
      */
@@ -511,6 +565,27 @@ export default class Decimal {
      */
     static pentate(value: DecimalSource, height?: number, payload?: DecimalSource, linear?: boolean): Decimal;
     /**
+     * Penta-logarithm, one of pentation's inverses, tells you what height you'd have to pentate 'base' to to get 'value'.
+     *
+     * Grows incredibly slowly. For bases above 2, you won't be seeing a result greater than 5 out of this function.
+     *
+     * Accepts a number of iterations (default is 100), and use binary search to, after making an initial guess, hone in on the true value, assuming pentation as the ground truth.
+     *
+     * Tetration for non-integer heights does not have a single agreed-upon definition,
+     * so this library uses an analytic approximation for bases <= 10, but it reverts to the linear approximation for bases > 10.
+     * If you want to use the linear approximation even for bases <= 10, set the linear parameter to true.
+     * Analytic approximation is not currently supported for bases > 10.
+     *
+     * For non-whole pentation heights, the linear approximation of pentation is always used, as there is no defined analytic approximation of pentation.
+     */
+    static penta_log(value: DecimalSource, base?: DecimalSource, linear?: boolean): Decimal;
+    /**
+     * Penta-root, one of pentation's inverses - what number, pentated to height 'degree', equals 'value'?
+     *
+     * Only works with the linear approximation of tetration, as starting with analytic and then switching to linear would result in inconsistent behavior for super-roots.
+     */
+    static linear_penta_root(value: DecimalSource, degree: number): Decimal;
+    /**
      * The sine function, one of the main two trigonometric functions. Behaves periodically with period 2*pi.
      */
     static sin(value: DecimalSource): Decimal;
@@ -767,19 +842,25 @@ export default class Decimal {
     reciprocate(): Decimal;
     /**
      * Returns the remainder of 'this' divided by 'value': for example, 5 mod 2 = 1, because the remainder of 5 / 2 is 1.
-     * Uses the "truncated division" modulo, which is the same as JavaScript's native modulo operator (%).
+     * Uses the "truncated division" modulo, which is the same as JavaScript's native modulo operator (%)...
+     * unless 'floored' is true, in which case it uses the "floored" modulo, which is closer to how modulo works in number theory.
+     * These two forms of modulo are the same when only positive numbers are involved, but differ in how they work with negative numbers.
      */
-    mod(value: DecimalSource): Decimal;
+    mod(value: DecimalSource, floored?: boolean): Decimal;
     /**
      * Returns the remainder of 'this' divided by 'value': for example, 5 mod 2 = 1, because the remainder of 5 / 2 is 1.
-     * Uses the "truncated division" modulo, which is the same as JavaScript's native modulo operator (%).
+     * Uses the "truncated division" modulo, which is the same as JavaScript's native modulo operator (%)...
+     * unless 'floored' is true, in which case it uses the "floored" modulo, which is closer to how modulo works in number theory.
+     * These two forms of modulo are the same when only positive numbers are involved, but differ in how they work with negative numbers.
      */
-    modulo(value: DecimalSource): Decimal;
+    modulo(value: DecimalSource, floored?: boolean): Decimal;
     /**
-     * Returns the remainder of this / value: for example, 5 mod 2 = 1, because the remainder of 5 / 2 is 1.
-     * Uses the "truncated division" modulo, which is the same as JavaScript's native modulo operator (%).
+     * Returns the remainder of 'this' divided by 'value': for example, 5 mod 2 = 1, because the remainder of 5 / 2 is 1.
+     * Uses the "truncated division" modulo, which is the same as JavaScript's native modulo operator (%)...
+     * unless 'floored' is true, in which case it uses the "floored" modulo, which is closer to how modulo works in number theory.
+     * These two forms of modulo are the same when only positive numbers are involved, but differ in how they work with negative numbers.
      */
-    modular(value: DecimalSource): Decimal;
+    modular(value: DecimalSource, floored?: boolean): Decimal;
     /**
      * Returns 1 if 'this' > 'value', returns -1 if 'this' < 'value', returns 0 if 'this' == 'value'.
      */
@@ -1118,6 +1199,25 @@ export default class Decimal {
      */
     linear_sroot(degree: number): Decimal;
     /**
+     * This function takes a Decimal => Decimal function as its argument (or DecimalSource => Decimal, that's fine too),
+     * and it returns a DecimalSource => Decimal function that's an inverse of the first one, which uses binary search to find its target.
+     * The resulting function will call the original many times, so it may be noticably slower than the original.
+     *
+     * This function is only intended to be used on continuous, strictly increasing (or, using the decreasing parameter, strictly decreasing) functions.
+     * Its resulting function may output erroneous results if the original function was not strictly increasing.
+     * If the function is increasing but not strictly increasing, the inverse will, in ranges where the original function is constant, try to return the value closest to 0 out of the multiple correct values.
+     * If the function is not continuous, the inverse should return the correct answer in cases where the given value is returned by some input to the original function, but it will return an erroneous result otherwise (the correct result would be to return NaN, but checking to ensure continuity is not implemented)
+     *
+     * @param func The Decimal => Decimal function to create an inverse function of.
+     * @param decreasing This parameter is false by default. If this parameter is true, the original function should be strictly decreasing instead of strictly increasing.
+     * @param iterations The amount of iterations that the inverse function runs before it gives up and returns whatever value it's found thus far. Default is 120, which should be enough to always be as precise as floating point allows.
+     * @param minX The original function is assumed to have this value as the lowest value in its domain. Is Decimal.dLayerMax.neg() by default, which means all negative finite values are allowed but infinity is not.
+     * @param maxX The original function is assumed to have this value as the highest value in its domain. Is Decimal.dLayerMax by default, which means all positive finite values are allowed but infinity is not.
+     * @param minY If the input to the inverse function is below this value, the inverse function assumes the input is not in the range and returns NaN. Is Decimal.dLayerMax.neg() by default, which means all negative finite values are allowed but infinity is not.
+     * @param maxY If the input to the inverse function is above this value, the inverse function assumes the input is not in the range and returns NaN. Is Decimal.dLayerMax by default, which means all positive finite values are allowed but infinity is not.
+     */
+    static increasingInverse(func: (((value: DecimalSource) => Decimal) | ((value: Decimal) => Decimal)), decreasing?: boolean, iterations?: number, minX?: DecimalSource, maxX?: DecimalSource, minY?: DecimalSource, maxY?: DecimalSource): (value: DecimalSource) => Decimal;
+    /**
      * Pentation/pentate: The result of tetrating 'height' times in a row. An absurdly strong operator - Decimal.pentate(2, 4.28) and Decimal.pentate(10, 2.37) are already too huge for break_eternity.js!
      * https://en.wikipedia.org/wiki/Pentation
      *
@@ -1129,6 +1229,27 @@ export default class Decimal {
      * For non-whole pentation heights, the linear approximation of pentation is always used, as there is no defined analytic approximation of pentation.
      */
     pentate(height?: number, payload?: DecimalSource, linear?: boolean): Decimal;
+    /**
+     * Penta-logarithm, one of pentation's inverses, tells you what height you'd have to pentate 'base' to to get 'this'.
+     *
+     * Grows incredibly slowly. For bases above 2, you won't be seeing a result greater than 5 out of this function.
+     *
+     * Accepts a number of iterations (default is 100), and use binary search to, after making an initial guess, hone in on the true value, assuming pentation as the ground truth.
+     *
+     * Tetration for non-integer heights does not have a single agreed-upon definition,
+     * so this library uses an analytic approximation for bases <= 10, but it reverts to the linear approximation for bases > 10.
+     * If you want to use the linear approximation even for bases <= 10, set the linear parameter to true.
+     * Analytic approximation is not currently supported for bases > 10.
+     *
+     * For non-whole pentation heights, the linear approximation of pentation is always used, as there is no defined analytic approximation of pentation.
+     */
+    penta_log(base?: DecimalSource, iterations?: number, linear?: boolean): Decimal;
+    /**
+     * Penta-root, one of pentation's inverses - what number, pentated to height 'degree', equals 'this'?
+     *
+     * Only works with the linear approximation of tetration, as starting with analytic and then switching to linear would result in inconsistent behavior for super-roots.
+     */
+    linear_penta_root(degree: number): Decimal;
     /**
      * The sine function, one of the main two trigonometric functions. Behaves periodically with period 2*pi.
      */

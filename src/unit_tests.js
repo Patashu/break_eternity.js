@@ -357,29 +357,6 @@ var test_tetrate_linear_sroot = function()
     try {
       base = Decimal.randomDecimalForTesting(Math.round(Math.random()*4));
       if (base.lt(0)) base = base.neg();
-      if (base.lt(1)) base = base.recip();
-      degree = Math.random()*10;
-      if (base.eq(0)) base = Decimal.dOne;
-      let round_trip = new Decimal(base).linear_sroot(degree).tetrate(degree, 1, true);
-      assert_eq_tolerance(base + ", " + degree + " -> " + round_trip, round_trip, base);
-    }
-    catch (err) {
-      console.log("Error in " + base + ", " + degree + ": " + err);
-    }
-  }
-}
-
-var test_tetrate_linear_sroot_lt1 = function()
-{
-  console.log("test_tetrate_linear_sroot_lt1");
-  let base = Decimal.dOne;
-  let degree = Decimal.dOne;
-  for (var i = 0; i < 100; ++i)
-  {
-    try {
-      base = Decimal.randomDecimalForTesting(2);
-      if (base.lt(0)) base = base.neg();
-      if (base.gt(1)) base = base.recip();
       degree = Math.random()*10;
       if (base.eq(0)) base = Decimal.dOne;
       let round_trip = new Decimal(base).linear_sroot(degree).tetrate(degree, 1, true);
@@ -527,6 +504,45 @@ var test_tetrate_increasing = function() {
   }
 }
 
+var test_penta_log = function()
+{
+  console.log("test_penta_log")
+  for (var i = 0; i < 1000; ++i)
+  {
+    let base = Math.random()*10 + 1.7;
+    let tower = Math.random()*10;
+    let part_1 = new Decimal(base).pentate(tower);
+    let part_1_linear = new Decimal(base).pentate(tower, 1, true);
+    if (!part_1.isFinite() || !part_1_linear.isFinite()) continue;
+    let round_trip = part_1.penta_log(base);
+    let round_trip_linear = part_1_linear.penta_log(base, 100, true);
+    assert_eq_tolerance("Test 1: " + base + ", " + tower + ", analytic", round_trip, tower, base < 2 ? 1e-2 : 1e-10);
+    assert_eq_tolerance("Test 2: " + base + ", " + tower + ", linear", round_trip_linear, tower, 1e-10);
+  }
+}
+
+var test_linear_penta_root = function()
+{
+  console.log("test_linear_penta_root");
+  let base = Decimal.dOne;
+  let degree = Decimal.dOne;
+  for (var i = 0; i < 1000; ++i)
+  {
+    try {
+      base = Decimal.randomDecimalForTesting(Math.round(Math.random()*4));
+      if (base.lt(0)) base = base.neg();
+      degree = Math.random()*10;
+      if (base.eq(0)) base = Decimal.dOne;
+      let round_trip = new Decimal(base).linear_penta_root(degree).pentate(degree, 1, true);
+      if (!round_trip.isFinite()) continue;
+      assert_eq_tolerance(base + ", " + degree + " -> " + round_trip, round_trip, base);
+    }
+    catch (err) {
+      console.log("Error in " + base + ", " + degree + ": " + err);
+    }
+  }
+}
+
 var all_tests = function()
 {
   test_tetrate_ground_truth();
@@ -548,7 +564,6 @@ var all_tests = function()
   test_tetrate_linear_truth();
   test_modulo();
   test_tetrate_linear_sroot();
-  test_tetrate_linear_sroot_lt1();
   test_ssqrt();
   test_lambertw_nonPrincipal();
   test_lambertw_nonPrincipal_2();
@@ -556,4 +571,6 @@ var all_tests = function()
   test_tetrate_small_bases();
   test_layeradd_recursive_property();
   test_tetrate_increasing();
+  test_penta_log();
+  test_linear_penta_root();
 }
