@@ -2378,7 +2378,7 @@ export default class Decimal {
 
     //Infinity + -Infinity = NaN
     if ((this.eq(Decimal.dInf) && decimal.eq(Decimal.dNegInf)) || (this.eq(Decimal.dNegInf) && decimal.eq(Decimal.dInf))) {
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     }
 
     //inf/nan check
@@ -2502,7 +2502,7 @@ export default class Decimal {
 
     //Infinity * 0 = NaN
     if ((this.mag == Number.POSITIVE_INFINITY && decimal.eq(Decimal.dZero)) || (this.eq(Decimal.dZero) && this.mag == Number.POSITIVE_INFINITY)) {
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     }
 
     //inf/nan check
@@ -2620,7 +2620,7 @@ export default class Decimal {
    */
   public recip(): Decimal {
     if (this.mag === 0) {
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     } 
     else if (this.mag === Number.POSITIVE_INFINITY) {
       return FC_NN(0, 0, 0);
@@ -3016,7 +3016,7 @@ export default class Decimal {
    */
   public absLog10(): Decimal {
     if (this.sign === 0) {
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     } else if (this.layer > 0) {
       return FC(Math.sign(this.mag), this.layer - 1, Math.abs(this.mag));
     } else {
@@ -3030,7 +3030,7 @@ export default class Decimal {
    */
   public log10(): Decimal {
     if (this.sign <= 0) {
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     } else if (this.layer > 0) {
       return FC(Math.sign(this.mag), this.layer - 1, Math.abs(this.mag));
     } else {
@@ -3044,13 +3044,13 @@ export default class Decimal {
   public log(base: DecimalSource): Decimal {
     base = D(base);
     if (this.sign <= 0) {
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     }
     if (base.sign <= 0) {
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     }
     if (base.sign === 1 && base.layer === 0 && base.mag === 1) {
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     } else if (this.layer === 0 && base.layer === 0) {
       return FC(this.sign, 0, Math.log(this.mag) / Math.log(base.mag));
     }
@@ -3063,7 +3063,7 @@ export default class Decimal {
    */
   public log2(): Decimal {
     if (this.sign <= 0) {
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     } else if (this.layer === 0) {
       return FC(this.sign, 0, Math.log2(this.mag));
     } else if (this.layer === 1) {
@@ -3080,7 +3080,7 @@ export default class Decimal {
    */
   public ln(): Decimal {
     if (this.sign <= 0) {
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     } else if (this.layer === 0) {
       return FC(this.sign, 0, Math.log(this.mag));
     } else if (this.layer === 1) {
@@ -3132,7 +3132,7 @@ export default class Decimal {
       } else if (Math.abs(b.toNumber() % 2) % 2 === 0) {
         return result;
       }
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     }
 
     return result;
@@ -3157,7 +3157,7 @@ export default class Decimal {
       return FC_NN(0, 0, 0);
     }
     if (!Number.isFinite(this.layer) || !Number.isFinite(this.mag)) {
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     }
 
     let a: Decimal = new Decimal(this);
@@ -3388,7 +3388,7 @@ export default class Decimal {
       } else {
         //0.06598803584531253708 > this_num >= 0: never converges
         //this_num < 0: quickly becomes a complex number
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       }
     }
 
@@ -3590,11 +3590,11 @@ export default class Decimal {
     //special cases:
     //slog base 0 or lower is NaN
     if (base.lte(Decimal.dZero)) {
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     }
     //slog base 1 is NaN
     if (base.eq(Decimal.dOne)) {
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     }
     //need to handle these small, wobbling bases specially
     if (base.lt(Decimal.dOne)) {
@@ -3607,7 +3607,7 @@ export default class Decimal {
       //0 < this < 1: ambiguous (happens multiple times)
       //this < 0: impossible (as far as I can tell)
       //this > 1: partially complex (http://myweb.astate.edu/wpaulsen/tetcalc/tetcalc.html base 0.25 for proof)
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     }
     //slog_n(0) is -1
     if (this.mag < 0 || this.eq(Decimal.dZero)) {
@@ -3617,7 +3617,7 @@ export default class Decimal {
       const negln = Decimal.ln(base).neg();
       let infTower = negln.lambertw().div(negln);
       if (this.eq(infTower)) return FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
-      if (this.gt(infTower)) return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      if (this.gt(infTower)) return new Decimal(Decimal.dNaN);
     }
 
     let result = 0;
@@ -3816,7 +3816,7 @@ export default class Decimal {
     if (slogdest >= 0) {
       return Decimal.tetrate(base, slogdest, Decimal.dOne, linear);
     } else if (!Number.isFinite(slogdest)) {
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     } else if (slogdest >= -1) {
       return Decimal.log(Decimal.tetrate(base, slogdest + 1, Decimal.dOne, linear), base);
     } else {
@@ -3840,7 +3840,7 @@ export default class Decimal {
     base = D(base);
     let baseD = base;
     base = base.toNumber();
-    if (base == 1 || base <= 0) return [FC_NN(Number.NaN, Number.NaN, Number.NaN), 0];
+    if (base == 1 || base <= 0) return [new Decimal(Decimal.dNaN), 0];
     if (base > 1.44466786100976613366) return [value.slog(base, 100, linear), 0];
     const negln = Decimal.ln(base).neg();
     let lower = negln.lambertw().div(negln);
@@ -3895,7 +3895,7 @@ export default class Decimal {
         else if (guess.lt(value)) fracheight += step_size;
         step_size /= 2;
       }
-      if (guess.neq_tolerance(value, 1e-7)) return [FC_NN(Number.NaN, Number.NaN, Number.NaN), 0];
+      if (guess.neq_tolerance(value, 1e-7)) return [new Decimal(Decimal.dNaN), 0];
       return [new Decimal(estimate + fracheight), 2];
     }
     if (value.lt(upper) && value.gt(lower)) {
@@ -3936,7 +3936,7 @@ export default class Decimal {
         else if (guess.gt(value)) fracheight += step_size;
         step_size /= 2;
       }
-      if (guess.neq_tolerance(value, 1e-7)) return [FC_NN(Number.NaN, Number.NaN, Number.NaN), 0];
+      if (guess.neq_tolerance(value, 1e-7)) return [new Decimal(Decimal.dNaN), 0];
       return [new Decimal(estimate + fracheight), 1];
     }
     throw new Error("Unhandled behavior in excess_slog");
@@ -3953,7 +3953,7 @@ export default class Decimal {
   //Some special values, for testing: https://en.wikipedia.org/wiki/Lambert_W_function#Special_values
   public lambertw(principal = true): Decimal {
     if (this.lt(-0.3678794411710499)) {
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN); //complex
+      return new Decimal(Decimal.dNaN); //complex
     }
     else if (principal) {
       if (this.abs().lt("1e-300")) return new Decimal(this);
@@ -3969,7 +3969,7 @@ export default class Decimal {
     }
     else {
       if (this.sign === 1) {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN); //complex
+        return new Decimal(Decimal.dNaN); //complex
       }
       if (this.layer === 0) {
         return Decimal.fromNumber(f_lambertw(this.sign * this.mag, 1e-10, false));
@@ -4007,7 +4007,7 @@ export default class Decimal {
       return FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
     }
     if (!this.isFinite()) {
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     }
     //Using linear approximation, x^^n = x^n if 0 < n < 1
     if (degree > 0 && degree < 1) {
@@ -4019,7 +4019,7 @@ export default class Decimal {
     }
     //Super roots with -1 <= degree < 0 have either no solution or infinitely many solutions, and tetration with height <= -2 returns NaN, so super roots of degree <= -2 don't work
     if (degree <= 0) {
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     }
     //Infinite degree super-root is x^(1/x) between 1/e <= x <= e, undefined otherwise
     if (degree == Number.POSITIVE_INFINITY) {
@@ -4028,7 +4028,7 @@ export default class Decimal {
         return this.pow(this.recip());
       }
       else {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       }
     }
     //Special case: any super-root of 1 is 1
@@ -4037,12 +4037,12 @@ export default class Decimal {
     }
     //TODO: base < 0 (It'll probably be NaN anyway)
     if (this.lt(0)) {
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     }
     //Treat all numbers of layer <= -2 as zero, because they effectively are
     if (this.lte("1ee-16")) {
       if (degree % 2 == 1) return new Decimal(this);
-      else return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      else return new Decimal(Decimal.dNaN);
     }
     //this > 1
     if (this.gt(1)) {
@@ -4255,7 +4255,7 @@ export default class Decimal {
         else lower = guess;
         if (guess.eq(previous)) loopGoing = false;
         else previous = guess;
-        if (upper.gt("1e18")) return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        if (upper.gt("1e18")) return new Decimal(Decimal.dNaN);
       }
       //using guess.neq(minimum) led to imprecision errors, so here's a fixed version of that
       if (!(guess.eq_tolerance(minimum, 1e-15))) {
@@ -4266,7 +4266,7 @@ export default class Decimal {
         //Check if the root is in the zero range.
         if (maximum.eq(FC(1, 10, 1))) {
           //There is no zero range, so the super root doesn't exist
-          return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+          return new Decimal(Decimal.dNaN);
         }
         lower = FC(1, 10, 1);
         upper = maximum;
@@ -4280,7 +4280,7 @@ export default class Decimal {
           else lower = guess;
           if (guess.eq(previous)) loopGoing = false;
           else previous = guess;
-          if (upper.gt("1e18")) return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+          if (upper.gt("1e18")) return new Decimal(Decimal.dNaN);
         }
         return guess.pow10().recip();
       }
@@ -4321,7 +4321,7 @@ export default class Decimal {
       minY = new Decimal(minY);
       maxY = new Decimal(maxY);
       
-      if (value.isNan() || maxX.lt(minX) || value.lt(minY) || value.gt(maxY)) return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      if (value.isNan() || maxX.lt(minX) || value.lt(minY) || value.gt(maxY)) return new Decimal(Decimal.dNaN);
 
       // Before actually doing the search, let's determine what range we're looking at. First-class function shenanigans incoming.
       let rangeApply = function(value : DecimalSource){return new Decimal(value);}
@@ -4540,7 +4540,7 @@ export default class Decimal {
           step_size *= 2;
         }
         // If the inverse is trying to increase when it's already at maxX, or it's trying to decrease when it's already at minX, it's going outside the domain, so return NaN.
-        if ((currently_rose != searchIncreasing && appliedResult.eq(maxX)) || (currently_rose == searchIncreasing && appliedResult.eq(minX))) return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        if ((currently_rose != searchIncreasing && appliedResult.eq(maxX)) || (currently_rose == searchIncreasing && appliedResult.eq(minX))) return new Decimal(Decimal.dNaN);
         step_size = Math.abs(step_size) * (currently_rose ? -1 : 1);
         result += step_size;
         if (step_size === 0 || oldresult == result) { break; }
@@ -4640,7 +4640,7 @@ export default class Decimal {
   public penta_log(base: DecimalSource = 10, iterations = 100, linear = false) {
     base = new Decimal(base);
     // Bases below 1 oscillate, so the logarithm doesn't make sense
-    if (base.lte(1)) return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+    if (base.lte(1)) return new Decimal(Decimal.dNaN);
     if (this.eq(1)) return FC_NN(0, 0, 0);
     if (this.eq(Decimal.dInf)) return FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
     let value = new Decimal(1);
@@ -4649,10 +4649,10 @@ export default class Decimal {
 
     // There's some x between -1 and -2, depending on the base, where base^^x == x. This x is base^^^(-Infinity), and we shouldn't bother with numbers less than that limit.
     if (this.lt(-1)) {
-      if (this.lte(-2)) return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      if (this.lte(-2)) return new Decimal(Decimal.dNaN);
       let limitcheck = base.tetrate(this.toNumber(), 1, linear);
       if (this.eq(limitcheck)) return FC_NN(-1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
-      if (this.gt(limitcheck)) return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      if (this.gt(limitcheck)) return new Decimal(Decimal.dNaN);
     }
     
     // pentate runs through each tetration iteration anyway, so while we're narrowing down on the nearest integer it's faster to just check them one-by-one than to run through pentate every time
@@ -4662,7 +4662,7 @@ export default class Decimal {
         value = Decimal.tetrate(base, value.toNumber(), 1, linear);
         if (result > 1000) {
           // Probably reached a limit by this point.
-          return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+          return new Decimal(Decimal.dNaN);
         }
       }
     }
@@ -4672,7 +4672,7 @@ export default class Decimal {
         value = Decimal.slog(value, base, linear);
         if (result > 100) {
           // Probably reached the limit by this point.
-          return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+          return new Decimal(Decimal.dNaN);
         }
       }
     }
@@ -4700,13 +4700,13 @@ export default class Decimal {
     }
     //TODO: degree < 0 (A pretty useless case, seeing as it runs into the same issues as linear_sroot's degrees between -1 and 0 for degrees between -2 and 0, and for degrees below -2 it'll only have a value for negative numbers between -1 and... some limit between -1 and -2.)
     if (degree < 0) {
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     }
     if (this.eq(Decimal.dInf)) {
       return FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
     }
     if (!this.isFinite()) {
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     }
     //Using linear approximation, x^^^n = x^n if 0 < n < 1
     if (degree > 0 && degree < 1) {
@@ -4718,7 +4718,7 @@ export default class Decimal {
     }
     //TODO: base < 0 (It'll probably be NaN anyway)
     if (this.lt(0)) {
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     }
     /* If 'this' is below 1, then the result is going to be below 1, meaning the original number was a tetration tower where all entries are below 1...
     ...and in the linear approximation, tetration with a height between 0 and 1 reduces to exponentiation of that height.
@@ -4781,7 +4781,7 @@ export default class Decimal {
     if (this.layer === 0) {
       return Decimal.fromNumber(Math.asin(this.sign * this.mag));
     }
-    return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+    return new Decimal(Decimal.dNaN);
   }
 
   /**
@@ -4794,7 +4794,7 @@ export default class Decimal {
     if (this.layer === 0) {
       return Decimal.fromNumber(Math.acos(this.sign * this.mag));
     }
-    return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+    return new Decimal(Decimal.dNaN);
   }
 
   /**
@@ -4850,7 +4850,7 @@ export default class Decimal {
    */
   public atanh(): Decimal {
     if (this.abs().gte(1)) {
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     }
 
     return Decimal.ln(this.add(1).div(Decimal.fromNumber(1).sub(this))).div(2);
