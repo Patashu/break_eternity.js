@@ -3131,7 +3131,7 @@ export default class Decimal {
       const sign2 = Math.abs(b.recip().toNumber() % 2) % 2;
       if (sign1 === 1 || sign2 === 1) {
         return result.neg();
-      } else if (sign1 === 0 || sign2 === 0) {
+      } else if (sign1 === 0) {
         return result;
       }
       return FC_NN(Number.NaN, Number.NaN, Number.NaN);
