@@ -543,6 +543,18 @@ var test_linear_penta_root = function()
   }
 }
 
+var test_fractional_negative_powers = function()
+{
+  console.log("test_fractional_negative_powers");
+  for (var i = 0; i < 1000; ++i)
+  {
+    let num = new Decimal(-Math.ceil(Math.random() * 1000));
+    let pow = Math.floor(Math.random() * 5) * 2 + 1;
+    let result = num.pow(1 / pow);
+    assert_eq_tolerance(num + " rooted by " + pow + " is " + result, result.pow(pow), num);
+  }
+}
+
 var all_tests = function()
 {
   test_tetrate_ground_truth();
