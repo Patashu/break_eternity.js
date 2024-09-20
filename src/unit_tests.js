@@ -585,4 +585,5 @@ var all_tests = function()
   test_tetrate_increasing();
   test_penta_log();
   test_linear_penta_root();
+  test_fractional_negative_powers();
 }
