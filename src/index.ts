@@ -334,7 +334,7 @@ function d_lambertw(z: Decimal, tol = 1e-10, principal = true): Decimal {
   }
   else {
     if (z.eq(Decimal.dZero)) {
-        return FC_NN(-1, Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY);
+        return new Decimal(Decimal.dNegInf);
       }
     //Get an initial guess for Halley's method
     w = Decimal.ln(z.neg());  
@@ -2497,12 +2497,17 @@ export default class Decimal {
 
     // Infinity * -Infinity = -Infinity
     if ((this.eq(Decimal.dInf) && decimal.eq(Decimal.dNegInf)) || (this.eq(Decimal.dNegInf) && decimal.eq(Decimal.dInf))) {
-      return FC_NN(-1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+      return new Decimal(Decimal.dNegInf);
     }
 
     //Infinity * 0 = NaN
     if ((this.mag == Number.POSITIVE_INFINITY && decimal.eq(Decimal.dZero)) || (this.eq(Decimal.dZero) && this.mag == Number.POSITIVE_INFINITY)) {
       return new Decimal(Decimal.dNaN);
+    }
+
+    // -Infinity * -Infinity = Infinity
+    if ((this.eq(Decimal.dNegInf) && decimal.eq(Decimal.dNegInf))) {
+      return new Decimal(Decimal.dInf);
     }
 
     //inf/nan check
@@ -3151,7 +3156,7 @@ export default class Decimal {
     */
 
     if (this.eq(Decimal.dInf)) {
-      return FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+      return new Decimal(Decimal.dInf);
     }
     if (this.eq(Decimal.dNegInf)) {
       return FC_NN(0, 0, 0);
@@ -3381,10 +3386,10 @@ export default class Decimal {
         payload = D(payload);
         if (payload.eq(upper)) return upper;
         else if (payload.lt(upper)) return lower;
-        else return FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+        else return new Decimal(Decimal.dInf);
       } else if (this_num > 1.44466786100976613366) {
         //explodes to infinity
-        return FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+        return new Decimal(Decimal.dInf);
       } else {
         //0.06598803584531253708 > this_num >= 0: never converges
         //this_num < 0: quickly becomes a complex number
@@ -3616,7 +3621,7 @@ export default class Decimal {
     if (base.lt(1.44466786100976613366)) {
       const negln = Decimal.ln(base).neg();
       let infTower = negln.lambertw().div(negln);
-      if (this.eq(infTower)) return FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+      if (this.eq(infTower)) return new Decimal(Decimal.dInf);
       if (this.gt(infTower)) return new Decimal(Decimal.dNaN);
     }
 
@@ -3850,8 +3855,8 @@ export default class Decimal {
       lower = upper = Decimal.fromNumber(Math.E);
     }
     if (value.lt(lower)) return [value.slog(base, 100, linear), 0];
-    if (value.eq(lower)) return [FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY), 0];
-    if (value.eq(upper)) return [FC_NN(1, Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY), 2];
+    if (value.eq(lower)) return [new Decimal(Decimal.dInf), 0];
+    if (value.eq(upper)) return [new Decimal(Decimal.dNegInf), 2];
     if (value.gt(upper)) {
       let slogzero = upper.mul(2);
       let slogone = baseD.pow(slogzero);
@@ -4004,7 +4009,7 @@ export default class Decimal {
       return this;
     }
     if (this.eq(Decimal.dInf)) {
-      return FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+      return new Decimal(Decimal.dInf);
     }
     if (!this.isFinite()) {
       return new Decimal(Decimal.dNaN);
@@ -4642,7 +4647,7 @@ export default class Decimal {
     // Bases below 1 oscillate, so the logarithm doesn't make sense
     if (base.lte(1)) return new Decimal(Decimal.dNaN);
     if (this.eq(1)) return FC_NN(0, 0, 0);
-    if (this.eq(Decimal.dInf)) return FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+    if (this.eq(Decimal.dInf)) return new Decimal(Decimal.dInf);
     let value = new Decimal(1);
     let result = 0;
     let step_size = 1;
@@ -4651,7 +4656,7 @@ export default class Decimal {
     if (this.lt(-1)) {
       if (this.lte(-2)) return new Decimal(Decimal.dNaN);
       let limitcheck = base.tetrate(this.toNumber(), 1, linear);
-      if (this.eq(limitcheck)) return FC_NN(-1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+      if (this.eq(limitcheck)) return new Decimal(Decimal.dNegInf);
       if (this.gt(limitcheck)) return new Decimal(Decimal.dNaN);
     }
     
@@ -4703,7 +4708,7 @@ export default class Decimal {
       return new Decimal(Decimal.dNaN);
     }
     if (this.eq(Decimal.dInf)) {
-      return FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+      return new Decimal(Decimal.dInf);
     }
     if (!this.isFinite()) {
       return new Decimal(Decimal.dNaN);
