@@ -367,7 +367,7 @@ function d_lambertw(z) {
     w = Decimal.ln(z);
   } else {
     if (z.eq(Decimal.dZero)) {
-      return FC_NN(-1, Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY);
+      return new Decimal(Decimal.dNegInf);
     }
     //Get an initial guess for Halley's method
     w = Decimal.ln(z.neg());
@@ -1213,7 +1213,7 @@ var Decimal = /*#__PURE__*/function () {
       var decimal = D(value);
       //Infinity + -Infinity = NaN
       if (this.eq(Decimal.dInf) && decimal.eq(Decimal.dNegInf) || this.eq(Decimal.dNegInf) && decimal.eq(Decimal.dInf)) {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       }
       //inf/nan check
       if (!Number.isFinite(this.layer)) {
@@ -1322,11 +1322,15 @@ var Decimal = /*#__PURE__*/function () {
       var decimal = D(value);
       // Infinity * -Infinity = -Infinity
       if (this.eq(Decimal.dInf) && decimal.eq(Decimal.dNegInf) || this.eq(Decimal.dNegInf) && decimal.eq(Decimal.dInf)) {
-        return FC_NN(-1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+        return new Decimal(Decimal.dNegInf);
       }
       //Infinity * 0 = NaN
       if (this.mag == Number.POSITIVE_INFINITY && decimal.eq(Decimal.dZero) || this.eq(Decimal.dZero) && this.mag == Number.POSITIVE_INFINITY) {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
+      }
+      // -Infinity * -Infinity = Infinity
+      if (this.eq(Decimal.dNegInf) && decimal.eq(Decimal.dNegInf)) {
+        return new Decimal(Decimal.dInf);
       }
       //inf/nan check
       if (!Number.isFinite(this.layer)) {
@@ -1432,7 +1436,7 @@ var Decimal = /*#__PURE__*/function () {
     key: "recip",
     value: function recip() {
       if (this.mag === 0) {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       } else if (this.mag === Number.POSITIVE_INFINITY) {
         return FC_NN(0, 0, 0);
       } else if (this.layer === 0) {
@@ -1873,7 +1877,7 @@ var Decimal = /*#__PURE__*/function () {
     key: "absLog10",
     value: function absLog10() {
       if (this.sign === 0) {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       } else if (this.layer > 0) {
         return FC(Math.sign(this.mag), this.layer - 1, Math.abs(this.mag));
       } else {
@@ -1888,7 +1892,7 @@ var Decimal = /*#__PURE__*/function () {
     key: "log10",
     value: function log10() {
       if (this.sign <= 0) {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       } else if (this.layer > 0) {
         return FC(Math.sign(this.mag), this.layer - 1, Math.abs(this.mag));
       } else {
@@ -1903,13 +1907,13 @@ var Decimal = /*#__PURE__*/function () {
     value: function log(base) {
       base = D(base);
       if (this.sign <= 0) {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       }
       if (base.sign <= 0) {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       }
       if (base.sign === 1 && base.layer === 0 && base.mag === 1) {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       } else if (this.layer === 0 && base.layer === 0) {
         return FC(this.sign, 0, Math.log(this.mag) / Math.log(base.mag));
       }
@@ -1922,7 +1926,7 @@ var Decimal = /*#__PURE__*/function () {
     key: "log2",
     value: function log2() {
       if (this.sign <= 0) {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       } else if (this.layer === 0) {
         return FC(this.sign, 0, Math.log2(this.mag));
       } else if (this.layer === 1) {
@@ -1940,7 +1944,7 @@ var Decimal = /*#__PURE__*/function () {
     key: "ln",
     value: function ln() {
       if (this.sign <= 0) {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       } else if (this.layer === 0) {
         return FC(this.sign, 0, Math.log(this.mag));
       } else if (this.layer === 1) {
@@ -1991,7 +1995,7 @@ var Decimal = /*#__PURE__*/function () {
         } else if (Math.abs(b.toNumber() % 2) % 2 === 0) {
           return result;
         }
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       }
       return result;
     }
@@ -2009,13 +2013,13 @@ var Decimal = /*#__PURE__*/function () {
       4) negative sign, negative mag (-e-15, -ee-15): layer 0 case would have been handled in the Math.pow check, so just return 1
       */
       if (this.eq(Decimal.dInf)) {
-        return FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+        return new Decimal(Decimal.dInf);
       }
       if (this.eq(Decimal.dNegInf)) {
         return FC_NN(0, 0, 0);
       }
       if (!Number.isFinite(this.layer) || !Number.isFinite(this.mag)) {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       }
       var a = new Decimal(this);
       //handle layer 0 case - if no precision is lost just use Math.pow, else promote one layer
@@ -2057,6 +2061,7 @@ var Decimal = /*#__PURE__*/function () {
     key: "root",
     value: function root(value) {
       var decimal = D(value);
+      if (this.lt(0) && decimal.mod(2, true).eq(1)) return this.neg().root(decimal).neg();
       return this.pow(decimal.recip());
     }
     /**
@@ -2193,6 +2198,7 @@ var Decimal = /*#__PURE__*/function () {
   }, {
     key: "cbrt",
     value: function cbrt() {
+      if (this.lt(0)) return this.neg().pow(1 / 3).neg();
       return this.pow(1 / 3);
     }
     /**
@@ -2243,14 +2249,14 @@ var Decimal = /*#__PURE__*/function () {
             lower = upper = Decimal.fromNumber(Math.E);
           }
           payload = D(payload);
-          if (payload.eq(upper)) return upper;else if (payload.lt(upper)) return lower;else return FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+          if (payload.eq(upper)) return upper;else if (payload.lt(upper)) return lower;else return new Decimal(Decimal.dInf);
         } else if (this_num > 1.44466786100976613366) {
           //explodes to infinity
-          return FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+          return new Decimal(Decimal.dInf);
         } else {
           //0.06598803584531253708 > this_num >= 0: never converges
           //this_num < 0: quickly becomes a complex number
-          return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+          return new Decimal(Decimal.dNaN);
         }
       }
       //0^^x oscillates if we define 0^0 == 1 (which in javascript land we do), since then 0^^1 is 0, 0^^2 is 1, 0^^3 is 0, etc. payload is ignored
@@ -2448,11 +2454,11 @@ var Decimal = /*#__PURE__*/function () {
       //special cases:
       //slog base 0 or lower is NaN
       if (base.lte(Decimal.dZero)) {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       }
       //slog base 1 is NaN
       if (base.eq(Decimal.dOne)) {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       }
       //need to handle these small, wobbling bases specially
       if (base.lt(Decimal.dOne)) {
@@ -2465,7 +2471,7 @@ var Decimal = /*#__PURE__*/function () {
         //0 < this < 1: ambiguous (happens multiple times)
         //this < 0: impossible (as far as I can tell)
         //this > 1: partially complex (http://myweb.astate.edu/wpaulsen/tetcalc/tetcalc.html base 0.25 for proof)
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       }
       //slog_n(0) is -1
       if (this.mag < 0 || this.eq(Decimal.dZero)) {
@@ -2474,8 +2480,8 @@ var Decimal = /*#__PURE__*/function () {
       if (base.lt(1.44466786100976613366)) {
         var negln = Decimal.ln(base).neg();
         var infTower = negln.lambertw().div(negln);
-        if (this.eq(infTower)) return FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
-        if (this.gt(infTower)) return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        if (this.eq(infTower)) return new Decimal(Decimal.dInf);
+        if (this.gt(infTower)) return new Decimal(Decimal.dNaN);
       }
       var result = 0;
       var copy = Decimal.fromDecimal(this);
@@ -2609,7 +2615,7 @@ var Decimal = /*#__PURE__*/function () {
       if (slogdest >= 0) {
         return Decimal.tetrate(base, slogdest, Decimal.dOne, linear);
       } else if (!Number.isFinite(slogdest)) {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       } else if (slogdest >= -1) {
         return Decimal.log(Decimal.tetrate(base, slogdest + 1, Decimal.dOne, linear), base);
       } else {
@@ -2642,7 +2648,7 @@ var Decimal = /*#__PURE__*/function () {
     function lambertw() {
       var principal = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
       if (this.lt(-0.3678794411710499)) {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN); //complex
+        return new Decimal(Decimal.dNaN); //complex
       } else if (principal) {
         if (this.abs().lt("1e-300")) return new Decimal(this);else if (this.mag < 0) {
           return Decimal.fromNumber(f_lambertw(this.toNumber()));
@@ -2656,7 +2662,7 @@ var Decimal = /*#__PURE__*/function () {
         }
       } else {
         if (this.sign === 1) {
-          return FC_NN(Number.NaN, Number.NaN, Number.NaN); //complex
+          return new Decimal(Decimal.dNaN); //complex
         }
 
         if (this.layer === 0) {
@@ -2692,10 +2698,10 @@ var Decimal = /*#__PURE__*/function () {
         return this;
       }
       if (this.eq(Decimal.dInf)) {
-        return FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+        return new Decimal(Decimal.dInf);
       }
       if (!this.isFinite()) {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       }
       //Using linear approximation, x^^n = x^n if 0 < n < 1
       if (degree > 0 && degree < 1) {
@@ -2707,7 +2713,7 @@ var Decimal = /*#__PURE__*/function () {
       }
       //Super roots with -1 <= degree < 0 have either no solution or infinitely many solutions, and tetration with height <= -2 returns NaN, so super roots of degree <= -2 don't work
       if (degree <= 0) {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       }
       //Infinite degree super-root is x^(1/x) between 1/e <= x <= e, undefined otherwise
       if (degree == Number.POSITIVE_INFINITY) {
@@ -2715,7 +2721,7 @@ var Decimal = /*#__PURE__*/function () {
         if (this_num < Math.E && this_num > _EXPN1) {
           return this.pow(this.recip());
         } else {
-          return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+          return new Decimal(Decimal.dNaN);
         }
       }
       //Special case: any super-root of 1 is 1
@@ -2724,11 +2730,11 @@ var Decimal = /*#__PURE__*/function () {
       }
       //TODO: base < 0 (It'll probably be NaN anyway)
       if (this.lt(0)) {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       }
       //Treat all numbers of layer <= -2 as zero, because they effectively are
       if (this.lte("1ee-16")) {
-        if (degree % 2 == 1) return new Decimal(this);else return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        if (degree % 2 == 1) return new Decimal(this);else return new Decimal(Decimal.dNaN);
       }
       //this > 1
       if (this.gt(1)) {
@@ -2920,7 +2926,7 @@ var Decimal = /*#__PURE__*/function () {
           if (_lower.eq(FC(1, 10, 1))) _guess = _upper.mul(2);else _guess = _lower.add(_upper).div(2);
           if (Decimal.pow(10, _guess).recip().tetrate(degree, 1, true).gt(this)) _upper = _guess;else _lower = _guess;
           if (_guess.eq(_previous)) _loopGoing = false;else _previous = _guess;
-          if (_upper.gt("1e18")) return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+          if (_upper.gt("1e18")) return new Decimal(Decimal.dNaN);
         }
         //using guess.neq(minimum) led to imprecision errors, so here's a fixed version of that
         if (!_guess.eq_tolerance(minimum, 1e-15)) {
@@ -2930,7 +2936,7 @@ var Decimal = /*#__PURE__*/function () {
           //Check if the root is in the zero range.
           if (maximum.eq(FC(1, 10, 1))) {
             //There is no zero range, so the super root doesn't exist
-            return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+            return new Decimal(Decimal.dNaN);
           }
           _lower = FC(1, 10, 1);
           _upper = maximum;
@@ -2941,7 +2947,7 @@ var Decimal = /*#__PURE__*/function () {
             if (_lower.eq(FC(1, 10, 1))) _guess = _upper.mul(2);else _guess = _lower.add(_upper).div(2);
             if (Decimal.pow(10, _guess).recip().tetrate(degree, 1, true).gt(this)) _upper = _guess;else _lower = _guess;
             if (_guess.eq(_previous)) _loopGoing = false;else _previous = _guess;
-            if (_upper.gt("1e18")) return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+            if (_upper.gt("1e18")) return new Decimal(Decimal.dNaN);
           }
           return _guess.pow10().recip();
         }
@@ -3062,18 +3068,18 @@ var Decimal = /*#__PURE__*/function () {
       var linear = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
       base = new Decimal(base);
       // Bases below 1 oscillate, so the logarithm doesn't make sense
-      if (base.lte(1)) return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      if (base.lte(1)) return new Decimal(Decimal.dNaN);
       if (this.eq(1)) return FC_NN(0, 0, 0);
-      if (this.eq(Decimal.dInf)) return FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+      if (this.eq(Decimal.dInf)) return new Decimal(Decimal.dInf);
       var value = new Decimal(1);
       var result = 0;
       var step_size = 1;
       // There's some x between -1 and -2, depending on the base, where base^^x == x. This x is base^^^(-Infinity), and we shouldn't bother with numbers less than that limit.
       if (this.lt(-1)) {
-        if (this.lte(-2)) return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        if (this.lte(-2)) return new Decimal(Decimal.dNaN);
         var limitcheck = base.tetrate(this.toNumber(), 1, linear);
-        if (this.eq(limitcheck)) return FC_NN(-1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
-        if (this.gt(limitcheck)) return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        if (this.eq(limitcheck)) return new Decimal(Decimal.dNegInf);
+        if (this.gt(limitcheck)) return new Decimal(Decimal.dNaN);
       }
       // pentate runs through each tetration iteration anyway, so while we're narrowing down on the nearest integer it's faster to just check them one-by-one than to run through pentate every time
       if (this.gt(1)) {
@@ -3082,7 +3088,7 @@ var Decimal = /*#__PURE__*/function () {
           value = Decimal.tetrate(base, value.toNumber(), 1, linear);
           if (result > 1000) {
             // Probably reached a limit by this point.
-            return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+            return new Decimal(Decimal.dNaN);
           }
         }
       } else {
@@ -3091,7 +3097,7 @@ var Decimal = /*#__PURE__*/function () {
           value = Decimal.slog(value, base, linear);
           if (result > 100) {
             // Probably reached the limit by this point.
-            return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+            return new Decimal(Decimal.dNaN);
           }
         }
       }
@@ -3122,13 +3128,13 @@ var Decimal = /*#__PURE__*/function () {
       }
       //TODO: degree < 0 (A pretty useless case, seeing as it runs into the same issues as linear_sroot's degrees between -1 and 0 for degrees between -2 and 0, and for degrees below -2 it'll only have a value for negative numbers between -1 and... some limit between -1 and -2.)
       if (degree < 0) {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       }
       if (this.eq(Decimal.dInf)) {
-        return FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+        return new Decimal(Decimal.dInf);
       }
       if (!this.isFinite()) {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       }
       //Using linear approximation, x^^^n = x^n if 0 < n < 1
       if (degree > 0 && degree < 1) {
@@ -3140,7 +3146,7 @@ var Decimal = /*#__PURE__*/function () {
       }
       //TODO: base < 0 (It'll probably be NaN anyway)
       if (this.lt(0)) {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       }
       /* If 'this' is below 1, then the result is going to be below 1, meaning the original number was a tetration tower where all entries are below 1...
       ...and in the linear approximation, tetration with a height between 0 and 1 reduces to exponentiation of that height.
@@ -3208,7 +3214,7 @@ var Decimal = /*#__PURE__*/function () {
       if (this.layer === 0) {
         return Decimal.fromNumber(Math.asin(this.sign * this.mag));
       }
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     }
     /**
      * The arccosine function, the inverse of the cosine function.
@@ -3222,7 +3228,7 @@ var Decimal = /*#__PURE__*/function () {
       if (this.layer === 0) {
         return Decimal.fromNumber(Math.acos(this.sign * this.mag));
       }
-      return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+      return new Decimal(Decimal.dNaN);
     }
     /**
      * The arctangent function, the inverse of the tangent function.
@@ -3285,7 +3291,7 @@ var Decimal = /*#__PURE__*/function () {
     key: "atanh",
     value: function atanh() {
       if (this.abs().gte(1)) {
-        return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        return new Decimal(Decimal.dNaN);
       }
       return Decimal.ln(this.add(1).div(Decimal.fromNumber(1).sub(this))).div(2);
     }
@@ -4546,7 +4552,7 @@ var Decimal = /*#__PURE__*/function () {
       base = D(base);
       var baseD = base;
       base = base.toNumber();
-      if (base == 1 || base <= 0) return [FC_NN(Number.NaN, Number.NaN, Number.NaN), 0];
+      if (base == 1 || base <= 0) return [new Decimal(Decimal.dNaN), 0];
       if (base > 1.44466786100976613366) return [value.slog(base, 100, linear), 0];
       var negln = Decimal.ln(base).neg();
       var lower = negln.lambertw().div(negln);
@@ -4556,8 +4562,8 @@ var Decimal = /*#__PURE__*/function () {
         lower = upper = Decimal.fromNumber(Math.E);
       }
       if (value.lt(lower)) return [value.slog(base, 100, linear), 0];
-      if (value.eq(lower)) return [FC_NN(1, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY), 0];
-      if (value.eq(upper)) return [FC_NN(1, Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY), 2];
+      if (value.eq(lower)) return [new Decimal(Decimal.dInf), 0];
+      if (value.eq(upper)) return [new Decimal(Decimal.dNegInf), 2];
       if (value.gt(upper)) {
         var slogzero = upper.mul(2);
         var slogone = baseD.pow(slogzero);
@@ -4598,7 +4604,7 @@ var Decimal = /*#__PURE__*/function () {
           if (guess.eq(value)) return [new Decimal(estimate + tested), 2];else if (guess.lt(value)) fracheight += step_size;
           step_size /= 2;
         }
-        if (guess.neq_tolerance(value, 1e-7)) return [FC_NN(Number.NaN, Number.NaN, Number.NaN), 0];
+        if (guess.neq_tolerance(value, 1e-7)) return [new Decimal(Decimal.dNaN), 0];
         return [new Decimal(estimate + fracheight), 2];
       }
       if (value.lt(upper) && value.gt(lower)) {
@@ -4636,7 +4642,7 @@ var Decimal = /*#__PURE__*/function () {
           if (_guess2.eq(value)) return [new Decimal(_estimate + _tested), 1];else if (_guess2.gt(value)) _fracheight += _step_size;
           _step_size /= 2;
         }
-        if (_guess2.neq_tolerance(value, 1e-7)) return [FC_NN(Number.NaN, Number.NaN, Number.NaN), 0];
+        if (_guess2.neq_tolerance(value, 1e-7)) return [new Decimal(Decimal.dNaN), 0];
         return [new Decimal(_estimate + _fracheight), 1];
       }
       throw new Error("Unhandled behavior in excess_slog");
@@ -4656,7 +4662,7 @@ var Decimal = /*#__PURE__*/function () {
         maxX = new Decimal(maxX);
         minY = new Decimal(minY);
         maxY = new Decimal(maxY);
-        if (value.isNan() || maxX.lt(minX) || value.lt(minY) || value.gt(maxY)) return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+        if (value.isNan() || maxX.lt(minX) || value.lt(minY) || value.gt(maxY)) return new Decimal(Decimal.dNaN);
         // Before actually doing the search, let's determine what range we're looking at. First-class function shenanigans incoming.
         var rangeApply = function rangeApply(value) {
           return new Decimal(value);
@@ -4868,7 +4874,7 @@ var Decimal = /*#__PURE__*/function () {
             step_size *= 2;
           }
           // If the inverse is trying to increase when it's already at maxX, or it's trying to decrease when it's already at minX, it's going outside the domain, so return NaN.
-          if (currently_rose != searchIncreasing && appliedResult.eq(maxX) || currently_rose == searchIncreasing && appliedResult.eq(minX)) return FC_NN(Number.NaN, Number.NaN, Number.NaN);
+          if (currently_rose != searchIncreasing && appliedResult.eq(maxX) || currently_rose == searchIncreasing && appliedResult.eq(minX)) return new Decimal(Decimal.dNaN);
           step_size = Math.abs(step_size) * (currently_rose ? -1 : 1);
           result += step_size;
           if (step_size === 0 || oldresult == result) {
