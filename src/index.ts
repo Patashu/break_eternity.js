@@ -3132,9 +3132,11 @@ export default class Decimal {
     const result = a.absLog10().mul(b).pow10();
 
     if (this.sign === -1) {
-      if (Math.abs(b.toNumber() % 2) % 2 === 1) {
+      const sign1 = Math.abs(b.toNumber() % 2) % 2;
+      const sign2 = Math.abs(b.recip().toNumber() % 2) % 2;
+      if (sign1 === 1 || sign2 === 1) {
         return result.neg();
-      } else if (Math.abs(b.toNumber() % 2) % 2 === 0) {
+      } else if (sign1 === 0) {
         return result;
       }
       return new Decimal(Decimal.dNaN);
