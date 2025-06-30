@@ -1,5 +1,5 @@
-export type CompareResult = -1 | 0 | 1;
-export type DecimalSource = Decimal | number | string;
+export declare type CompareResult = -1 | 0 | 1;
+export declare type DecimalSource = Decimal | number | string;
 /**
  * The value of the Decimal is sign * 10^10^10...^mag, with (layer) 10s. If the layer is not 0, then negative mag means it's the reciprocal of the corresponding number with positive mag.
  */
