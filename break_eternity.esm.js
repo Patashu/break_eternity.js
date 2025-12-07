@@ -721,6 +721,18 @@ var Decimal = /*#__PURE__*/function () {
 
       {
         value = value.replace(",", "");
+      }
+
+      if (value.toLowerCase() === 'nan') {
+        return this.fromDecimal(Decimal.dNaN);
+      }
+
+      if (value.toLowerCase() === 'infinity') {
+        return this.fromDecimal(Decimal.dInf);
+      }
+
+      if (value.toLowerCase() === '-infinity') {
+        return this.fromDecimal(Decimal.dNegInf);
       } //Handle x^^^y format. Note that no linearhyper5 parameter is needed, as pentation has no analytic approximation.
 
 
