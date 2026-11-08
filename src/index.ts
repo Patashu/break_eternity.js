@@ -2539,7 +2539,7 @@ export default class Decimal {
 	{
 		let result = this.sign * this.mag * decimal.sign * decimal.mag;
 		if (Number.isFinite(result)) {
-			return new Decimal(this.sign * this.mag * decimal.sign * decimal.mag);
+			return new Decimal(result);
 		}
 	}
 
@@ -2616,6 +2616,16 @@ export default class Decimal {
    */
   public div(value: DecimalSource): Decimal {
     const decimal = D(value);
+	
+	//Special case - handle two small numbers.
+	if (this.layer === 0 && decimal.layer === 0)
+	{
+		let result = this.sign * this.mag / ( decimal.sign * decimal.mag );
+		if (Number.isFinite(result)) {
+			return new Decimal(result);
+		}
+	}
+	
     return this.mul(decimal.recip());
   }
 
