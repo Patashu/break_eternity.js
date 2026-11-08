@@ -66,7 +66,25 @@ A list of functions is provided earlier in this readme, or you can read through 
 
 If you want to just mess around with the library to try it, download break_eternity.js, add <script> </script> tags to the beginning and end respectively, rename it break_eternity.html, open it in chrome, right click -> inspect, go to the Javascript Console, and type in and execute whatever commands you want. Enjoy!
 
----
+## Build
+
+First, clone the repo
+```
+git clone git://github.com/Patashu/break_eternity.js.git
+cd break_infinity.js
+```
+
+Then install npm dependencies
+```
+npm ci
+```
+
+And then run build command which will build all targets to the dist directory.
+```
+npm run build
+```
+
+## Acknowledgements
 
 Special thanks:
 

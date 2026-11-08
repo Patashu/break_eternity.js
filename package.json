@@ -1,24 +1,37 @@
 {
   "name": "break_eternity.js",
-  "version": "2.1.3",
+  "version": "2.2.0",
   "description": "A Javascript numerical library to represent numbers as large as 10^^1e308 and as small as 10^-10^^1e308. Sequel to break_infinity.js, designed for incremental games.",
-  "main": "dist/break_eternity.js",
+  "type": "module",
+  "main": "dist/break_eternity.cjs.js",
   "module": "dist/break_eternity.esm.js",
   "unpkg": "dist/break_eternity.min.js",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "build": "bili",
-    "prepublishOnly": "npm run build",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint . && prettier --check .",
-    "fix": "prettier --write . && eslint --fix ."
+  "jsdelivr": "dist/break_eternity.min.js",
+  "typings": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/break_eternity.esm.js",
+      "require": "./dist/break_eternity.cjs.js"
+    }
   },
   "files": [
     "dist"
   ],
+  "scripts": {
+    "prebuild": "husky install",
+    "build": "vite build -c .config/vite.config.js && vite build -c .config/vite.config.umd.js",
+    "docs": "typedoc",
+    "test": "jest -c .config/jest.config.cjs",
+    "test:coverage": "jest -c .config/jest.config.cjs --collectCoverage"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix"
+    ]
+  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Patashu/break_eternity.js.git"
+    "url": "https://github.com/Patashu/break_eternity.js.git"
   },
   "keywords": [
     "bignum",
@@ -34,15 +47,19 @@
   },
   "homepage": "https://github.com/Patashu/break_eternity.js#readme",
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^4.20.0",
-    "@typescript-eslint/parser": "^4.20.0",
-    "bili": "^5.0.5",
-    "eslint": "^7.23.0",
-    "eslint-config-prettier": "^8.1.0",
-    "eslint-plugin-react": "^7.23.1",
-    "prettier": "^2.2.1",
-    "rollup-plugin-typescript2": "^0.32.1",
-    "typescript": "^4.2.3"
-  },
-  "packageManager": "yarn@1.22.19+sha1.4ba7fc5c6e704fce2066ecbfb0b0d8976fe62447"
+    "@types/jest": "^27.0.3",
+    "@typescript-eslint/eslint-plugin": "^5.4.0",
+    "@typescript-eslint/parser": "^5.4.0",
+    "eslint": "^8.3.0",
+    "husky": "^7.0.0",
+    "jest": "^27.3.1",
+    "jest-each": "^27.3.1",
+    "jest-html-reporter": "^3.4.1",
+    "lint-staged": "^12.0.3",
+    "ts-jest": "^27.0.7",
+    "tsup": "^6.6.3",
+    "typedoc": "^0.23.25",
+    "typescript": "^4.9.3",
+    "vite": "^4.1.4"
+  }
 }
