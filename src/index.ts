@@ -2533,6 +2533,15 @@ export default class Decimal {
     if (this.sign === 0 || decimal.sign === 0) {
       return FC_NN(0, 0, 0);
     }
+	
+	//Special case - handle two small numbers.
+	if (this.layer === 0 && decimal.layer === 0)
+	{
+		let result = this.sign * this.mag * decimal.sign * decimal.mag;
+		if (Number.isFinite(result)) {
+			return new Decimal(this.sign * this.mag * decimal.sign * decimal.mag);
+		}
+	}
 
     //Special case - Multiplying a number by its own reciprocal yields +/- 1, no matter how large.
     if (this.layer === decimal.layer && this.mag === -decimal.mag) {
