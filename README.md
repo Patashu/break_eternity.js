@@ -84,6 +84,26 @@ And then run build command which will build all targets to the dist directory.
 npm run build
 ```
 
+If you get an error like:
+
+```
+error during build:
+PrettyError: Cannot find [...]break_eternity.js\src\index.ts
+    at normalizeOptions ([...]break_eternity.js\node_modules\tsup\dist\index.js:2202:13)
+```
+
+Then open that index.js file and remove this code:
+
+```
+if (!options.entry || options.entry.length === 0) {
+      throw new (0, _chunkQAQ2Z76Ijs.PrettyError)(`Cannot find ${entry}`);
+    } else {
+      logger2.info("CLI", `Building entry: ${options.entry.join(", ")}`);
+    }
+```
+
+Then try again.
+
 ## Acknowledgements
 
 Special thanks:
